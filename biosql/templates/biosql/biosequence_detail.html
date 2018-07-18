@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load bioresources_extras %}
+
+
+{% block head %}
+
+
+
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+
+
+{% endblock %}
+
+
+
+{% block content %}
+
+
+   <h1>{{ object.accession }}</h1>
+<table class="table  table-responsive">
+
+<tr><td><b>Locus Tag</b></td><td>{{ object.accession }}</td></tr>
+{% for q in object.qualifiers.all %}
+{% if q.term.name in "sequence_version topology date_changed" %}
+<tr><td><b>{{ q.term.name|replace:"_| "|capfirst }}</b></td><td>
+{{q.value}}
+</td></tr>
+{% endif %}
+{% endfor %}
+<tr><td><b>Organismo</b></td><td><a href="{% url 'biosql:assembly_view' object.biodatabase_id %}">{{ object.biodatabase.name }}</a></td></tr>
+<tr><td><b>Taxon</b></td><td>{{ object.taxon.scientific_name }}</td></tr>
+
+</table>
+
+<h3>Anotaciones</h3>
+<a href="#">Listar Anotaciones / productos génicos </a>
+<table class="table  table-responsive">
+<thead>
+<tr><td>Total</td>
+{% for name,count in object.feature_counts.items %}
+{% if name != "source" %}
+<td>{{name}}</td>
+{% endif %}
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+<tr><td>{{object.features.all|length}}</td>
+{% for name,count in object.feature_counts.items %}
+{% if name != "source" %}
+<td>{{count}}</td>
+{% endif %}
+{% endfor %}
+</tr>
+</tbody>
+</table>
+
+
+
+ <iframe  id="jbrowse"
+ src="{% static 'jbrowse' %}/index.html?data=data/H37Rv&fullviewlink=false&menu=false&nav=true&tracklist=false&loc=NC_000962.3:0..999&"
+ height="400px" width="100%"></iframe>
+
+<div class="row">
+
+<style type="text/css">
+        #mynetwork {
+            /*width: 100%;*/
+            height: 800px;
+            border: 1px solid lightgray;
+        }
+    </style>
+
+<div class="col-md-8" id="mynetwork"></div>
+<div class="col-md-4">
+<table class="table table-responsive">
+    <tr><td style="background-color: red">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Cromosoma/Contig</td></tr>
+    <tr><td style="background-color: orange">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Ensamblado</td></tr>
+    <tr><td style="background-color: SlateBlue">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Publicación</td></tr>
+    <tr><td style="background-color: green">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Organización</td></tr>
+    <tr><td style="background-color: cyan">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Autor</td></tr>
+</table>
+<h6>Otras organizaciones (de la/s publicaciones) </h6>
+<ul>
+{% for org in graph.external_orgs %}
+<li> {{org.name}} ( {{org.country}} ) </li>
+{% endfor %}
+
+</ul>
+</div>
+
+</div>
+
+<script type="text/javascript">
+    // create an array with nodes
+    var nodes = new vis.DataSet([
+        {% for x in graph.nodes %}
+        {id: '{{x.id}}', label: '{{x.label}}',color:'{{x.color}}'},
+        {% endfor%}
+    ]);
+
+    var edges = new vis.DataSet([
+        {% for x in graph.edges %}
+        {from: '{{x.from}}', to: '{{x.to}}',arrows:'to'},
+        {% endfor %}
+    ]);
+    var container = document.getElementById('mynetwork');
+    var data = {
+        nodes: nodes,
+        edges: edges
+    };
+    var options = {
+        nodes: {
+              shape: 'box'
+            },
+        layout: {  hierarchical: {   direction: "UD"  }    }
+    };
+
+    var network = new vis.Network(container, data, options);
+</script>
+
+{% endblock %}

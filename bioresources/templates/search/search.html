@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load highlight %}
+
+{% load bioresources_extras %}
+
+{% block jumbotron %}
+<style>
+.jumbotron {
+    padding-bottom: 10px;
+}
+</style>
+<div class="jumbotron">
+<h2>{{dbtitle}}</h2>
+
+    <form method="get" action="."  >
+        <div class="input-group col-mb-12">
+            <input class="form-control" type="search" name="q" id="id_q" value="{{query}}" />
+            <input class="form-control" type="hidden" name="type" id="id_q" value="{{dbtype}}" />
+            <div class="input-group-append">
+                <button  type="submit" class="btn btn-info"><i class="fa fa-search">&nbsp;</i></button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block sidebarleft %}
+
+{% if sidebarleft %}
+<nav class="col-md-2 d-none d-md-block bg-light sidebar">
+
+{% for k,v in selected.items %}
+
+ <div class="sidebar-sticky">
+
+        <span class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">{{ k }}</span>
+       <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+                                 href="{{request|url_without_parameter:k}}">{{v}}  <i class="fas fa-minus-circle"></i>   </a>
+
+   </div>
+{% endfor %}
+
+
+{% for rtype,counts2 in sidebarleft.items %}
+
+          <div class="sidebar-sticky">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                                  <span>{{ rtype }}</span>
+                                  <a class="d-flex align-items-center text-muted" href="#">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                                  </a>
+                                </h6>
+
+                      <ul class="nav flex-column">
+                      {% for cat,count in counts2 %}
+                        <li class="nav-item">
+                          <a class="nav-link" style="font-size:0.7rem" href="{{request.get_full_path}}&{{rtype}}={{cat|urlencode}}">
+
+                            {{cat}} : {{count}}
+                          </a>
+                        </li>
+                      {% endfor %}
+                      </ul>
+                    </div>
+
+{% endfor %}
+
+       </nav>
+{% endif %}
+
+{% endblock %}
+
+
+{% block content %}
+
+<style>
+.highlighted_text {
+color : red;
+}
+
+</style>
+
+
+    <div class="container">
+    <div class="row">
+
+     {% if query %}
+
+                <div class="col-md-6">
+                <h3>Search results for "<strong>{{query}}</strong>"</h3>
+               </div>
+                <div class="col-md-6">
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-left">
+                      {% if page_obj.has_previous %}
+                      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{query}}">&laquo;</a></li>
+                      {% else %}
+                      <li class="page-item disabled"><a class="page-link" href="#"><span>&laquo;</span></a></li>
+                      {% endif %}
+                      {% for i in paginator.page_range %}
+                      {% if page_obj.number == i %}
+                      <li class="page-item active"><a class="page-link" href="#">{{ i }} <span class="sr-only">(current)</span></a></li>
+                      {% else %}
+                      <li class="page-item"><a class="page-link" href="?page={{ i }}&q={{query}}">{{ i }}</a></li>
+                      {% endif %}
+                      {% endfor %}
+                      {% if page_obj.has_next %}
+                      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{query}}">&raquo;</a></li>
+                      {% else %}
+                      <li class="page-item disabled"><a class="page-link" href="#"><span>&raquo;</span></a></li>
+                      {% endif %}
+                    </ul>
+                    </nav>
+</div>
+                {% for result in page_obj.object_list  %}
+                    <p>
+                        <a href="{% url 'bioresources:publication_view' result.object.id %}{{ result.object.id }}">{% highlight result.object.name with query  html_tag "span" css_class "highlighted_text" %} </a> <br />
+                        <span> {% highlight result.object.description with query  html_tag "span" css_class "highlighted_text" max_length 200 %}  </span><br />
+                        {% if result.taxon %}
+                        <span>  {{ result.taxon | first }}  </span> <br />
+                        {% endif %}
+                        {% if result.intraspecific_name %}
+                        <span> {{ result.intraspecific_name }}  </span><br />
+                         {% endif %}
+
+
+
+                        {% for aff in result.affiliations  %}
+                         <span>  {% highlight aff with query  html_tag "span" css_class "highlighted_text" %} | </span>
+                        {% endfor %}
+                        <br />
+
+                        {% for aff in result.authors  %}
+                        <span>  {% highlight aff with query  html_tag "span" css_class "highlighted_text" %} | </span>
+                        {% endfor %}
+                        <br />
+
+                        {% for aff in result.related_author_names  %}
+                         <span>  {% highlight aff with query  html_tag "span" css_class "highlighted_text" %} | </span>
+                        {% endfor %}
+                        <br />
+
+                        {% for aff in result.related_org_names  %}
+                        <span>  {% highlight aff with query  html_tag "span" css_class "highlighted_text" %} | </span>
+                        {% endfor %}
+                        <br />
+
+
+
+
+
+                    </p>
+
+                {% empty %}
+                {{ suggestions }}
+                    <p>No results found.</p>
+                {% endfor %}
+
+                {% if page.has_previous or page.has_next %}
+                    <div>
+                        {% if page.has_previous %}<a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
+                        |
+                        {% if page.has_next %}<a href="?q={{ query }}&amp;page={{ page.next_page_number }}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                {# Show some example queries to run, maybe query syntax, something else? #}
+            {% endif %}
+    </div>
+    </div>
+{% endblock %}
