@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Bioentry, Biosequence, Biodatabase, Ontology, Term, Dbxref, BioentryQualifierValue, Seqfeature, \
-    Tool, ToolRun, Location, SeqfeatureDbxref
+    Tool, ToolRun, Location, SeqfeatureDbxref,Taxon
 
 admin.site.register(Biosequence)
 admin.site.register(Biodatabase)
@@ -60,3 +60,7 @@ class SeqfeatureDbxrefAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'seqfeature',
     )
+
+@admin.register(Taxon)
+class TaxonAdmin(admin.ModelAdmin):
+    search_fields = ["accession"]

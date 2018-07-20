@@ -9,8 +9,7 @@ urlpatterns = [
     path('seq/<int:pk>', views.sequence_view, name='seq_view'),
     path('assembly/<int:pk>', views.assembly_view, name='assembly_view'),
     path('sequence/<int:pk>', views.TaxView.as_view(), name='sequence_view'),
-    path('structure/<int:pk>', views.StructureView.as_view(), name='structure_view'),
-    path('structure_raw/<str:pdbid>', views.structure_raw, name='structure_raw_view'),
+
 
 
     path('variant/<int:pk>', views.TaxView.as_view(), name='variant_view'),

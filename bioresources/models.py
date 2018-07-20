@@ -228,6 +228,9 @@ class Structure(Resource):
     method = models.CharField(max_length=50, null=True)
     org_list = models.TextField(null=True)
 
+    def __str__(self):
+        return self.name
+
     def related_author_names(self):
         ran = []
         for affiliation in self.targets.all():

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'vardb',
     'bioresources',  # importante que este antes de allauth
 
+
+
     'django_select2',
     'easy_select2',
 

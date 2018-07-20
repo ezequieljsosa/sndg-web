@@ -353,7 +353,7 @@ class Taxon(models.Model):
         db_table = 'taxon'
 
     def __str__(self):
-        return "(" + str(self.ncbi_taxon_id) + ")" + self.scientific_name
+        return "(" + str(self.ncbi_taxon_id) + ")" + self.scientific_name()
 
 
 class TaxonName(models.Model):

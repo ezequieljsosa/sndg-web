@@ -16,24 +16,7 @@ class AboutView(TemplateView):
         return context
 
 
-class StructureView(TemplateView):
-    # http://nglviewer.org/ngl/api/class/src/stage/stage.js~Stage.html#instance-method-loadFile
-    template_name = "biosql/structure_detail.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context['jojo'] = "sdalmkghdaf"
-        return context
-
-
-from django.http import HttpResponse
-
-
-def structure_raw(request, pdbid):
-    pdb = open(
-        "/data/organismos/MeloI/structure/Minc3s02077g28134/Minc3s02077g28134/Minc3s02077g28134_4zw9_A_1_470/Minc3s02077g28134.B99990001_out/Minc3s02077g28134.B99990001_out.pdb").read()
-    return HttpResponse(pdb)
 
 
 class TaxView(TemplateView):
@@ -74,7 +57,7 @@ def sequence_view(request, pk):
 
     if be.biodatabase.name.endswith("prots"):
         beg = Biodatabase.objects.get(name=be.biodatabase.name.replace("_prots", ""))
-        taxon = beg.bioentry_set.first().taxon
+        taxon = beg.entries.first().taxon
         feature = Seqfeature.objects.raw("""
         SELECT sf.seqfeature_id, sf.bioentry_id, sf.type_term_id, sf.source_term_id , sf.display_name,  sf.rank
         FROM biodatabase bdb,bioentry be, seqfeature sf, seqfeature_qualifier_value sfqv
@@ -108,11 +91,11 @@ def sequence_view(request, pk):
         return render(request, 'biosql/protein_detail.html', {
             "functions": functions, "graph": graph,
             "object": be, "feature": feature, "taxon": taxon, "seq": seq, "start": start, "end": end,
-            "sidebarleft": {}})
+            "sidebarleft": 1})
     else:
         return render(request, 'biosql/biosequence_detail.html', {
             "object": be,"graph": graph,
-            "sidebarleft": {} }) # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
+            "sidebarleft": 0 }) # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
 
 
 def assembly_graph(assembly):
