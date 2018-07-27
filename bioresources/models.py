@@ -14,8 +14,22 @@ class Person(models.Model):
     email = models.EmailField()
     arg_affiliation = models.BooleanField(default=False)
 
+    def organizations(self):
+        organizations = []
+        for aff in self.affiliations.all():
+            for org in aff.organizations:
+                if org not in organizations:
+                    organizations.append(org)
+        return organizations
+
+    def related_org_names(self):
+        return [x.name for x in organizations]
+
     def complete_name(self):
         return self.surname + ", " + self.name
+
+    def type(self):
+        return "person"
 
     def __str__(self):
         return self.name + " " + self.surname
@@ -53,6 +67,7 @@ class Resource(models.Model):
     READS = 'sra'
     STRUCTURE = 'structure'
     EXPRESSION = 'expression'
+    EXPRESSION = 'barcode'
 
     RESOURCE_TYPES = (
         (PUBLICATION, PUBLICATION),
@@ -208,7 +223,7 @@ class Publication(Resource):
 
 class Affiliation(models.Model):
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="affiliations")
-    author = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="authors")
+    author = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="affiliations")
     organizations = models.ManyToManyField(Organization)
 
 
@@ -283,3 +298,12 @@ class Expression(Resource):
         for affiliation in self.targets.all():
             ran += affiliation.source.affiliation_names()
         return list(set(ran))
+
+class Barcode(Resource):
+    country = models.CharField(max_length=100)
+    subdivision = models.CharField(max_length=150)
+    marker = models.CharField(max_length=50, null=True)
+    image_url = models.URLField(null=True)
+    bold_org = models.CharField(max_length=255, null=True)
+    collectors = models.CharField(max_length=255, null=True)
+

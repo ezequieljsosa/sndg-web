@@ -242,20 +242,22 @@ class ToolRun(models.Model):
     executed_at = models.DateTimeField(auto_now=True)
 
 
-class ToolRunResult(models.Model):
-    run = models.ForeignKey(ToolRun, models.DO_NOTHING, related_name="results")
+# class ToolRunResult(models.Model):
+#     toolrunresult_id = models.AutoField(primary_key=True)
+#     run = models.ForeignKey(ToolRun, models.DO_NOTHING, related_name="results")
+#     description = models.CharField(max_length=255, blank=True, null=True)
+#
+#
+# class ToolRunResultAttrs(models.Model):
+#     runResult = models.ForeignKey(ToolRunResult, models.DO_NOTHING, related_name="attrs")
+#     name = models.CharField(max_length=255, blank=True, null=True)
 
-
-class ToolRunResultAttrs(models.Model):
-    runResult = models.ForeignKey(ToolRunResult, models.DO_NOTHING, related_name="attrs")
-
-
-class AligmentSimple(ToolRunResult):
-    query = models.TextField(blank=False)
-    query_seq = models.TextField(blank=False)
-    query_start = models.IntegerField()
-    query_end = models.IntegerField()
-    query_strand = models.IntegerField(default=1)
+# class AligmentSimple(ToolRunResult):
+#     query = models.TextField(blank=False)
+#     query_seq = models.TextField(blank=False)
+#     query_start = models.IntegerField()
+#     query_end = models.IntegerField()
+#     query_strand = models.IntegerField(default=1)
 
 
 class Seqfeature(models.Model):
@@ -356,6 +358,8 @@ class Taxon(models.Model):
         return "(" + str(self.ncbi_taxon_id) + ")" + self.scientific_name()
 
 
+
+
 class TaxonName(models.Model):
     id = models.AutoField(primary_key=True)
     taxon = models.ForeignKey(Taxon, models.DO_NOTHING, related_name="names")
@@ -386,6 +390,9 @@ class Term(models.Model):
         return "%s - %s (%i)" % (self.identifier, self.name, self.ontology.ontology_id)
 
 
+
+
+
 class TermDbxref(models.Model):
     term = models.ForeignKey(Term, models.CASCADE, primary_key=True, related_name="dbxrefs")
     dbxref = models.ForeignKey(Dbxref, models.DO_NOTHING)
@@ -413,9 +420,9 @@ class TermPath(models.Model):
 
 class TermRelationship(models.Model):
     term_relationship_id = models.AutoField(primary_key=True)
-    subject_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="subject_termrelationships")
+    subject_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="subject_termrelationships") # parent
     predicate_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="predicate_termrelationships")
-    object_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="object_termrelationships")
+    object_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="object_termrelationships") #child
     ontology = models.ForeignKey(Ontology, models.DO_NOTHING)
 
     class Meta:
@@ -436,9 +443,27 @@ class TermRelationshipTerm(models.Model):
 class TermSynonym(models.Model):
     id = models.AutoField(primary_key=True)
     synonym = models.CharField(max_length=255)
-    term = models.ForeignKey(Term, models.DO_NOTHING)
+    term = models.ForeignKey(Term, models.DO_NOTHING,related_name="synonyms")
 
     class Meta:
         managed = False
         db_table = 'term_synonym'
         unique_together = (('term', 'synonym'),)
+
+
+class TaxIdx(models.Model):
+
+    tax = models.ForeignKey(Taxon, models.CASCADE,primary_key=True,db_column="tax_id")
+    text = models.TextField()
+
+    class Meta:
+        managed = True
+        db_table = 'tax_idx'
+
+class TermIdx(models.Model):
+    term = models.ForeignKey(Term, models.CASCADE,primary_key=True,db_column="term_id")
+    text = models.TextField()
+
+    class Meta:
+        managed = True
+        db_table = 'term_idx'

@@ -1,7 +1,8 @@
 import datetime
 from haystack import indexes
 from django.db.models import Prefetch
-from .models import Publication, Assembly, BioProject, Expression, Structure
+from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation,Barcode
+from biosql.models import Bioentry,Biodatabase
 
 """
 python manage.py build_solr_schema > /opt/solr-7.3.1/server/solr/eze_core/schema.xml
@@ -118,7 +119,6 @@ class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
         return Expression
 
     def index_queryset(self, using=None):
-
         qs = (Publication.objects.prefetch_related(
             "affiliations__organizations", "affiliations__author")
             .filter(affiliations__organizations__country="Argentina"))
@@ -150,7 +150,6 @@ class BioProjectIndex(indexes.SearchIndex, indexes.Indexable):
         return BioProject
 
     def index_queryset(self, using=None):
-
         qs = (Publication.objects.prefetch_related(
             "affiliations__organizations", "affiliations__author")
             .filter(affiliations__organizations__country="Argentina"))
@@ -159,3 +158,59 @@ class BioProjectIndex(indexes.SearchIndex, indexes.Indexable):
             .prefetch_related(Prefetch("targets__source",
                                        queryset=qs))
             .filter(deprecated=False, index_updated=False))
+
+
+class PersonIndex(indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True)
+    surname = indexes.CharField(model_attr='surname')
+    type = indexes.CharField(model_attr='type', faceted=True)
+
+    affiliations = indexes.MultiValueField(model_attr='related_org_names', faceted=True)
+
+    def get_model(self):
+        return Person
+
+    def index_queryset(self, using=None):
+        # qs = (Affiliation.objects.select_related(
+        #     "affiliations__organizations"))
+
+        return (self.get_model().objects
+            .prefetch_related("affiliations__organizations")
+            .filter(arg_affiliation=True, deprecated=False, index_updated=False))
+
+
+class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr='name')
+    country = indexes.CharField(model_attr='country', faceted=True)
+    city = indexes.CharField(model_attr='city')
+
+    def get_model(self):
+        return Organization
+
+    def index_queryset(self, using=None):
+        return (self.get_model().objects.filter(country="Argentina",
+                                                deprecated=False, index_updated=False))
+
+
+class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr='name')
+    country = indexes.CharField(model_attr='country', faceted=True)
+    subdivision = indexes.CharField(model_attr='city',faceted=True)
+    marker = indexes.CharField(model_attr='marker',faceted=True)
+    bold_org = indexes.CharField(model_attr='bold_org',faceted=True)
+    taxon = indexes.MultiValueField(model_attr='taxon_name', faceted=True)
+
+
+
+    def get_model(self):
+        return Barcode
+
+    def index_queryset(self, using=None):
+        return (self.get_model().objects.filter(country="Argentina",
+                                                deprecated=False, index_updated=False))
+
+
+
+
