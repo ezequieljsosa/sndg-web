@@ -67,7 +67,7 @@ class BioSearchForm(SearchForm):
 
         params = {"content": AutoQuery(self.cleaned_data['q']),
                   "type": Exact(self.data["type"])}
-        for x in ["authors", "affiliations", "taxon"]:
+        for x in ["authors", "affiliations", "taxon"] + Resource.facet_dict.get(self.data["type" ], []):
             if x in self.data and self.data[x]:
                 params[x] = self.data [x]
         sqs = self.searchqueryset.filter(**params)

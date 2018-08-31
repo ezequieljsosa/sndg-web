@@ -9,7 +9,11 @@ admin.site.register(Ontology)
 admin.site.register(Term)
 
 
-admin.site.register(Tool)
+@admin.register(Tool)
+class ToolAdmin(admin.ModelAdmin):
+    list_display = ["name","version","url"]
+    search_fields = ["name"]
+
 admin.site.register(ToolRun)
 
 

@@ -14,9 +14,9 @@ class StructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["pdb"] = self.kwargs["pdbid"]
+        context["pdb"] = self.kwargs["pdbid"].lower()
 
-        pdbobj = PDB.objects.prefetch_related("residues").get(code=self.kwargs["pdbid"])
+        pdbobj = PDB.objects.prefetch_related("residues").get(code=self.kwargs["pdbid"].lower())
 
 
         context["chains"] = [{"name":x} for x in set([r.chain for r in pdbobj.residues.all() if r.chain.strip()]) ]

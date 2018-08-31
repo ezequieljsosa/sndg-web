@@ -24,10 +24,10 @@ from bioresources import views as bioviews
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     path('', include('bioresources.urls')),
-    path('', include('biosql.urls')),
-    path('', include('pdbdb.urls')),
+    path('bioseq/', include('biosql.urls')),
+    path('pdbdb/', include('pdbdb.urls')),
     path('', include('vardb.urls')),
-    #url(r'^search/', include('haystack.urls')),
+    # url(r'^search/', include('haystack.urls')),
     # url(r'^solr/', include('solrtest.urls')),
     url(r'^crud/',  include('crudbuilder.urls')),
 

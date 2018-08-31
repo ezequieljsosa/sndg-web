@@ -14,16 +14,19 @@ class Person(models.Model):
     email = models.EmailField()
     arg_affiliation = models.BooleanField(default=False)
 
+    def rtype(self):
+        return "person"
+
     def organizations(self):
         organizations = []
         for aff in self.affiliations.all():
-            for org in aff.organizations:
+            for org in aff.organizations.all():
                 if org not in organizations:
                     organizations.append(org)
         return organizations
 
     def related_org_names(self):
-        return [x.name for x in organizations]
+        return [x.name for x in self.organizations()]
 
     def complete_name(self):
         return self.surname + ", " + self.name
@@ -54,6 +57,9 @@ class Organization(models.Model):
     scopus_id = models.CharField(max_length=200, null=True)
     scopus_names = models.TextField(null=True)
 
+    def rtype(self):
+        return "org"
+
     def __str__(self):
         return " ".join([x for x in [self.name, "|", self.country, self.city] if x])
 
@@ -67,7 +73,17 @@ class Resource(models.Model):
     READS = 'sra'
     STRUCTURE = 'structure'
     EXPRESSION = 'expression'
-    EXPRESSION = 'barcode'
+    BARCODE = 'barcode'
+
+
+    facet_dict = {
+        "assembly": ["species_name", "level", "assembly_type"],
+        "gds": ["pdat", "gdstype"],
+        "bioproject": ["sample_scope", "material"], #, "capture_target", "method"
+        "barcode": ["subdivision", "marker"],
+
+    }
+
 
     RESOURCE_TYPES = (
         (PUBLICATION, PUBLICATION),
@@ -77,6 +93,8 @@ class Resource(models.Model):
         (GENOME, GENOME),
         (READS, READS),
         (STRUCTURE, STRUCTURE),
+        (EXPRESSION, EXPRESSION),
+        (BARCODE, BARCODE),
     )
 
     type = models.CharField(max_length=10, choices=RESOURCE_TYPES)
@@ -94,6 +112,11 @@ class Resource(models.Model):
 
     class Meta:
         unique_together = ('type', 'name',)
+
+    def ncbi_tax_keywords(self):
+        if self.ncbi_tax:
+            return self.ncbi_tax.keywords.first().text
+        return None
 
     def taxon_name(self):
         if self.ncbi_tax:
@@ -180,13 +203,13 @@ class BioProject(Resource):
 
     def related_author_names(self):
         ran = []
-        for affiliation in self.targets.all():
+        for affiliation in self.targets.filter(source__type="pmc").all():
             ran += affiliation.source.author_names()
         return list(set(ran))
 
     def related_org_names(self):
         ran = []
-        for affiliation in self.targets.all():
+        for affiliation in self.targets.filter(source__type="pmc").all():
             ran += affiliation.source.affiliation_names()
         return list(set(ran))
 
@@ -199,17 +222,20 @@ class Publication(Resource):
     scopus_id = models.CharField(max_length=50, null=True)
     issn = models.CharField(max_length=50, null=True)
 
-    def affiliation_names(self):
+    def affiliation_names(self,all=False):
         affs = []
         for affiliation in self.affiliations.all():
-            for org in affiliation.organizations.all():
+            qs = affiliation.organizations
+            if not all:
+                qs = qs.filter(country="Argentina")
+            for org in qs.all():
                 if org.name not in affs:
                     affs.append(org.name)
         return affs
 
     def author_names(self):
         authors = []
-        for affiliation in self.affiliations.all():
+        for affiliation in self.affiliations.filter(organizations__country="Argentina").all():
             if affiliation.author.complete_name() not in authors:
                 authors.append(affiliation.author.complete_name())
         return authors

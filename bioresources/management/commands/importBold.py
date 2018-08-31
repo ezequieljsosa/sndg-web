@@ -64,10 +64,10 @@ class Command(BaseCommand):
                     description=d["description"],
                     country=d["collection_event"]["country"],
                     collectors=d["collection_event"]["collectors"],
-
+                    type="barcode",
                     marker=d["sequences"]["sequence"][0]["markercode"],
 
-                    bold_org=d["specimen_identifiers"]["institution_storing"],
+                    bold_org=d["specimen_identifiers"]["institution_storing"]
                 )
                 try:
                     bc.ncbi_tax = Taxon.objects.get(ncbi_taxon_id=d["tax"])
@@ -78,11 +78,21 @@ class Command(BaseCommand):
                 except KeyError:
                     pass
                 try:
-                    bc.subdivision = d["collection_event"]["province_state"],
+                    bc.subdivision = d["collection_event"]["province_state"]
                 except KeyError:
                     pass
 
                 bcodes.append(bc)
+        bcodes_col = []
+        for i,bc in enumerate(tqdm(bcodes)):
+            bcodes_col.append(bc)
+            if i == 5000:
+                with transaction.atomic():
+                    for bc2 in bcodes_col:
+                        bc2.save()
+                    bcodes_col = []
+
         with transaction.atomic():
-            for bc in tqdm(bcodes):
-                bc.save()
+            for bc2 in bcodes_col:
+                bc2.save()
+

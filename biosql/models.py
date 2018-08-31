@@ -229,8 +229,12 @@ class Reference(models.Model):
 
 class Tool(models.Model):
     name = models.CharField(max_length=120, blank=False)
+    description = models.TextField(default="")
     version = models.CharField(max_length=64, blank=True, null=True)
     url = models.URLField()
+
+    def rtype(self):
+        return "tool"
 
 
 class ToolRun(models.Model):
@@ -453,7 +457,7 @@ class TermSynonym(models.Model):
 
 class TaxIdx(models.Model):
 
-    tax = models.ForeignKey(Taxon, models.CASCADE,primary_key=True,db_column="tax_id")
+    tax = models.ForeignKey(Taxon, models.CASCADE,primary_key=True,db_column="tax_id",related_name="keywords")
     text = models.TextField()
 
     class Meta:
@@ -461,7 +465,7 @@ class TaxIdx(models.Model):
         db_table = 'tax_idx'
 
 class TermIdx(models.Model):
-    term = models.ForeignKey(Term, models.CASCADE,primary_key=True,db_column="term_id")
+    term = models.ForeignKey(Term, models.CASCADE,primary_key=True,db_column="term_id",related_name="keywords")
     text = models.TextField()
 
     class Meta:

@@ -1,8 +1,10 @@
 import datetime
+from tqdm import tqdm
 from haystack import indexes
 from django.db.models import Prefetch
-from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation,Barcode
-from biosql.models import Bioentry,Biodatabase
+from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation, \
+    Barcode
+from biosql.models import Bioentry, Biodatabase, Tool
 
 """
 python manage.py build_solr_schema > /opt/solr-7.3.1/server/solr/eze_core/schema.xml
@@ -36,11 +38,14 @@ class PublicationIndex(indexes.SearchIndex, indexes.Indexable):
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return self.get_model().objects.prefetch_related(
-            "affiliations", "affiliations__organizations", "affiliations__author"
-        ).filter(deprecated=False, index_updated=False)
+            "affiliations", "affiliations__organizations", "affiliations__author", "targets__target"
+        ).filter(deprecated=False, index_updated=False,
+                 targets__target__type__in=["gds", "assembly", "bioproject", "structure"])
 
 
 class StructureIndex(indexes.SearchIndex, indexes.Indexable):
+    # TODO anotaciones GO/EC/otras...
+
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr='name')
     description = indexes.CharField(model_attr='description')
@@ -127,6 +132,19 @@ class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
             .filter(deprecated=False, index_updated=False))
 
 
+class ToolIndex(indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr='name')
+    description = indexes.CharField(model_attr='description')
+    type = indexes.CharField(model_attr='rtype', faceted=True)
+
+    def get_model(self):
+        return Tool
+
+    def index_queryset(self, using=None):
+        return (self.get_model().objects)
+
+
 class BioProjectIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr='name')
@@ -162,8 +180,10 @@ class BioProjectIndex(indexes.SearchIndex, indexes.Indexable):
 
 class PersonIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr='complete_name')
     surname = indexes.CharField(model_attr='surname')
-    type = indexes.CharField(model_attr='type', faceted=True)
+
+    type = indexes.CharField(model_attr='rtype', faceted=True)
 
     affiliations = indexes.MultiValueField(model_attr='related_org_names', faceted=True)
 
@@ -176,33 +196,32 @@ class PersonIndex(indexes.SearchIndex, indexes.Indexable):
 
         return (self.get_model().objects
             .prefetch_related("affiliations__organizations")
-            .filter(arg_affiliation=True, deprecated=False, index_updated=False))
+            .filter(arg_affiliation=True))  # TODO agregar campos , deprecated=False, index_updated=False
 
 
 class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr='name')
     country = indexes.CharField(model_attr='country', faceted=True)
-    city = indexes.CharField(model_attr='city')
+    city = indexes.CharField(model_attr='city', null=True)
+    type = indexes.CharField(model_attr='rtype', faceted=True)
 
     def get_model(self):
         return Organization
 
     def index_queryset(self, using=None):
-        return (self.get_model().objects.filter(country="Argentina",
-                                                deprecated=False, index_updated=False))
+        return (self.get_model().objects.filter(country="Argentina"))  # TODO deprecated=False, index_updated=False
 
 
 class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr='name')
     country = indexes.CharField(model_attr='country', faceted=True)
-    subdivision = indexes.CharField(model_attr='city',faceted=True)
-    marker = indexes.CharField(model_attr='marker',faceted=True)
-    bold_org = indexes.CharField(model_attr='bold_org',faceted=True)
+    subdivision = indexes.CharField(model_attr='subdivision', faceted=True, null=True)
+    marker = indexes.CharField(model_attr='marker', faceted=True, null=True)
+    bold_org = indexes.CharField(model_attr='bold_org', faceted=True)
     taxon = indexes.MultiValueField(model_attr='taxon_name', faceted=True)
-
-
+    type = indexes.CharField(model_attr='type', faceted=True)
 
     def get_model(self):
         return Barcode
@@ -210,7 +229,3 @@ class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
     def index_queryset(self, using=None):
         return (self.get_model().objects.filter(country="Argentina",
                                                 deprecated=False, index_updated=False))
-
-
-
-

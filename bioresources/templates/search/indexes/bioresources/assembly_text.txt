@@ -7,4 +7,4 @@
 {{ object.species_name }}
 {{ object.level }}
 {{ object.assembly_type }}
-{{ object.taxon_name }}
+{{ object.ncbi_tax_keywords }}

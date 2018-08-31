@@ -16,9 +16,6 @@ class AboutView(TemplateView):
         return context
 
 
-
-
-
 class TaxView(TemplateView):
     model = Taxon
     template_name = "biosql/taxon_detail.html"
@@ -27,8 +24,6 @@ class TaxView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['object'] = Taxon.objects.prefetch_related("names").get(ncbi_taxon_id=self.kwargs["pk"])
         return context
-
-
 
 
 def labelize(long_string, size=4):
@@ -94,39 +89,57 @@ def sequence_view(request, pk):
             "sidebarleft": 1})
     else:
         return render(request, 'biosql/biosequence_detail.html', {
-            "object": be,"graph": graph,
-            "sidebarleft": 0 }) # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
+            "object": be, "graph": graph,
+            "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
+
+
+def publications_from_resource_graph(resource, graph, external_orgs, resource_identifier=None):
+    if not resource_identifier:
+        resource_identifier = resource.name
+
+    for x in resource.sources.filter(source__type="pmc").all():
+
+        graph["nodes"].append({"id": x.source.name, "label": labelize(x.source.name), "color": "SlateBlue"})
+        graph["edges"].append({"from": resource_identifier, "to": x.source.name})
+
+
+        p = Publication.objects.get(id=x.source.id)
+        for i, affiliation in enumerate(p.affiliations.all()):
+            if affiliation.author.arg_affiliation and (affiliation.author.complete_name not in
+                [x["id"] for x in graph["nodes"]]):
+                graph["nodes"].append({"id": affiliation.author.complete_name,
+                                       "label": affiliation.author.complete_name() + " #" + str(i),
+                                       "color": "cyan" if affiliation.author.arg_affiliation else "grey"})
+
+                for org in affiliation.organizations.all():
+                    if org.name not in [y["id"] for y in graph["nodes"]]:
+                        graph["nodes"].append({"id": org.name,
+                                               "label": labelize(org.name),
+                                               "color": "green" if org.country == "Argentina" else "purple"})
+                    graph["edges"].append({"from": x.source.name, "to": org.name})
+                    graph["edges"].append({"from": org.name, "to": affiliation.author.complete_name})
+            else:
+                for org in affiliation.organizations.all():
+                    if org not in external_orgs:
+                        external_orgs.append(org)
+
+
+from django.db.models import Q
 
 
 def assembly_graph(assembly):
     external_orgs = []
     assembly_name = assembly.external_ids.filter(type="accession").first().identifier
-    graph = {"nodes": [ {"id": assembly_name, "label": assembly_name, "color": "orange"}],
+    graph = {"nodes": [{"id": assembly_name, "label": assembly_name, "color": "orange"}],
              "edges": []}
-    for rel in assembly.sources.all():
+
+    publications_from_resource_graph(assembly, graph, external_orgs, assembly_name)
+    for rel in assembly.sources.filter(~Q(source__type="pmc")).all():
         if rel.source.name not in graph["nodes"]:
             graph["nodes"].append({"id": rel.source.name, "label": labelize(rel.source.name), "color": "SlateBlue"})
             graph["edges"].append({"from": assembly_name, "to": rel.source.name})
-            for x in rel.source.sources.all():
-                if x.source.type == "pmc":
-                    p = Publication.objects.get(id=x.source.id)
-                    for i, affiliation in enumerate(p.affiliations.all()):
-                        if affiliation.author.arg_affiliation:
-                            graph["nodes"].append({"id": affiliation.author.complete_name,
-                                                   "label": affiliation.author.complete_name() + " #" + str(i),
-                                                   "color": "cyan" if affiliation.author.arg_affiliation else "grey"})
+            publications_from_resource_graph(rel.source, graph, external_orgs)
 
-                            for org in affiliation.organizations.all():
-                                if org.name not in [y["id"] for y in graph["nodes"]]:
-                                    graph["nodes"].append({"id": org.name,
-                                                           "label": labelize(org.name),
-                                                           "color": "green" if org.country == "Argentina" else "purple"})
-                                graph["edges"].append({"from": rel.source.name, "to": org.name})
-                                graph["edges"].append({"from": org.name, "to": affiliation.author.complete_name})
-                        else:
-                            for org in affiliation.organizations.all():
-                                if org not in external_orgs:
-                                    external_orgs.append(org)
     nodes = []
     added = []
     for x in graph["nodes"]:
@@ -137,13 +150,14 @@ def assembly_graph(assembly):
     graph["external_orgs"] = external_orgs
     return graph
 
-def entry_graph(be, beg):
 
+def entry_graph(be, beg):
     assembly = Assembly.objects.get(external_ids__identifier=beg.name)
     graph = assembly_graph(assembly)
     graph["nodes"].append({"id": be.accession, "label": be.accession, "color": "red"})
     graph["edges"].append({"from": be.accession, "to": beg.name})
     return graph
+
 
 def assembly_view(request, pk):
     # pf_features = Prefetch()
@@ -160,6 +174,7 @@ def assembly_view(request, pk):
 
     graph = assembly_graph(assembly)
 
-    return render(request, 'biosql/assembly_detail.html', { "lengths": lengths,
-            "object": assembly,"graph": graph, "contigs":be.entries.all(),
-            "sidebarleft": {} })
+    return render(request, 'biosql/assembly_detail.html', {"lengths": lengths,
+                                                           "object": assembly, "graph": graph,
+                                                           "contigs": be.entries.all(),
+                                                           "sidebarleft": {}})

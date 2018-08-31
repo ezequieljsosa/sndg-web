@@ -3,6 +3,7 @@
 
 
 {% block content %}
+<div class="container">
 <div class="row">
 
 
@@ -44,9 +45,22 @@
       {% endif %}
 
     </div>
-</div>
+
+
+    <div class="row">
+    <div class="col-md-12">
+    <h3>Recursos referenciados</h3>
+    <table class="table table-bordered">
+    {% for r in target_resources %}
+    <tr><td>{{r.type}}</td><td> <a href="{{r.url_}}"> {{r.name}}</a></td></tr>
+    {% endfor %}
+    </table>
+    </div></div>
 
 
 
 </div>
+
+
+
 {% endblock %}
