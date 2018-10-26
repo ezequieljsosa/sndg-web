@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django_extensions',
 
     'biosql',
-    'pdbdb',
-    'vardb',
+    # 'pdbdb',
+    # 'vardb',
     'bioresources',  # importante que este antes de allauth
 
     'django_select2',

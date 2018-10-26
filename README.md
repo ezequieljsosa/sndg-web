@@ -5,3 +5,4 @@ SNDG Web Apps
 ./manage.py shell_plus --ipython --print-sql
 
 
+pip install  git+https://github.com/ezequieljsosa/elsapy.git@complete_view_fields

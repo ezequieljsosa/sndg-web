@@ -3,7 +3,76 @@ from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
 from django.db import models
-from biosql.models import Taxon
+from biosql.models import Taxon,Term
+
+
+def get_class(kls):
+    parts = kls.split('.')
+    module = ".".join(parts[:-1])
+    m = __import__(module)
+    for comp in parts[1:]:
+        m = getattr(m, comp)
+    return m
+
+
+class ProcessStatus(models.Model):
+    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def step(self, key):
+        for step in self.steps.all():
+            if step.name == key:
+                return step
+        raise IndexError("'%s' step not found" % key)
+
+    def __str__(self):
+        return "ProcessStatus(%s)" % self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+class ProcessStatusStep(models.Model):
+    name = models.CharField(max_length=200)
+    class_name = models.CharField(max_length=200)
+    class_identifier = models.CharField(max_length=200)
+    cast_int_identifier = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    process_status = models.ForeignKey(ProcessStatus, related_name="steps", on_delete=models.CASCADE)
+
+    def __contains__(self, key):
+        return len(self.units.filter(process_identifier=key))
+
+    def append(self, db_identifier, process_identifier=None):
+        if not process_identifier:
+            process_identifier = db_identifier
+        ProcessStatusStepProcessUnit(process_status_step=self,
+                                     db_identifier=db_identifier, process_identifier=process_identifier).save()
+
+    def results(self):
+        clazz = get_class(self.class_name)
+        for unit in self.units.all():
+            if unit.db_identifier:
+                identifier = int(unit.db_identifier) if self.cast_int_identifier else unit.db_identifier
+                yield clazz.objects.get(**{self.class_identifier: identifier})
+
+    def __str__(self):
+        return "ProcessStatusStep(%s)" % self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+class ProcessStatusStepProcessUnit(models.Model):
+    db_identifier = models.CharField(max_length=30,null=True)
+    process_identifier = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    process_status_step = models.ForeignKey(ProcessStatusStep, related_name="units", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "PSStepPUnit('%s','%s')" % (self.db_identifier,self.process_identifier)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Person(models.Model):
@@ -65,15 +134,16 @@ class Organization(models.Model):
 
 
 class Resource(models.Model):
-    PUBLICATION = 'pmc'
+    PUBLICATION = 'publication'
     BIOPROJECT = 'bioproject'
     SEQUENCE = 'nuccore'
     ASSEMBLY = 'assembly'
     GENOME = 'genome'
-    READS = 'sra'
+    READS = 'ra'
     STRUCTURE = 'structure'
     EXPRESSION = 'expression'
     BARCODE = 'barcode'
+    SAMPLE = 'sample'
 
     facet_dict = {
         "assembly": ["species_name", "level", "assembly_type"],
@@ -366,3 +436,31 @@ class Barcode(Resource):
     image_url = models.URLField(null=True)
     bold_org = models.CharField(max_length=255, null=True)
     collectors = models.CharField(max_length=255, null=True)
+
+
+
+class ResourceProperty(models.Model):
+
+
+    organization = models.ForeignKey(Organization, on_delete=models.DO_NOTHING)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
+    term = models.ForeignKey(Term, on_delete=models.DO_NOTHING)
+
+class ResourcePropertyValue(models.Model):
+    property = models.ForeignKey(ResourceProperty, on_delete=models.DO_NOTHING)
+    value = models.CharField(max_length=200)
+
+
+
+
+class Sample(Resource):
+    country = models.CharField(max_length=100)
+    subdivision = models.CharField(max_length=150)
+    collection_date = models.DateField(null=True)
+    publication_date = models.DateField(null=True)
+    update_date = models.DateField(null=True)
+
+
+class ReadsArchive(Resource):
+    release_date = models.DateField(null=True)
+    update_date = models.DateField(null=True)

@@ -6,6 +6,10 @@
 
 {% block head %}
 
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+
 <script type="application/javascript" src="{% static 'sequence-viewer.min.js' %}"></script>
 
 
@@ -18,6 +22,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
 <script src="https://cdn.rawgit.com/calipho-sib/feature-viewer/v1.0.0/dist/feature-viewer.bundle.js"></script>
 
+<script src="{% static 'ols-graphview.js' %}" ></script>
 
 
 
@@ -98,35 +103,57 @@
 
 </table>
 
-
+{% if functions.biological_process or functions.molecular_function %}
 <h3 id="function">Función</h3>
 
+{% if functions.biological_process %}
 <h4>biological_process</h4>
 {% for q in functions.biological_process %}
-
 {{q.name}}
-
 {% endfor %}
+{% endif %}
 
+{% if functions.molecular_function %}
 <h4>molecular_function</h4>
-
 {% for q in functions.molecular_function %}
-
 {{q.name}}
-
 {% endfor %}
+{% endif %}
 
+{% endif %}
 
 
 
 <h3 id="localization">Localización Celular</h3>
 
-{% for q in functions.cellular_component %}
+<div id="ontology_vis" style="height: 500px">
+.
 
-{{q.name}}
+</div>
+<script>
+const  webserviceURL = "https://www.ebi.ac.uk/ols/api/ontologies/go/terms?iri=";
+const tmpnetworkOptions={ webservice : {URL: webserviceURL, OLSschema:true},
+        //loadingBar:{pictureURL:"../../../img/loading1.gif"}
+         displayOptions : {showButtonBox:false, showInfoWindow:false, showLegend:false},
+        }
 
-{% endfor %}
+        $(document).ready(function () {
+             let terms = '{% for q in functions.cellular_component %}{{q.identifier}} {% endfor %}';
+             var term= "http://purl.obolibrary.org/obo/" + terms.split(" ")[0].replace(":","_") ;
 
+                  var app = require("ols-graphview");
+                  var instance = new app();
+                  instance.visstart("ontology_vis", term, tmpnetworkOptions,{})
+                  const fetchUri = 'https://www.ebi.ac.uk/ols/api/ontologies/go/terms/' + escape(encodeURIComponent( 'http://purl.obolibrary.org/obo/'));
+                  instance.fetchNewGraphData(fetchUri + terms.split(" ")[1].replace(":","_") + '/graph'  );
+
+
+
+        });
+
+
+
+</script>
 
 
 <h3 id="other">Otros</h3>

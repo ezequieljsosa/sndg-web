@@ -27,6 +27,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--obo_path', required=True)
+        parser.add_argument('--relationships_obo_path', required=False)
         parser.add_argument('--ontology', required=True, choices=["go", "so"])
 
     def create_base_terms(self):
@@ -42,11 +43,13 @@ class Command(BaseCommand):
         Term.objects.get_or_create(identifier="other", name="other", version=1, ontology=sfs_ontology,
                                    definition="")
 
-        self.is_a = Term.objects.get(identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")
-
-        self.ontology = Ontology.objects.get_or_create(name=self.ontology_name)
-
         graph_ontology = Ontology.objects.get_or_create(name="Graph", definition="")[0]
+
+        self.is_a = \
+        Term.objects.get_or_create(identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")[0]
+
+        self.ontology = Ontology.objects.get_or_create(name=self.ontology_name)[0]
+
         self.dbmap = {
             "biological_process": Dbxref.objects.get_or_create(dbname="go", accession="biological_process", version=1)[
                 0],
@@ -78,10 +81,10 @@ class Command(BaseCommand):
             k = x.strip().split(' ')[0]
             self.dbmap[k] = Dbxref.objects.get_or_create(dbname="go", accession=k, version=1)[0]
 
-        part_of = Term.objects.get(identifier="part_of", )
-        regulates = Term.objects.get(identifier="regulates")
-        negatively_regulates = Term.objects.get(identifier="negatively_regulates")
-        positively_regulates = Term.objects.get(identifier="positively_regulates")
+        part_of = Term.objects.get_or_create(identifier="part_of", ontology=graph_ontology)[0]
+        regulates = Term.objects.get_or_create(identifier="regulates", ontology=graph_ontology)[0]
+        negatively_regulates = Term.objects.get_or_create(identifier="negatively_regulates", ontology=graph_ontology)[0]
+        positively_regulates = Term.objects.get_or_create(identifier="positively_regulates", ontology=graph_ontology)[0]
 
         has_quality = Term.objects.get_or_create(identifier="has_quality", name="has_quality", version=1, ontology=
         graph_ontology)[0]
@@ -130,80 +133,106 @@ class Command(BaseCommand):
             "overlaps": overlaps, "guided_by": guided_by
         }
 
-    def create_terms(self):
+    def create_terms(self, shortname):
+        self.cache = {}
         ids = []
         with open(self.obo_path) as h:  # filter the ids because GODag iterates over alt_ids too
             for l in h.readlines():
-                if l.startswith("id: GO:"):
+                if l.startswith("id: " + shortname.upper() + ":"):
                     ids.append(l.split(" ")[1].strip())
-
+        ids = set(ids)
+        if shortname == "go":
+            attrs = ["def", "synonym", "subset", "alt_id", "dbxref"]
+        else:
+            attrs = ["def", "subset", "dbxref", "alt_id"]
         go_dag = GODag(self.obo_path, load_obsolete=True,
-                       optional_attrs=["def", "synonym", "subset", "alt_id", "dbxref"])
+                       optional_attrs=attrs)
 
-        for go in tqdm(ids):
-            term = go_dag[go]
+
+        finished = False
+        pbar = iter(tqdm(ids))
+        while not finished:
             with transaction.atomic():
-                dbTerm = Term(name=term.name,
-                              definition=term.defn,
-                              identifier=go,
-                              is_obsolete="T" if term.is_obsolete else "F",
-                              ontology=ontology)
-                dbTerm.save()
-                # intersetc = (set([ x.dbxref.accession for x in  dbTerm.dbxrefs.all()]) &
-                #              set(["biological_process","molecular_function","cellular_component"]))
-                # if not intersetc:
-                #
-                #     termdbref = TermDbxref(term=t, dbxref=self.dbmap[term.namespace], rank=1)
-                #     termdbref.save()
+                for _ in range(2000):
+                    try:
+                        go = next(pbar)
+                        if go not in go_dag:
+                            continue
+                        term = go_dag[go]
+                        if not Term.objects.filter(ontology=self.ontology,identifier=go).exists():
+                            dbTerm = Term(name=term.name,
+                                          definition=term.defn if hasattr(term, "defn") else "",
+                                          identifier=go,
+                                          is_obsolete="T" if term.is_obsolete else "F",
+                                          ontology=self.ontology)
+                            dbTerm.save()
+                            if term.namespace:
+                                termdbref = TermDbxref(term=dbTerm, dbxref=self.dbmap[term.namespace], rank=1)
+                                termdbref.save()
 
-                termdbref = TermDbxref(term=dbTerm, dbxref=self.dbmap[term.namespace], rank=1)
-                termdbref.save()
+                            for subset in term.subset:
+                                if subset in self.dbmap:
+                                    termdbref = TermDbxref(term=dbTerm, dbxref=self.dbmap[subset], rank=1)
+                                    termdbref.save()
+                            if hasattr(term, "synonym"):
+                                for synonym in term.synonym:
+                                    TermSynonym.objects.get_or_create(term=dbTerm, synonym=synonym[0][:255])
 
-                for subset in term.subset:
-                    if subset in dbmap:
-                        termdbref = TermDbxref(term=dbTerm, dbxref=self.dbmap[subset], rank=1)
-                        termdbref.save()
-                for synonym in term.synonym:
-                    syn = TermSynonym(term=dbTerm, synonym=synonym[0][:255])
-                    syn.save()
-                for synonym in term.alt_ids:
-                    syn = TermSynonym(term=dbTerm, synonym=synonym[0][:255])
-                    syn.save()
+                            for synonym in term.alt_ids:
+                                TermSynonym.objects.get_or_create(term=dbTerm, synonym=synonym[0][:255])
 
-                self.cache[go] = dbTerm
+                            self.cache[go] = dbTerm
+                        else:
+                            self.cache[go] = Term.objects.filter(ontology=self.ontology,identifier=go).get()
+                    except StopIteration:
+                        finished = True
 
-    def create_relationships(self):
-        go_dag = GODag(self.obo_path, optional_attrs=['relationship'], load_obsolete=False)
+
+
+    def create_relationships(self,shortname):
+        go_dag = GODag(self.relationships_obo_path, optional_attrs=['relationship'], load_obsolete=(shortname == "so"))
 
         terms = Term.objects.filter(ontology=self.ontology)
 
-        for dbTerm in tqdm(terms.all(), total=terms.count()):
-            go = dbTerm.identifier
-            term = go_dag[dbTerm.identifier]
+        finished = False
+        pbar = iter(tqdm(terms.all(), total=terms.count()))
+        while not finished:
             with transaction.atomic():
-                for child in term.children:
-                    if go in cache and child.id in cache:
-                        r = TermRelationship(
-                            subject_term=cache[go],  # parent
-                            predicate_term=is_a,
-                            object_term=cache[child.id],  # child
-                            ontology=ontology
-                        )
-                        r.save()
+                for _ in range(2000):
+                    try:
+                        dbTerm = next(pbar)
+                        go = dbTerm.identifier
+                        if dbTerm.identifier not in go_dag:
+                            continue
+                        term = go_dag[dbTerm.identifier]
 
-                for rel, terms in term.relationship.items():
-                    for child in terms:
-                        if go in cache and child.id in cache:
-                            r = TermRelationship(
-                                subject_term=cache[go],  # parent
-                                predicate_term=relmap[rel],
-                                object_term=cache[child.id],  # child
-                                ontology=ontology
-                            )
-                            r.save()
+                        for child in term.children:
+                            if go in self.cache and child.id in self.cache:
+                                r = TermRelationship(
+                                    subject_term=self.cache[go],  # parent
+                                    predicate_term=self.is_a,
+                                    object_term=self.cache[child.id],  # child
+                                    ontology=self.ontology
+                                )
+                                r.save()
+
+                        for rel, terms in term.relationship.items():
+                            for child in terms:
+                                if go in self.cache and child.id in self.cache:
+                                    r = TermRelationship(
+                                        subject_term=self.cache[go],  # parent
+                                        predicate_term=self.relmap[rel],
+                                        object_term=self.cache[child.id],  # child
+                                        ontology=self.ontology
+                                    )
+                                    r.save()
+                    except StopIteration:
+                        finished = True
 
     def handle(self, *args, **options):
-
+        if "relationships_obo_path" not in options or not options["relationships_obo_path"]:
+            options["relationships_obo_path"] = options["obo_path"]
+        self.relationships_obo_path = options["relationships_obo_path"]
         if options["ontology"] == "go":
             self.ontology_name = "Gene Ontology"
         elif options["ontology"] == "so":
@@ -213,5 +242,5 @@ class Command(BaseCommand):
 
         self.create_base_terms()
 
-        self.create_terms()
-        self.create_relationships()
+        self.create_terms(options["ontology"])
+        self.create_relationships(options["ontology"])

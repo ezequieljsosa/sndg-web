@@ -29,10 +29,10 @@ class Command(BaseCommand):
                 self.travel_tax_child(t, iter_adv, txt,buffer)
 
         if parent.ncbi_taxon_id != 1:
-            buffer["data"].append(TaxIdx(tax=parent, text=txt))
+            buffer["data"][parent.ncbi_taxon_id] = TaxIdx(tax=parent, text=txt)
         if len(buffer["data"]) > 5000:
-            TaxIdx.objects.bulk_create(buffer["data"])
-            buffer["data"] = []
+            TaxIdx.objects.bulk_create(buffer["data"].values())
+            buffer["data"] = {}
 
         iter_adv.update(1)
 
@@ -51,25 +51,25 @@ class Command(BaseCommand):
         if parent.term_id in cache:
             return
         cache[parent.term_id] = 1
-        buffer["data"].append(TermIdx(term=parent, text=txt))
+        buffer["data"][parent.ncbi_taxon_id] = TermIdx(term=parent, text=txt)
         iter_adv.update(1)
         if len(buffer["data"]) == 5000:
             with transaction.atomic():
-                TermIdx.objects.bulk_create(buffer["data"])
-            buffer["data"] = []
+                TermIdx.objects.bulk_create(buffer["data"].values())
+            buffer["data"] = {}
 
     def add_arguments(self, parser):
         pass
 
     def handle(self, *args, **options):
-        # root = Taxon.objects.prefetch_related("names").get(ncbi_taxon_id=1)
-        # count = Taxon.objects.count()
-        # iter_adv = self.tqdm(total=count)
-        #
-        # buffer = {"data":[]}
-        # for c in root.children.all():
-        #     self.travel_tax_child(c, iter_adv, "",buffer)
-        # bulk_create(buffer["data"])
+        root = Taxon.objects.prefetch_related("names").get(ncbi_taxon_id=1)
+        count = Taxon.objects.count()
+        iter_adv = self.tqdm(total=count)
+
+        buffer = {"data":{}}
+        for c in self.tqdm(root.children.all(),total=root.children.count()):
+            self.travel_tax_child(c, iter_adv, "",buffer)
+        bulk_create(buffer["data"].values())
 
 
         buffer = {"data":[]}
