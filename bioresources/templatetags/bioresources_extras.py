@@ -46,6 +46,31 @@ def url_without_parameter(arg1, arg2):
 
     return arg1.get_full_path()
 
+@register.filter(name='qs_without_parameter')
+def qs_without_parameter(arg1, arg2):
+    """
+    Removes an argument from the get URL.
+    Use:
+        {{ request|url_without_parameter:'page' }}
+
+    Args:
+        arg1: request
+        arg2: parameter to remove
+    """
+
+
+    parameters = {}
+    for key, value in arg1.items():
+        if parameters.get(key, None) is None and arg2 != key:
+            parameters[key] = value[0]
+
+
+    return "&".join(
+        [k + "=" + v
+         for k,v in  parameters.items() ])
+
+
+
 
 @register.filter(name='index')
 def index(List, i):

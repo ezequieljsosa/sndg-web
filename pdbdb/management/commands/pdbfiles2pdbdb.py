@@ -51,8 +51,10 @@ class Command(BaseCommand):
         df = entries_df(entries_path)
         pdbs = list(tqdm(iterpdbs(pdbs_dir)))
         # 4zux 42 mer 2lo7("5my5","/data/databases/pdb/divided/my/pdb5my5.ent")
+        # ("4zu4", "/data/databases/pdb/divided/zu/pdb4zu4.ent")
 
-        with tqdm([("4zu4", "/data/databases/pdb/divided/zu/pdb4zu4.ent")]) as pbar:
+        with tqdm([(pdb, "/data/databases/pdb/divided/%s/pdb%s.ent" % (pdb[1:3], pdb))
+                   for pdb in ["5oq0", "5aeb", "4tnm", "5my5", "2lo7"]]) as pbar:
             for (code, pdb_path) in pbar:
                 pbar.set_description(code)
                 try:
@@ -111,6 +113,6 @@ class Command(BaseCommand):
                                                    occupancy=float(atom.occupancy), bfactor=float(atom.bfactor),
                                                    element=atom.element)
                                         atoms.append(atm)
-                            Atom.objects.bulk_create(sorted(atoms,key=lambda x:x.serial))
+                            Atom.objects.bulk_create(sorted(atoms, key=lambda x: x.serial))
                 except Exception as ex:
                     raise CommandError(ex)

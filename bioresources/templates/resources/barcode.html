@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+<div class="container">
+<div class="row">
+
+
+
+<div class="col-md-12">
+
+    <h1>{{barcode.name}}</h1>
+    <p>
+        {{barcode.description}}
+        </p>
+    <table class="table table-responsive table-stripped">
+    <tr><td>Lugar</td><td>{{barcode.subdivision}}</td></tr>
+    <tr><td>Tomo la muestra</td><td>{{barcode.collectors}}</td></tr>
+    <tr><td>Marcador</td><td>{{barcode.marker}}</td></tr>
+    <tr><td>Organización</td><td>{{barcode.bold_org}}</td></tr>
+    <tr><td>Taxonomía</td><td>{{barcode.ncbi_tax.scientific_name}}</td></tr>
+    </table>
+
+    <img src="{{barcode.image_url}}" />
+
+</div>
+
+
+  </div>
+  </div>
+{% endblock %}

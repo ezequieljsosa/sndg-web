@@ -61,12 +61,12 @@
 
 {% for c in contigs %}
 <tr>
-<td>{{c.accession}}</td>
+<td><a href="{% url 'biosql:seq_view' c.bioentry_id %}"> {{c.accession}}</a></td>
 <td>{{lengths|getattribute:c.accession}}</td>
 
 {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
 {% for x in feature_types.split %}
-<td>{{c.feature_counts|getattribute:x }}</td>
+<td>{{c.feature_counts|getattribute:x|default:"0" }}</td>
 {% endfor %}
 {% endwith %}
 </tr>

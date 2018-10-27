@@ -19,25 +19,28 @@ from django.urls import path,include
 from django.contrib.auth import views as auth_views
 
 
-from bioresources import views as bioviews
+# from bioresources import views as bioviews
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     path('', include('bioresources.urls')),
-    path('', include('biosql.urls')),
-    path('', include('pdbdb.urls')),
-    path('', include('vardb.urls')),
-    #url(r'^search/', include('haystack.urls')),
-    # url(r'^solr/', include('solrtest.urls')),
+    path('bioseq/', include('biosql.urls')),
+    # path('pdbdb/', include('pdbdb.urls')),
+    # path('', include('vardb.urls')),
     url(r'^crud/',  include('crudbuilder.urls')),
 
-    # url(r'^login/$', auth_views.login, name='login'),
-    # url(r'^logout/$', auth_views.logout,{'next_page': '/'}, name='logout'),
-    # url(r'^signup/$', bioviews.signup, name='signup'),
+
     url(r'^accounts/', include('allauth.urls')),
     url(r'^captcha/', include('captcha.urls')),
 
     url(r'^select2/', include('django_select2.urls')),
+
+
+    # url(r'^login/$', auth_views.login, name='login'),
+    # url(r'^logout/$', auth_views.logout,{'next_page': '/'}, name='logout'),
+    # url(r'^signup/$', bioviews.signup, name='signup'),
+    # url(r'^search/', include('haystack.urls')),
+    # url(r'^solr/', include('solrtest.urls')),
 
 
 ]

@@ -38,11 +38,9 @@ INSTALLED_APPS = [
     'django_extensions',
 
     'biosql',
-    'pdbdb',
-    'vardb',
+    # 'pdbdb',
+    # 'vardb',
     'bioresources',  # importante que este antes de allauth
-
-
 
     'django_select2',
     'easy_select2',
@@ -141,7 +139,7 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 STATICFILES_DIRS = (
     os.path.join(SITE_ROOT, "static/"),
-    ("jbrowse","/data/xomeq/JBrowse-1.14.2/"),
+    ("jbrowse", "/data/xomeq/JBrowse-1.14.2/"),
 )
 
 LOGIN_REDIRECT_URL = '/'
@@ -171,10 +169,20 @@ if DEBUG:
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': 'http://127.0.0.1:8983/solr/Notes',
+        'URL': 'http://127.0.0.1:8984/solr/Notes',
         'INCLUDE_SPELLING': True,
         # ...or for multicore...
         # 'URL': 'http://127.0.0.1:8983/solr/mysite',
     },
+    'oai': {
+        'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
+        'URL': 'http://127.0.0.1:8983/solr/oai',
+        'INCLUDE_SPELLING': False,
+        # ...or for multicore...
+        # 'URL': 'http://127.0.0.1:8983/solr/mysite',
+    },
 }
-
+HAYSTACK_ID_FIELD = "item.id" #'id')
+HAYSTACK_DJANGO_CT_FIELD = 'metadata.django_ct'  # django_ct')
+HAYSTACK_DJANGO_ID_FIELD = 'item.id'  # django_id')
+HAYSTACK_DOCUMENT_FIELD = 'metadata.search' #'text')

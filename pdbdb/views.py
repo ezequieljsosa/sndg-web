@@ -14,9 +14,9 @@ class StructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["pdb"] = self.kwargs["pdbid"]
+        context["pdb"] = self.kwargs["pdbid"].lower()
 
-        pdbobj = PDB.objects.prefetch_related("residues").get(code=self.kwargs["pdbid"])
+        pdbobj = PDB.objects.prefetch_related("residues").get(code=self.kwargs["pdbid"].lower())
 
 
         context["chains"] = [{"name":x} for x in set([r.chain for r in pdbobj.residues.all() if r.chain.strip()]) ]
@@ -29,7 +29,7 @@ class StructureView(TemplateView):
         #     .filter(property=ds,value__gte=0.2,pdbresidue_set=OuterRef("id"))
 
         context["pockets"] = PDBResidueSet.objects.prefetch_related("properties__property","residues__atoms__atom").filter(
-            Q(pdb=pdbobj) , Q(residue_set=rs) , Q(properties__property=ds) & Q(properties__value__gte=0.2)).all()
+            Q(pdb=pdbobj) , Q(residue_set=rs) , Q(properties__property=ds) & Q(properties__value__gte=0.0)).all()[0:10]
         for p in context["pockets"]:
             p.druggability = [x.value for x in p.properties.all() if x.property == ds][0]
             p.atoms = []
