@@ -36,31 +36,40 @@
 <nav class="d-none d-md-block sidebar" style="position: fixed;margin-top: 0px">
 
 
+<div class="sidebar-sticky">
+    <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn"
+              href="#function">General</a>
+</div>
+
  <div class="sidebar-sticky">
-    <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+    <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn {% if not functions.biological_process and not functions.molecular_function %} disabled{% endif %}"
               href="#function">Función</a>
 </div>
+
  <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn {% if not functions.cellular_component %} disabled{% endif %}"
               href="#localization">Localización Celular</a>
               </div>
+
+
 <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1  btn{% if not functions.other %} disabled{% endif %}"
               href="#other">Otros</a></div>
+
 <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1  btn{% if not structures %} disabled{% endif %}"
               href="#structure">Estructura</a></div>
 <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn {% if not annotations %} disabled{% endif %}"
               href="#annotation">Anotación</a></div>
 <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn"
               href="#sequence">Secuencia</a></div>
 <div class="sidebar-sticky">
- <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+ <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn"
               href="#gen_ctx">Contexto Génico</a></div>
  <div class="sidebar-sticky">
-  <a class="justify-content-between align-items-center px-3 mt-4 mb-1 "
+  <a class="justify-content-between align-items-center px-3 mt-4 mb-1 btn"
                href="#vers">Versiones</a></div>
 
 
@@ -90,8 +99,8 @@
 {% endfor %}
 
 </td></tr>
-<tr><td><b>Organismo</b></td><td>{{ object.biodatabase.name|replace:"_prots|" }}</td></tr>
-<tr><td><b>Taxon</b></td><td>{{ taxon.scientific_name }}</td></tr>
+<tr><td><b>Organismo</b></td><td><a href="{% url 'bioresources:assembly_view2' accession %}"> {{ accession }}</a></td></tr>
+<tr><td><b>Taxon</b></td><td> <a href="{% url 'biosql:tax_view' taxon.ncbi_taxon_id %}"> {{ taxon.scientific_name }} </a> </td></tr>
 <tr><td><b>Names/Genes</b></td><td>
 {% for k,v in feature.qualifiers_dict.items %}
 {% if k in "protein_id old_locus_tag gene" %}
@@ -107,46 +116,57 @@
 <h3 id="function">Función</h3>
 
 {% if functions.biological_process %}
-<h4>biological_process</h4>
+<h4>Biological Process</h4>
+
+<ul>
 {% for q in functions.biological_process %}
-{{q.name}}
+<li><a href="https://www.ebi.ac.uk/ols/ontologies/go/terms?iri=http://purl.obolibrary.org/obo/{{q.identifier|replace:":|_"}}">{{q.name}}</a></li>
 {% endfor %}
+</ul>
+
 {% endif %}
 
 {% if functions.molecular_function %}
-<h4>molecular_function</h4>
+<h4>Molecular Function/s</h4>
+<ul>
 {% for q in functions.molecular_function %}
-{{q.name}}
+<li><a href="https://www.ebi.ac.uk/ols/ontologies/go/terms?iri=http://purl.obolibrary.org/obo/{{q.identifier|replace:":|_"}}">{{q.name}}</a></li>
 {% endfor %}
+</ul>
 {% endif %}
 
 {% endif %}
 
 
-
+{% if functions.cellular_component %}
 <h3 id="localization">Localización Celular</h3>
-
-<div id="ontology_vis" style="height: 500px">
-.
-
-</div>
+<ul>
+{% for q in functions.cellular_component %}
+<li><a href="https://www.ebi.ac.uk/ols/ontologies/go/terms?iri=http://purl.obolibrary.org/obo/{{q.identifier|replace:":|_"}}">{{q.name}}</a></li>
+{% endfor %}
+</ul>
+<div id="ontology_vis" style="display:None;height: 500px"></div>
 <script>
 const  webserviceURL = "https://www.ebi.ac.uk/ols/api/ontologies/go/terms?iri=";
 const tmpnetworkOptions={ webservice : {URL: webserviceURL, OLSschema:true},
         //loadingBar:{pictureURL:"../../../img/loading1.gif"}
-         displayOptions : {showButtonBox:false, showInfoWindow:false, showLegend:false},
+         displayOptions : {showButtonBox:false, showInfoWindow:false, showLegend:false,showListOfExtendedNodes:false},
         }
 
         $(document).ready(function () {
-             let terms = '{% for q in functions.cellular_component %}{{q.identifier}} {% endfor %}';
-             var term= "http://purl.obolibrary.org/obo/" + terms.split(" ")[0].replace(":","_") ;
-
-                  var app = require("ols-graphview");
-                  var instance = new app();
-                  instance.visstart("ontology_vis", term, tmpnetworkOptions,{})
-                  const fetchUri = 'https://www.ebi.ac.uk/ols/api/ontologies/go/terms/' + escape(encodeURIComponent( 'http://purl.obolibrary.org/obo/'));
-                  instance.fetchNewGraphData(fetchUri + terms.split(" ")[1].replace(":","_") + '/graph'  );
-
+             // let terms = '{% for q in functions.cellular_component %}{{q.identifier}} {% endfor %}';
+             // var term= "http://purl.obolibrary.org/obo/" + terms.split(" ")[0].replace(":","_") ;
+             //
+             //      var app = require("ols-graphview");
+             //      var instance = new app();
+             //      instance.visstart("ontology_vis", term, tmpnetworkOptions,{});
+             //      $("#vis-network").css("heigth",500);
+             //      const fetchUri = 'https://www.ebi.ac.uk/ols/api/ontologies/go/terms/' + escape(encodeURIComponent( 'http://purl.obolibrary.org/obo/'));
+             //      instance.fetchNewGraphData(fetchUri + terms.split(" ")[1].replace(":","_") + '/graph'  );
+             //      instance.getNetwork().on('stabilized',function(params){
+             //          const nx = instance.getNetwork();
+             //         console.log(params)
+             //      });
 
 
         });
@@ -154,10 +174,15 @@ const tmpnetworkOptions={ webservice : {URL: webserviceURL, OLSschema:true},
 
 
 </script>
+{% endif %}
 
 
+{% if functions.other %}
 <h3 id="other">Otros</h3>
 
+{% endif %}
+
+{% if structure %}
 <h3 id="structure">Estructura</h3>
 
 <table class="table table-responsive" width="100%">
@@ -173,10 +198,9 @@ const tmpnetworkOptions={ webservice : {URL: webserviceURL, OLSschema:true},
 
 {% endfor %}
 </table>
+{% endif %}
 
-
-
-
+{% if annotation %}
 <h3 id="annotation">Anotación</h3>
 <table class="table table-responsive" width="100%">
 {% for feature in object.features.all %}
@@ -191,7 +215,10 @@ const tmpnetworkOptions={ webservice : {URL: webserviceURL, OLSschema:true},
 {% endwith %}
 {% endfor %}
 </table>
-<h3 id="sequence">Secuencia</h3>
+
+{% endif %}
+
+<h3 id="sequence">Secuencia AA</h3>
 
 <div id="protein-sequence-viewer"></div>
 <div id="protein-features-viewer"></div>

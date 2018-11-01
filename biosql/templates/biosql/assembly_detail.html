@@ -7,10 +7,13 @@
 {% block head %}
 
 
-
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
+
+
 
 
 {% endblock %}
@@ -39,16 +42,19 @@
 
 
 
-
-
-
- <iframe  id="jbrowse"
+<iframe  id="jbrowse"
  src="{% static 'jbrowse' %}/index.html?data=data/H37Rv&fullviewlink=false&menu=false&nav=true&tracklist=false&loc=NC_000962.3:0..999&"
  height="400px" width="100%"></iframe>
 
+<div class="row">
+<div class="col-md-8">
+
+
+
 
 <h3>Secuencias</h3>
-<table class="table table-responsive">
+<table id="contig_table" class="table table-responsive">
+<thead>
 <tr><td>ID</td><td>Length</td>
 
 {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
@@ -58,7 +64,8 @@
 {% endwith %}
 
 </tr>
-
+</thead>
+<tbody>
 {% for c in contigs %}
 <tr>
 <td><a href="{% url 'biosql:seq_view' c.bioentry_id %}"> {{c.accession}}</a></td>
@@ -73,9 +80,10 @@
 {% endfor %}
 
 
-
+</tbody>
 </table>
-
+</div>
+</div>
 
 <div class="row">
 
@@ -107,8 +115,16 @@
 
 </div>
 
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript">
     // create an array with nodes
+
+    $(document).ready(function() {
+        $('#contig_table').DataTable();
+    } );
+
     var nodes = new vis.DataSet([
         {% for x in graph.nodes %}
         {id: '{{x.id}}', label: '{{x.label}}',color:'{{x.color}}'},

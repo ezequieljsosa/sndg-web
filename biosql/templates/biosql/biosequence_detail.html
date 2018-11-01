@@ -13,6 +13,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
 
 
+
+
 {% endblock %}
 
 
@@ -32,7 +34,7 @@
 {% endif %}
 {% endfor %}
 <tr><td><b>Organismo</b></td><td><a href="{% url 'biosql:assembly_view' object.biodatabase_id %}">{{ object.biodatabase.name }}</a></td></tr>
-<tr><td><b>Taxon</b></td><td>{{ object.taxon.scientific_name }}</td></tr>
+<tr><td><b>Taxon</b></td><td><a href="{% url 'biosql:tax_view' object.taxon.ncbi_taxon_id %}">{{ object.taxon.scientific_name }}</a></td></tr>
 
 </table>
 
@@ -122,5 +124,6 @@
 
     var network = new vis.Network(container, data, options);
 </script>
+
 
 {% endblock %}

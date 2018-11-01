@@ -17,6 +17,7 @@ urlpatterns = [
     path('person/<int:pk>', views.person, name='person_view'),
     path('expression/<int:pk>', views.expression, name='gds_view'),
     path('assembly/<int:pk>', views.assembly, name='assembly_view'),
+    path('assembly/<str:pk>', views.assembly, name='assembly_view2'),
 
     path('genome/<int:genome_id>', views.publication, name='genome_view'),
 ]

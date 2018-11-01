@@ -9,6 +9,7 @@ urlpatterns = [
     path('seq/<int:pk>', views.sequence_view, name='seq_view'),
     path('assembly/<int:pk>', views.assembly_view, name='assembly_view'),
     path('sequence/<int:pk>', views.TaxView.as_view(), name='sequence_view'),
+    path('seq/<str:locus_tag>', views.sequence_lt_view, name='sequence_lt_view'),
 
 
 

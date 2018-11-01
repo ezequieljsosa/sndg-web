@@ -3,7 +3,7 @@ from django.views.generic import TemplateView, DetailView
 
 from django.db.models import Prefetch
 
-from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology
+from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology,SeqfeatureQualifierValue
 from bioresources.models import Assembly, Publication
 
 
@@ -42,8 +42,15 @@ def labelize(long_string, size=4):
     return "\\n".join(lines)
 
 
+def sequence_lt_view(request, locus_tag):
+
+
+    return sequence_view(request, Bioentry.objects.get(accession=locus_tag).bioentry_id)
+
+
 def sequence_view(request, pk):
-    # pf_features = Prefetch()
+
+
     be = (Bioentry.objects.select_related("biodatabase").select_related("taxon")
         .prefetch_related("dbxrefs__dbxref", "qualifiers__term", "seq",
                           "features__locations", "features__source_term",
@@ -78,7 +85,7 @@ def sequence_view(request, pk):
         FROM biosequence WHERE bioentry_id = %i ;
         """ % (start, end - start, feature.bioentry_id))[0]
         functions = {"biological_process": [], "molecular_function": [], "cellular_component": []}
-        for qual in be.qualifiers.all():
+        for qual in be.qualifiers.filter(term__dbxrefs__dbxref__dbname="go",term__dbxrefs__dbxref__accession="goslim_generic"):
             for dbxref in qual.term.dbxrefs.all():
                 if dbxref.dbxref.accession in functions:
                     functions[dbxref.dbxref.accession].append(qual.term)
@@ -90,7 +97,7 @@ def sequence_view(request, pk):
 
     if be.biodatabase.name.endswith("prots"):
         return render(request, 'biosql/protein_detail.html', {
-            "functions": functions, "graph": graph,
+            "functions": functions, "graph": graph,"accession":be.biodatabase.name.replace("_prots", ""),
             "object": be, "feature": feature, "taxon": taxon, "seq": seq, "start": start, "end": end,
             "sidebarleft": 1})
     else:
@@ -164,8 +171,9 @@ def entry_graph(be, beg):
     return graph
 
 
+
+
 def assembly_view(request, pk):
-    # pf_features = Prefetch()
     be = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
     be = be.get(biodatabase_id=pk)
     assembly = Assembly.objects.get(external_ids__identifier=be.name)

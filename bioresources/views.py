@@ -83,8 +83,16 @@ def structure(request, pk):
 
 
 def assembly(request, pk):
-    assembly = Assembly.objects.prefetch_related("external_ids").get(id=pk)
-    accession = assembly.external_ids.filter(type="accession").first().identifier
+    try:
+        pk = int(pk)
+        assembly = Assembly.objects.prefetch_related("external_ids").get(id=pk)
+        accession = assembly.external_ids.filter(type="accession").first().identifier
+    except ValueError:
+        accession = pk
+        # assembly = (Assembly.objects.prefetch_related("external_ids").filter(external_ids__type="accession",
+        #                                                                      external_ids__identifier=pk))
+
+
     pk2 = Biodatabase.objects.get(name=accession).biodatabase_id
     return redirect(reverse("biosql:assembly_view", kwargs={"pk": pk2}))
 
