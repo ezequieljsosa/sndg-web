@@ -6,6 +6,7 @@ from django.db import models
 from biosql.models import Taxon,Term
 
 
+
 def get_class(kls):
     parts = kls.split('.')
     module = ".".join(parts[:-1])
@@ -391,7 +392,8 @@ class Structure(Resource):
 class Assembly(Resource):
     intraspecific_name = models.CharField(max_length=250, null=True)
     species_name = models.CharField(max_length=200, null=True)
-    level = models.CharField(max_length=50, null=True)
+    level = models.CharField(max_length=50, null=True,choices=(("complete","complete"),
+            ("chromosome","chromosome"),("scaffold","scaffold"),("contig","contig"),))
     ncbi_org = models.CharField(max_length=200, null=True)
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)

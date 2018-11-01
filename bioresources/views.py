@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.core.exceptions import ImproperlyConfigured
+from django.core.files.storage import FileSystemStorage
+from django.forms import Form
+from django.http import HttpResponseRedirect, HttpResponse
 from haystack.generic_views import SearchView
 from haystack.query import SearchQuerySet
 
@@ -12,7 +16,7 @@ from .models import Publication, Structure, Assembly, Expression, Person, Organi
     Affiliation, Resource
 from .tables import PublicationTable
 from .filters import PublicationFilter
-from .forms import BioSearchForm
+from .forms import BioSearchForm, AssemblyForm
 
 from collections import defaultdict
 
@@ -22,6 +26,8 @@ from biosql.models import Tool, Biodatabase
 from biosql.views import publications_from_resource_graph, labelize
 import urllib
 from haystack.inputs import Exact
+
+from django.contrib.auth.decorators import login_required
 
 resources = [
     {"name": "Genomas", "count": 99, "icon": "circle", "type": "genome"},
@@ -84,8 +90,11 @@ def structure(request, pk):
 
 def assembly(request, pk):
     assembly = Assembly.objects.prefetch_related("external_ids").get(id=pk)
-    accession = assembly.external_ids.filter(type="accession").first().identifier
+    sqs = assembly.external_ids.filter(type="accession")
+    accession = sqs.first().identifier if sqs.exists() else assembly.name
+
     pk2 = Biodatabase.objects.get(name=accession).biodatabase_id
+
     return redirect(reverse("biosql:assembly_view", kwargs={"pk": pk2}))
 
 
@@ -242,3 +251,110 @@ class BioSearchView(SearchView):
 #     RequestConfig(request,paginate={'per_page': 25}).configure(table)
 #     return render(request, 'publications/list.html',
 #                   {"publications": table})
+
+@login_required
+def assembly_new(request):
+
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = AssemblyForm(request.POST)
+
+        if form.is_valid():
+            assembly = form.save()
+
+            return HttpResponseRedirect('/assembly/' + str(assembly.id))
+
+
+    else:
+        form = AssemblyForm()
+
+    return render(request, 'forms/assembly_new.html', {'form': form})
+
+
+# from django_fine_uploader.views import FineUploaderView
+# class NotConcurrentUploaderView(FineUploaderView):
+#     """Example of a chunked, but NOT concurrent upload.
+#     Disabling concurrent uploads per view.
+#     Remember, you can turn off concurrent uploads on your settings, with:
+#     FU_CONCURRENT_UPLOADS = False
+#     """
+#     @property
+#     def concurrent(self):
+#         return False
+#
+#     def form_valid(self, form):
+#         self.process_upload(form)
+#         return self.make_response({'success': True})
+#
+from django.views import generic
+
+class UploadView(generic.TemplateView):
+    template_name = 'forms/resource_upload.html'
+
+
+
+from django.conf import settings
+
+
+from resumable.fields import ResumableFileField
+
+
+class ResumableForm(Form):
+    file = ResumableFileField(
+        # allowed_mimes=("audio/ogg",),
+        upload_url=lambda: reverse('upload_api'),
+        chunks_dir=getattr(settings, 'FILE_UPLOAD_TEMP_DIR')
+    )
+
+from resumable.files import ResumableFile
+def upload_view(request):
+    form = ResumableForm()
+    return render(request, 'forms/resource_upload.html', {'form': form})
+
+class ResumableUploadView(generic.TemplateView):
+    template_name = 'forms/resource_upload.html'
+
+    def get(self, request, *args, **kwargs):
+        if "resumableChunkNumber" in request.GET:
+            r = ResumableFile(self.storage, self.request.GET)
+            if not (r.chunk_exists or r.is_complete):
+                return HttpResponse('chunk not found', status=404)
+            return HttpResponse('chunk already exists')
+        else:
+            form = ResumableForm()
+            return render(request, self.template_name, {'form': form})
+
+    def post(self, *args, **kwargs):
+        """Saves chunks then checks if the file is complete.
+        """
+        chunk = self.request.FILES.get('file')
+        r = ResumableFile(self.storage, self.request.POST)
+        if r.chunk_exists:
+            return HttpResponse('chunk already exists')
+        r.process_chunk(chunk)
+        if r.is_complete:
+            self.process_file(r.filename, r)
+            r.delete_chunks()
+        return HttpResponse()
+
+    def process_file(self, filename, file):
+        """Process the complete file.
+        """
+        self.storage.save(filename, file)
+
+    @property
+    def chunks_dir(self):
+        chunks_dir = getattr(settings, 'FILE_UPLOAD_TEMP_DIR', None)
+        if not chunks_dir:
+            raise ImproperlyConfigured(
+                'You must set settings.FILE_UPLOAD_TEMP_DIR')
+        return chunks_dir
+
+    @property
+    def storage(self):
+        return FileSystemStorage(location=self.chunks_dir)
+
+
+
+from django.contrib.auth.decorators import login_required
+

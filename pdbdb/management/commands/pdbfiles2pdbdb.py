@@ -9,6 +9,7 @@ from Bio.PDB.Polypeptide import is_aa
 
 from Bio.PDB.PDBParser import PDBParser
 from django.db.utils import IntegrityError
+from bioresources.models import Structure
 
 import math
 import traceback
@@ -21,6 +22,7 @@ warnings.simplefilter('ignore', BiopythonParserWarning)
 warnings.simplefilter('ignore', BiopythonDeprecationWarning)
 warnings.simplefilter('ignore', BiopythonExperimentalWarning)
 
+import subprocess as sp
 
 def iterpdbs(pdbs_dir, pdb_extention=".ent"):
     for index_dir in os.listdir(pdbs_dir):
@@ -53,16 +55,31 @@ class Command(BaseCommand):
         # 4zux 42 mer 2lo7("5my5","/data/databases/pdb/divided/my/pdb5my5.ent")
         # ("4zu4", "/data/databases/pdb/divided/zu/pdb4zu4.ent")
 
-        with tqdm([(pdb, "/data/databases/pdb/divided/%s/pdb%s.ent" % (pdb[1:3], pdb))
-                   for pdb in ["5oq0", "5aeb", "4tnm", "5my5", "2lo7"]]) as pbar:
-            for (code, pdb_path) in pbar:
+        #Structure.objects.all()
+        with tqdm(["4zux"]) as pbar:
+            for code in pbar:
+                #code = pdb_resource.name.lower()
+                code = code.lower()
+                if PDB.objects.filter(code = code).exists():
+                    continue
+                pdb_path = "/data/databases/pdb/divided/%s/pdb%s.ent" % (code[1:3], code)
+
+                if not os.path.exists(pdb_path):
+                    pdb_dir_idx = "/data/databases/pdb/divided/%s/" % code[1:3]
+                    if not os.path.exists(pdb_dir_idx):
+                        os.mkdir(pdb_dir_idx)
+
+                    sp.check_output("wget -O %s.gz ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/%s/pdb%s.ent.gz"
+                                    % (pdb_path,code[1:3],code),shell=True)
+                    sp.check_output("gunzip %s.gz" % pdb_path,shell=True)
+
                 pbar.set_description(code)
                 try:
                     entry = df[df.IDCODE == code.upper()].iloc[0]
                 except IndexError:
                     continue
-
-                pdb_model = PDB(code=code, experiment=str(entry.EXPERIMENT))
+                with open(pdb_path) as h:
+                    pdb_model = PDB(code=code, experiment=str(entry.EXPERIMENT),text=h.read())
 
                 resolution = None
                 try:
@@ -84,7 +101,7 @@ class Command(BaseCommand):
                                                         icode=residue.id[2],
                                                         type="R" if not residue.id[0].strip() else residue.id[
                                                             0].strip(),
-                                                        resname=residue.resname, disordered=residue.is_disordered())
+                                                        resname=residue.resname.strip(), disordered=residue.is_disordered())
                                 if is_aa(residue, standard=True):
                                     residue_model.seq_order = idx
                                     idx += 1
