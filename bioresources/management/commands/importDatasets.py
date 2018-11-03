@@ -203,8 +203,7 @@ class Command(BaseCommand):
 
                             sample_geo_props = ['geographic location (country and/or sea)', 'geo_loc_name',
                                                 'Origin (developed or donated from)', "birth_location",
-                                        "geo-loc-name",
-                                                "central west Argentina",'country_of_birth']
+                                        "geo-loc-name",'country_of_birth']
 
                             if any([options["country"].lower() in attributes.get(x, "").lower() for x in sample_geo_props]):
                                 biosample = mapper.save(biosampledata, biosample_id)

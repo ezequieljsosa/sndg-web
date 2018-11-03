@@ -66,6 +66,17 @@
 
 
 
+          {% if "dna" in layers %}
+              representations["dna"] = component.addRepresentation( "cartoon", {
+                  sele: "dna",
+                  scale: 0.5
+              } );
+              representations["dna"].setVisibility(true);
+              visible["dna"] = true;
+          {% endif %}
+
+
+
 
         {% for p in pockets %}
               representations["{{p.name}}_apol"] =  component.addRepresentation( "surface", {
@@ -121,8 +132,11 @@
           {% endif %}
 
           {% if pockets|length > 5 %}
-          $('#pocketsTable').DataTable({"searching": false,pageLength:5, paging: true,"lengthChange": false });
+          $('#pocketsTable').DataTable({"searching": false,pageLength:5, paging: true,"lengthChange": false,
+              "order": [[ 3, "desc" ]] });
           {% endif %}
+
+
 
           component.autoView();
       } );
@@ -157,7 +171,7 @@
 
 {% if pockets %}
 <h4>Pockets</h4>
-<table id="chainsTable" class="table">
+<table id="pocketsTable" class="table">
 <thead><tr><td>Nro</td><td>Atoms</td><td>Spheres</td><td>Druggability</td><td>Labels</td></tr></thead>
 <tbody>
 
@@ -176,7 +190,7 @@
 {% endif %}
 
 
-
+    {% if layers %}
 <h4>Features</h4>
 <table class="table">
 
@@ -194,6 +208,13 @@
 </tr>
 {% endif %}
 
+{% if "dna" in layers %}
+    <tr>
+        <td>DNA</td>
+        <td><input type="checkbox" checked="checked"  onchange="toogle_view('dna')"></td>
+    </tr>
+{% endif %}
+
 {% for rs in residuesets %}
 <tr>
 <td>{{rs.name}}</td>
@@ -202,7 +223,7 @@
 {% endfor %}
 </table>
 
-
+{% endif  %}
 
 
 </div>

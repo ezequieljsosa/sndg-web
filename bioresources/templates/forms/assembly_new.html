@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+
+
+{% load static %}
+{% load bioresources_extras %}
+
+{% block content %}
+<div class="row">
+<div class="col-lg-9">
+<form action="{% url 'bioresources:assembly_new' %}" method="post">
+
+    {% crispy form %}
+
+</form>
+</div>
+</div>
+{% endblock %}

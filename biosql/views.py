@@ -4,7 +4,7 @@ from django.views.generic import TemplateView, DetailView
 from django.db.models import Prefetch
 
 from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology,SeqfeatureQualifierValue
-from bioresources.models import Assembly, Publication
+from bioresources.models import Assembly, Publication,Sample
 
 
 class AboutView(TemplateView):
@@ -12,7 +12,6 @@ class AboutView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['jojo'] = "sdalmkghdaf"
         return context
 
 
@@ -125,7 +124,7 @@ def publications_from_resource_graph(resource, graph, external_orgs, resource_id
 
                 for org in affiliation.organizations.all():
                     if org.name not in [y["id"] for y in graph["nodes"]]:
-                        graph["nodes"].append({"id": org.name,
+                        graph["nodes"].append({"id": org.name,"type":"organization",
                                                "label": labelize(org.name),
                                                "color": "green" if org.country == "Argentina" else "purple"})
                     graph["edges"].append({"from": x.source.name, "to": org.name})
@@ -142,15 +141,27 @@ from django.db.models import Q
 def assembly_graph(assembly):
     external_orgs = []
     assembly_name = assembly.external_ids.filter(type="accession").first().identifier
-    graph = {"nodes": [{"id": assembly_name, "label": assembly_name, "color": "orange"}],
+    graph = {"nodes": [{"id": assembly_name, "label": assembly_name,"type":"assembly", "color": "orange"}],
              "edges": []}
 
     publications_from_resource_graph(assembly, graph, external_orgs, assembly_name)
-    for rel in assembly.sources.filter(~Q(source__type="pmc")).all():
+    for rel in assembly.sources.filter(source__type__in = ["publication","sample"]).all(): #.filter(~Q(source__type="publication"))
         if rel.source.name not in graph["nodes"]:
-            graph["nodes"].append({"id": rel.source.name, "label": labelize(rel.source.name), "color": "SlateBlue"})
+
             graph["edges"].append({"from": assembly_name, "to": rel.source.name})
-            publications_from_resource_graph(rel.source, graph, external_orgs)
+            if rel.source.type == "publication":
+                graph["nodes"].append({"id": rel.source.name, "type":"publication","label": labelize(rel.source.name), "color": "SlateBlue"})
+                publications_from_resource_graph(rel.source, graph, external_orgs)
+
+            else:
+                graph["nodes"].append({"id": rel.source.name,"type":"sample", "label": labelize(rel.source.name), "color": "Grey"})
+                sample = Sample.objects.get(id=rel.source.id)
+                sample_origin = sample.origin_dict()
+                for k,v in sample_origin.items():
+                    name = k + ": " + v
+                    if name not in graph["nodes"]:
+                        graph["nodes"].append({"id":name , "label": labelize(name), "color": "AliceBlue"})
+                        graph["edges"].append({"from": name, "to": sample.name})
 
     nodes = []
     added = []
@@ -166,9 +177,10 @@ def assembly_graph(assembly):
 def entry_graph(be, beg):
     assembly = Assembly.objects.get(external_ids__identifier=beg.name)
     graph = assembly_graph(assembly)
-    graph["nodes"].append({"id": be.accession, "label": be.accession, "color": "red"})
+    graph["nodes"].append({"id": be.accession, "label": be.accession,"type":"seq", "color": "red"})
     graph["edges"].append({"from": be.accession, "to": beg.name})
     return graph
+
 
 
 

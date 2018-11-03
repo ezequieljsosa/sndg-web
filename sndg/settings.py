@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django_extensions',
 
     'biosql',
-    # 'pdbdb',
+    'pdbdb',
     # 'vardb',
     'bioresources',  # importante que este antes de allauth
 
@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'captcha',
+    'crispy_forms',
+
+    "resumable",
 
 ]
 
@@ -186,3 +189,6 @@ HAYSTACK_ID_FIELD = "item.id" #'id')
 HAYSTACK_DJANGO_CT_FIELD = 'metadata.django_ct'  # django_ct')
 HAYSTACK_DJANGO_ID_FIELD = 'item.id'  # django_id')
 HAYSTACK_DOCUMENT_FIELD = 'metadata.search' #'text')
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"

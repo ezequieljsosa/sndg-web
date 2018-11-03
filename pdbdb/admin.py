@@ -26,7 +26,7 @@ class PDBResidueSetInline(admin.TabularInline):
 
 @admin.register(PDB)
 class PDBAdmin(admin.ModelAdmin):
-    list_display = ["code","resolution","tax","residues","ligands","solvent"]
+    list_display = ["code","resolution","taxon","residues","ligands","solvent"]
     search_fields = ["code","experiment"]
 
     def residues(self, obj):

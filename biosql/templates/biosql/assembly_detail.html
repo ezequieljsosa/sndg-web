@@ -13,21 +13,17 @@
 
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
 
-
-
-
 {% endblock %}
 
-
-
 {% block content %}
-
 
    <h1>{{ object.accession }}</h1>
 <table class="table  table-responsive">
 
 <tr><td><b>Name</b></td><td>{{ object.name }}</td></tr>
+{% if object.description %}
 <tr><td><b>Descripción</b></td><td>{{ object.description }}</td></tr>
+{% endif %}
 
 <tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
 <tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
@@ -36,11 +32,9 @@
 
 
 <tr><td><b>Tipo</b></td><td>{{ object.assembly_type }}</td></tr>
-<tr><td><b>Taxon</b></td><td>{{ object.ncbi_tax.scientific_name }}</td></tr>
+<tr><td><b>Taxon</b></td><td><a href="{% url 'biosql:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a></td></tr>
 
 </table>
-
-
 
 <iframe  id="jbrowse"
  src="{% static 'jbrowse' %}/index.html?data=data/H37Rv&fullviewlink=false&menu=false&nav=true&tracklist=false&loc=NC_000962.3:0..999&"
@@ -48,9 +42,6 @@
 
 <div class="row">
 <div class="col-md-8">
-
-
-
 
 <h3>Secuencias</h3>
 <table id="contig_table" class="table table-responsive">
@@ -101,6 +92,7 @@
     <tr><td style="background-color: red">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Cromosoma/Contig</td></tr>
     <tr><td style="background-color: orange">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Ensamblado</td></tr>
     <tr><td style="background-color: SlateBlue">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Publicación</td></tr>
+    <tr><td style="background-color: Grey">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Muestra</td></tr>
     <tr><td style="background-color: green">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Organización</td></tr>
     <tr><td style="background-color: cyan">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Autor</td></tr>
 </table>
@@ -127,7 +119,7 @@
 
     var nodes = new vis.DataSet([
         {% for x in graph.nodes %}
-        {id: '{{x.id}}', label: '{{x.label}}',color:'{{x.color}}'},
+        {id: '{{x.id}}', label: '{{x.label}}',type: '{{x.type}}',color:'{{x.color}}'},
         {% endfor%}
     ]);
 
@@ -149,6 +141,27 @@
     };
 
     var network = new vis.Network(container, data, options);
+    network.on("click", function (params) {
+            params.event = "[original event]";
+            const node = data.nodes.get( this.getNodeAt(params.pointer.DOM)) ;
+            // switch (node.type){
+            //     case "assembly":
+            //         window.location.href = '{%  url 'bioresources:assembly_view' 0  %}'.replace("/0", "/" + node.id)
+            //         break
+            //     case "seq":
+            //          window.location.href = '{%  url 'biosql:seq_view' 0  %}'.replace("/0","/" +node.id)
+            //          break
+            //     case "organization":
+            //          window.location.href = '{%  url 'bioresources:org_view' 0  %}'.replace("/0","/" +node.id)
+            //          break
+            //     case "person":
+            //          window.location.href = '{%  url 'bioresources:person_view' 0  %}'.replace("/0","/" +node.id)
+            //          break
+            //     case "sample":
+            //          window.location.href = '{%  url 'bioresources:sample_view' 0  %}'.replace("/0","/" +node.id)
+            //          break
+            // }
+        });
 </script>
 
 {% endblock %}

@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 import warnings
-
+import json
 
 
 from Bio import BiopythonWarning, BiopythonParserWarning, BiopythonDeprecationWarning, BiopythonExperimentalWarning
@@ -54,26 +54,40 @@ class Command(BaseCommand):
 
         rsfpocker = ResidueSet.objects.get_or_create(name="FPocketPocket", description="")[0]
 
-        with tqdm(PDB.objects.filter(code="4zu4").all(), total=total) as pbar:
+        from django.db.models import Max
+        class Struct:
+            def __init__(self, **entries):
+                self.__dict__.update(entries)
+
+        with tqdm(PDB.objects.all(), total=total) as pbar:
             for pdb in pbar:
                 pbar.set_description(pdb.code)
                 try:
                     pdb = PDB.objects.prefetch_related("residues__atoms").get(id=pdb.id)
                     pdb_path = tmp + "/" + pdb.code + ".pdb"
                     with open(pdb_path, "w") as h:
-                        h.write("\n".join(pdb.lines()))
+                        h.write(pdb.text)
 
-                    res = FPocket(pdb_path, tmp).hunt_pockets()
+                    Residue.objects.filter(pdb=pdb, resname="STP").delete()
+                    PDBResidueSet.objects.filter(pdb=pdb,residue_set__name="FPocketPocket").delete()
+                    pockets_path = os.path.abspath(tmp) + "/" + pdb.code + "pockets.json"
+                    if not os.path.exists(pockets_path):
+                        res = FPocket(pdb_path, tmp).hunt_pockets()
+                        res.save(pockets_path )
+                    with open(pockets_path) as h:
+                        res_pockets = json.load(h)
                     rss = []
+                    nro_atm = Atom.objects.filter(residue__pdb=pdb).aggregate(Max("serial"))["serial__max"]
                     with transaction.atomic():
-                        for pocket in res.pockets:
-
-                            rs = PDBResidueSet(name="%i" % pocket.pocket_num, pdb=pdb, residue_set=rsfpocker)
+                        for pocket in self.tqdm(res_pockets):
+                            pocket = Struct(**pocket)
+                            rs = PDBResidueSet(name="%i" % pocket.number, pdb=pdb, residue_set=rsfpocker)
                             rss.append(rs)
                             rs.save()
 
                             res_alpha = {}
-                            for stp_line in pocket.alpha_spheres:
+                            for stp_line in pocket.as_lines:
+                                nro_atm += 1
                                 resid = int(stp_line[22:26])
                                 if resid in res_alpha:
                                     r = res_alpha[resid]
@@ -83,7 +97,7 @@ class Command(BaseCommand):
                                             resname="STP", disordered=1)
                                     r.save()
                                     res_alpha[resid] = r
-                                Atom(residue=r, serial=int(stp_line[6:11]), name=stp_line[12:16],
+                                Atom(residue=r, serial=nro_atm, name=stp_line[12:16],
                                      x=float(stp_line[30:38].strip()), y=float(stp_line[38:46].strip()),
                                      z=float(stp_line[46:54].strip()),
                                      occupancy=float(stp_line[54:60].strip()), bfactor=float(stp_line[60:66].strip()),

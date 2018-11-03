@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
 from django.db import models
-from biosql.models import Taxon,Term
+from biosql.models import Taxon, Term, Ontology
+from django.db.models import Q
 
 
 def get_class(kls):
@@ -30,6 +31,7 @@ class ProcessStatus(models.Model):
 
     def __repr__(self):
         return self.__str__()
+
 
 class ProcessStatusStep(models.Model):
     name = models.CharField(max_length=200)
@@ -62,14 +64,15 @@ class ProcessStatusStep(models.Model):
     def __repr__(self):
         return self.__str__()
 
+
 class ProcessStatusStepProcessUnit(models.Model):
-    db_identifier = models.CharField(max_length=30,null=True)
+    db_identifier = models.CharField(max_length=30, null=True)
     process_identifier = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     process_status_step = models.ForeignKey(ProcessStatusStep, related_name="units", on_delete=models.CASCADE)
 
     def __str__(self):
-        return "PSStepPUnit('%s','%s')" % (self.db_identifier,self.process_identifier)
+        return "PSStepPUnit('%s','%s')" % (self.db_identifier, self.process_identifier)
 
     def __repr__(self):
         return self.__str__()
@@ -144,6 +147,7 @@ class Resource(models.Model):
     EXPRESSION = 'expression'
     BARCODE = 'barcode'
     SAMPLE = 'sample'
+    TOOL = 'tool'
 
     facet_dict = {
         "assembly": ["species_name", "level", "assembly_type"],
@@ -391,7 +395,9 @@ class Structure(Resource):
 class Assembly(Resource):
     intraspecific_name = models.CharField(max_length=250, null=True)
     species_name = models.CharField(max_length=200, null=True)
-    level = models.CharField(max_length=50, null=True)
+    level = models.CharField(max_length=50, null=True, choices=(("complete", "complete"),
+                                                                ("chromosome", "chromosome"), ("scaffold", "scaffold"),
+                                                                ("contig", "contig"),))
     ncbi_org = models.CharField(max_length=200, null=True)
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
@@ -438,27 +444,31 @@ class Barcode(Resource):
     collectors = models.CharField(max_length=255, null=True)
 
 
-
 class ResourceProperty(models.Model):
-
-
     organization = models.ForeignKey(Organization, on_delete=models.DO_NOTHING)
-    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="properties")
     term = models.ForeignKey(Term, on_delete=models.DO_NOTHING)
 
+
 class ResourcePropertyValue(models.Model):
-    property = models.ForeignKey(ResourceProperty, on_delete=models.DO_NOTHING)
+    property = models.OneToOneField(ResourceProperty, on_delete=models.CASCADE, related_name="value")
     value = models.CharField(max_length=200)
 
 
-
-
 class Sample(Resource):
+    origin_props = ['Origin (developed or donated from)', 'geo_loc_name', 'geographic location (country and/or sea)',
+                    'birth_location', 'country_of_birth', 'geo-loc-name']
+
     country = models.CharField(max_length=100)
     subdivision = models.CharField(max_length=150)
     collection_date = models.DateField(null=True)
     publication_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
+
+    def origin_dict(self):
+        props = self.properties.prefetch_related("value").filter(
+            Q(term__ontology__name="NCBI sample") & Q(term__identifier__in=Sample.origin_props))
+        return {prop.term.name: prop.value.value for prop in props}
 
 
 class ReadsArchive(Resource):

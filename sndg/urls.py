@@ -25,7 +25,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     path('', include('bioresources.urls')),
     path('bioseq/', include('biosql.urls')),
-    # path('pdbdb/', include('pdbdb.urls')),
+    path('pdbdb/', include('pdbdb.urls')),
     # path('', include('vardb.urls')),
     url(r'^crud/',  include('crudbuilder.urls')),
 
@@ -41,6 +41,7 @@ urlpatterns = [
     # url(r'^signup/$', bioviews.signup, name='signup'),
     # url(r'^search/', include('haystack.urls')),
     # url(r'^solr/', include('solrtest.urls')),
+
 
 
 ]

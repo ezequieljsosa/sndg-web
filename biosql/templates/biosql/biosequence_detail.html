@@ -86,6 +86,7 @@
     <tr><td style="background-color: green">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Organización</td></tr>
     <tr><td style="background-color: cyan">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Autor</td></tr>
 </table>
+{% if graph.external_orgs %}
 <h6>Otras organizaciones (de la/s publicaciones) </h6>
 <ul>
 {% for org in graph.external_orgs %}
@@ -93,6 +94,7 @@
 {% endfor %}
 
 </ul>
+{% enif %}
 </div>
 
 </div>
@@ -101,7 +103,7 @@
     // create an array with nodes
     var nodes = new vis.DataSet([
         {% for x in graph.nodes %}
-        {id: '{{x.id}}', label: '{{x.label}}',color:'{{x.color}}'},
+        {id: '{{x.id}}', label: '{{x.label}}',type: '{{x.type}}',color:'{{x.color}}'},
         {% endfor%}
     ]);
 
