@@ -9,20 +9,23 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-from .local_settings import db, secretKey
+# noinspection PyUnresolvedReferences
+import environ
 import os
+
+env = environ.Env()
+
+# CREATE DATABASE mydatabase CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+#DATABASE_URL=mysql://user:%23password@127.0.0.1:3306/dbname
+DATABASES = {
+    'default': env.db(),
+}
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = secretKey
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -98,11 +101,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sndg.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-# CREATE DATABASE mydatabase CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-DATABASES = db
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -141,7 +139,7 @@ STATIC_URL = '/static/'
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 STATICFILES_DIRS = (
-    os.path.join(SITE_ROOT, "static/"),
+    os.path.abspath( os.path.join(SITE_ROOT, "../static/")),
     ("jbrowse", "/data/xomeq/JBrowse-1.14.2/"),
 )
 
@@ -166,9 +164,6 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = DEFAULT_FROM_EMAIL = 'xxx@gmail.com'
 EMAIL_HOST_PASSWORD = 'xxx'
 
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
@@ -185,10 +180,10 @@ HAYSTACK_CONNECTIONS = {
         # 'URL': 'http://127.0.0.1:8983/solr/mysite',
     },
 }
-HAYSTACK_ID_FIELD = "item.id" #'id')
+HAYSTACK_ID_FIELD = "item.id"  # 'id')
 HAYSTACK_DJANGO_CT_FIELD = 'metadata.django_ct'  # django_ct')
 HAYSTACK_DJANGO_ID_FIELD = 'item.id'  # django_id')
-HAYSTACK_DOCUMENT_FIELD = 'metadata.search' #'text')
+HAYSTACK_DOCUMENT_FIELD = 'metadata.search'  # 'text')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
