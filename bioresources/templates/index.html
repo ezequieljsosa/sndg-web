@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 
 {% load bioresources_extras %}
 
@@ -71,7 +72,7 @@
 <td><button id="searchBtn" class="btn btn-info"><i class="fa fa-search">&nbsp;</i></button></td></tr></tbody></table>
 
 {% if suggestions %}
-<small class="form-text text-muted">¿Quisiste decir?:
+<small class="form-text text-muted">{% trans 'Did you mean?:' %}
 {% for x in suggestions %}
 <a href="{% url 'bioresources:index' %}?db={{db}}&search={{x}}">{{x}}</a>
 {% endfor %}

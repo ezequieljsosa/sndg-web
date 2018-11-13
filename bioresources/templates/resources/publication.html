@@ -1,5 +1,9 @@
 {% extends "base.html" %}
+
+{% load i18n %}
+
 {% load static %}
+
 
 
 {% block content %}
@@ -14,12 +18,12 @@
 
     <h1>{{publication.name}}</h1>
     <p>
-    {% for auth in authors %}
+    {% for auth in publication.author_names %}
     {{auth}} ,
     {% endfor %}
     </p>
     <ol>
-     {% for org in orgs %}
+     {% for org in publication.affiliation_names %}
        <li> {{ org }}</li>
      {% endfor %}
     </ol>
@@ -49,10 +53,10 @@
 
     <div class="row">
     <div class="col-md-12">
-    <h3>Recursos referenciados</h3>
+    <h3>{% trans 'Referenced resources' %}</h3>
     <table class="table table-bordered">
-    {% for r in target_resources %}
-    <tr><td>{{r.type}}</td><td> <a href="{{r.url_}}"> {{r.name}}</a></td></tr>
+    {% for r in publication.targets.all %}
+    <tr><td>{{r.type}}</td><td> <a href="{{r.get_absolute_url}}"> {{r.name}}</a></td></tr>
     {% endfor %}
     </table>
     </div></div>

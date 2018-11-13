@@ -13,7 +13,7 @@ from django.shortcuts import render
 from django_tables2 import RequestConfig
 
 from .models import Publication, Structure, Assembly, Expression, Person, Organization, Barcode, BioProject, \
-    Affiliation, Resource,Sample
+    Affiliation, Resource, Sample
 from .tables import PublicationTable
 from .filters import PublicationFilter
 from .forms import BioSearchForm, AssemblyForm
@@ -28,19 +28,37 @@ import urllib
 from haystack.inputs import Exact
 
 from django.contrib.auth.decorators import login_required
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as __
 
+# noinspection PyProtectedMember
 resources = [
     # {"name": "Genomas", "count": 99, "icon": "circle", "type": "genome"},
-    {"name": "Proteinas", "count": 99, "icon": "puzzle-piece", "type": "protein"},
-    {"name": "Herramientas", "count": 99, "icon": "wrench", "type": Resource.TOOL},
-    {"name": "Estructuras", "count": 99, "icon": "sitemap", "type": Resource.STRUCTURE},
-    {"name": "Barcodes", "count": 99, "icon": "barcode", "type": Resource.BARCODE},
-    {"name": "Ensamblados", "count": 99, "icon": "adn", "type": Resource.ASSEMBLY},
-    {"name": "Bioproyectos", "count": 99, "icon": "briefcase", "type": Resource.BIOPROJECT},
-    {"name": "Publicaciones", "count": 99, "icon": "book", "type": Resource.PUBLICATION},
-    {"name": "Organizaciones", "count": 99, "icon": "building", "type": "org"},
-    {"name": "Investigadores", "count": 99, "icon": "user", "type": "person"},
-    {"name": "Expresión", "count": 99, "icon": "sliders-h", "type": Resource.EXPRESSION},
+    {"name": __("Proteins"), "count": 99,
+     "icon": "puzzle-piece",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.PROTEIN].lower()},
+    {"name": __("Tools"), "count": 99, "icon": "wrench",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.TOOL].lower()},
+    {"name": Structure._meta.verbose_name_plural, "count": 99,
+     "icon": "sitemap",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.STRUCTURE].lower()},
+    {"name": Barcode._meta.verbose_name_plural, "count": 99,
+     "icon": "barcode",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.BARCODE].lower()},
+    {"name": Assembly._meta.verbose_name_plural, "count": 99,
+     "icon": "adn",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.ASSEMBLY].lower()},
+    {"name": BioProject._meta.verbose_name_plural, "count": 99,
+     "icon": "briefcase",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.BIOPROJECT].lower()},
+    {"name": Publication._meta.verbose_name_plural, "count": 99,
+     "icon": "book",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.PUBLICATION].lower()},
+    {"name": __("Organizations"), "count": 99, "icon": "building", "type": "org"},
+    {"name": __("Persons"), "count": 99, "icon": "user", "type": "person"},
+    {"name": Expression._meta.verbose_name_plural, "count": 99,
+     "icon": "sliders-h",
+     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.EXPRESSION].lower()},
 
 ]
 
@@ -65,7 +83,10 @@ def index(request):
             sqs = sqs.facet(ft, limit=5)
 
     facets = sqs.facet_counts()
-    rdata = defaultdict(lambda: 0, {k: v for k, v in facets["fields"]["type"]})
+    if "fields" in facets:
+        rdata = defaultdict(lambda: 0, {k: v for k, v in facets["fields"]["type"]})
+    else:
+        rdata = defaultdict(lambda: 0)
     count = 0
     for r in resources:
         r["count"] = rdata[r["type"]]
@@ -77,7 +98,11 @@ def index(request):
         if suggestions:
             suggestions = [x.strip() for x in suggestions.replace("(", " ").split(")") if x.strip()]
 
-    del facets["fields"]["type"]
+    if "fields" in facets:
+        del facets["fields"]["type"]
+    else:
+        facets["fields"] = {}
+
     return render(request, 'index.html', {
         "stats": resources, "search": search, "selected": selected,
         "db": db, "suggestions": suggestions, "querystring": params,
@@ -114,14 +139,9 @@ def publication(request, pk):
         if author not in authors:
             authors.append(author)
 
-    target_resources = []
-    for x in publication.targets.all():
-        x.target.url_ = reverse("bioresources:assembly_view", kwargs={"pk": x.target.id})
-        target_resources.append(x.target)
-
     return render(request, 'resources/publication.html', {
-        "publication": publication, "orgs": orgs, "authors": authors,
-        "sidebarleft": 1, "target_resources": target_resources})
+        "publication": publication,
+        "sidebarleft": 1})
 
 
 def barcode(request, pk):
@@ -229,7 +249,8 @@ class BioSearchView(SearchView):
         context["dbtype"] = self.get_form_kwargs()["data"]["type"]
 
         for x in context["page_obj"].object_list:
-            x.sndg_url = reverse("bioresources:" + context["dbtype"] + '_view', kwargs={"pk": x.object.id})
+            if x:
+                x.sndg_url = reverse("bioresources:" + context["dbtype"] + '_view', kwargs={"pk": x.object.id})
 
         prange = list(context["page_obj"].paginator.page_range)
 
@@ -244,13 +265,14 @@ class BioSearchView(SearchView):
         context["params"] = dict(self.request.GET)
         suggestion_list = []
         context["suggestion_list"] = suggestion_list
-        if context["suggestions"]:
+        if "suggestions" in context and context["suggestions"]:
             for x in context["suggestions"][1::2]:
                 for y in x["suggestion"]:
                     suggestion_list.append(y)
 
         # SearchQuerySet().filter(content="genomea") .facet('affiliations',limit=5).facet("type").facet_counts()
         return context
+
 
 # def publications(request):
 #     table = PublicationTable(Publication.objects.all())
@@ -260,7 +282,6 @@ class BioSearchView(SearchView):
 
 @login_required
 def assembly_new(request):
-
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
         form = AssemblyForm(request.POST)
@@ -294,13 +315,12 @@ def assembly_new(request):
 #
 from django.views import generic
 
+
 class UploadView(generic.TemplateView):
     template_name = 'forms/resource_upload.html'
 
 
-
 from django.conf import settings
-
 
 from resumable.fields import ResumableFileField
 
@@ -312,10 +332,14 @@ class ResumableForm(Form):
         chunks_dir=getattr(settings, 'FILE_UPLOAD_TEMP_DIR')
     )
 
+
 from resumable.files import ResumableFile
+
+
 def upload_view(request):
     form = ResumableForm()
     return render(request, 'forms/resource_upload.html', {'form': form})
+
 
 class ResumableUploadView(generic.TemplateView):
     template_name = 'forms/resource_upload.html'
@@ -361,10 +385,7 @@ class ResumableUploadView(generic.TemplateView):
         return FileSystemStorage(location=self.chunks_dir)
 
 
-
 from django.contrib.auth.decorators import login_required
-
-
 
 
 def sample_view(request, pk):
@@ -374,4 +395,4 @@ def sample_view(request, pk):
     publications_from_resource_graph(sample, graph, external_orgs)
     return render(request, 'resources/expression.html', {
         "expression": expression, "graph": graph, "external_orgs": external_orgs,
-    "sidebarleft": 1, })
+        "sidebarleft": 1, })

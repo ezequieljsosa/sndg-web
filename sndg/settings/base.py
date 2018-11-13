@@ -14,9 +14,10 @@ import environ
 import os
 
 env = environ.Env()
+environ.Env.read_env()
 
 # CREATE DATABASE mydatabase CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-#DATABASE_URL=mysql://user:%23password@127.0.0.1:3306/dbname
+# DATABASE_URL=mysql://user:%23password@127.0.0.1:3306/dbname
 DATABASES = {
     'default': env.db(),
 }
@@ -139,11 +140,13 @@ STATIC_URL = '/static/'
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 STATICFILES_DIRS = (
-    os.path.abspath( os.path.join(SITE_ROOT, "../static/")),
+    os.path.abspath(os.path.join(SITE_ROOT, "../static/")),
     ("jbrowse", "/data/xomeq/JBrowse-1.14.2/"),
 )
 
 LOGIN_REDIRECT_URL = '/'
+
+# AUTH_USER_MODEL = "bioresources.User"
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -165,25 +168,40 @@ EMAIL_HOST_USER = DEFAULT_FROM_EMAIL = 'xxx@gmail.com'
 EMAIL_HOST_PASSWORD = 'xxx'
 
 HAYSTACK_CONNECTIONS = {
+    # SNDG_SOLR=solr://127.0.0.1:8984/solr/Notes
     'default': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': 'http://127.0.0.1:8984/solr/Notes',
+        'URL': env('SNDG_SOLR'),  # 'http://127.0.0.1:8984/solr/Notes'
         'INCLUDE_SPELLING': True,
         # ...or for multicore...
         # 'URL': 'http://127.0.0.1:8983/solr/mysite',
+        'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndexOAI'],
     },
     'oai': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
         'URL': 'http://127.0.0.1:8983/solr/oai',
         'INCLUDE_SPELLING': False,
-        # ...or for multicore...
-        # 'URL': 'http://127.0.0.1:8983/solr/mysite',
+        'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
+                             'bioresources.search_indexes.StructureIndex',
+                             'bioresources.search_indexes.AssemblyIndex',
+                             'bioresources.search_indexes.ExpressionIndex',
+                             'bioresources.search_indexes.ToolIndex',
+                             'bioresources.search_indexes.BioProjectIndex',
+                             'bioresources.search_indexes.PersonIndex',
+                             'bioresources.search_indexes.OrganizationIndex',
+                             'bioresources.search_indexes.BarcodeIndex',
+                             ],
+
     },
 }
-HAYSTACK_ID_FIELD = "item.id"  # 'id')
-HAYSTACK_DJANGO_CT_FIELD = 'metadata.django_ct'  # django_ct')
-HAYSTACK_DJANGO_ID_FIELD = 'item.id'  # django_id')
-HAYSTACK_DOCUMENT_FIELD = 'metadata.search'  # 'text')
+
+
+HAYSTACK_ID_FIELD = env("HAYSTACK_ID_FIELD",default='id')
+HAYSTACK_DJANGO_CT_FIELD = env("HAYSTACK_DJANGO_CT_FIELD",default='django_ct')
+HAYSTACK_DJANGO_ID_FIELD = env("HAYSTACK_DJANGO_ID_FIELD",default='django_id')
+HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD",default='text')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
+
+# LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),

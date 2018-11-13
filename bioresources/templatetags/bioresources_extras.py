@@ -62,8 +62,10 @@ def qs_without_parameter(arg1, arg2):
     parameters = {}
     for key, value in arg1.items():
         if parameters.get(key, None) is None and arg2 != key:
-            parameters[key] = value[0]
-
+            try:
+                parameters[key] = value[0]
+            except IndexError:
+                parameters[key] = value
 
     return "&".join(
         [k + "=" + v

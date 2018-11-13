@@ -11,6 +11,7 @@ from . import compile_data
 from django.urls import reverse
 
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as __
 from model_utils import Choices
 
 
@@ -22,9 +23,13 @@ def get_class(kls):
         m = getattr(m, comp)
     return m
 
+from django.contrib.auth.models import AbstractUser
+
+# class User(AbstractUser):
+#     pass
 
 class ProcessStatus(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200,help_text=__('Process name'))
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -86,12 +91,15 @@ class ProcessStatusStepProcessUnit(models.Model):
 
 
 class Person(models.Model):
+    # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
     name = models.CharField(max_length=200, default="")
     scopus_id = models.CharField(max_length=200, null=True)
     scopus_names = models.TextField(null=True)
     email = models.EmailField()
-    arg_affiliation = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name + " " + self.surname
 
     def rtype(self):
         return "person"
@@ -110,11 +118,7 @@ class Person(models.Model):
     def complete_name(self):
         return self.surname + ", " + self.name
 
-    def type(self):
-        return "person"
 
-    def __str__(self):
-        return self.name + " " + self.surname
 
 
 class Identity(models.Model):
@@ -126,6 +130,9 @@ class Identity(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField()
     ends = models.DateTimeField()
+
+    def __str__(self):
+        return self.identifier
 
 
 class Organization(models.Model):
@@ -144,11 +151,10 @@ class Organization(models.Model):
 
 
 class Resource(models.Model):
-
     RESOURCE_TYPES = Choices(
-        [(i, x, _(x)) for i, x in enumerate([
+        *[(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
-            "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE","TOOL",
+            "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL", "PROTEIN",
         ])]
     )
 
@@ -182,15 +188,19 @@ class Resource(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        self.type = self.__class__.TYPE
+        super(Model, self).save(*args, **kwargs)
+
     def get_absolute_url(self):
-        return reverse('people.views.details', args=[str(self.id)])
+        return reverse('bioresources:%s_view' % self.type, args=[str(self.id)])
 
     def compile(self):
         return compile_data
 
     def ncbi_tax_keywords(self):
         if self.ncbi_tax:
-            return self.ncbi_tax.keywords.first().text
+            return self.ncbi_tax.keywords.text
         return None
 
     def taxon_name(self):
@@ -238,6 +248,7 @@ class ResourceRelation(models.Model):
 
     class Meta:
         unique_together = (('source', 'target', 'deprecated'),)
+        verbose_name_plural = __("Resource Relations")
 
     def __str__(self):
         return ("(" + self.source.type + ":" + str(self.source.id) +
@@ -250,20 +261,23 @@ class BioProject(Resource):
     """
 
     SAMPLE_SCOPE_TYPES = Choices(
-        [(i, x, _(x)) for i, x in enumerate([
+        *[(i, x, _(x)) for i, x in enumerate([
             "monoisolate", 'multi-species', "environment", "synthetic", "other",
         ])]
     )
 
-    MATERIAL_TYPES =    Choices([(i, x, _(x)) for i, x in enumerate([
+    MATERIAL_TYPES = Choices(
+        *[(i, x, _(x)) for i, x in enumerate([
             "genome", 'metagenome', "chromosome", "transcriptome", "reagent", "proteome",
         ])])
 
     CAPTURE_TYPES = Choices(
-        [(i, x, _(x)) for i, x in enumerate([
+        *[(i, x, _(x)) for i, x in enumerate([
             "whole", 'exome', "barcode", "TargetedLocusLoci",
         ])]
     )
+
+    TYPE = Resource.RESOURCE_TYPES.BIOPROJECT
 
     sample_scope = models.CharField(max_length=20, choices=SAMPLE_SCOPE_TYPES, null=True)
     material = models.CharField(max_length=20, choices=MATERIAL_TYPES, null=True)
@@ -275,6 +289,9 @@ class BioProject(Resource):
     method = models.CharField(max_length=200, null=True)
 
     # objetive = models.CharField(max_length=200, blank=False)
+
+    class Meta:
+        verbose_name_plural = __("BioProjects")
 
     def related_author_names(self):
         ran = []
@@ -290,6 +307,9 @@ class BioProject(Resource):
 
 
 class Publication(Resource):
+
+    TYPE = Resource.RESOURCE_TYPES.PUBLICATION
+
     doi = models.CharField(max_length=100)
     date_of_publication = models.DateField(max_length=200)
     pubmed_id = models.CharField(max_length=50, null=True)
@@ -297,29 +317,37 @@ class Publication(Resource):
     scopus_id = models.CharField(max_length=50, null=True)
     issn = models.CharField(max_length=50, null=True)
 
-    def affiliation_names(self, all=False):
+    class Meta:
+        verbose_name_plural = __("Publications")
+
+    def affiliation_names(self, country=False):
         affs = []
         for affiliation in self.affiliations.all():
             qs = affiliation.organizations
-            if not all:
-                qs = qs.filter(country="Argentina")
+            if country:
+                qs = qs.filter(country=country)
             for org in qs.all():
                 if org.name not in affs:
                     affs.append(org.name)
         return affs
 
-    def author_names(self):
+    def author_names(self,country=None):
         authors = []
-        for affiliation in self.affiliations.filter(organizations__country="Argentina").all():
+        if country:
+            sqs = self.affiliations.filter(organizations__country=country)
+        else:
+            sqs = self.affiliations
+
+        for affiliation in sqs.all():
             if affiliation.author.complete_name() not in authors:
                 authors.append(affiliation.author.complete_name())
         return authors
 
-    def author_names_idx(self):
-        return " ".join(self.author_names())
+    def author_names_idx(self,country=None):
+        return " ".join(self.author_names(country))
 
-    def affiliation_names_idx(self):
-        return " ".join(self.affiliation_names())
+    def affiliation_names_idx(self,country=None):
+        return " ".join(self.affiliation_names(country))
 
 
 class Affiliation(models.Model):
@@ -327,8 +355,11 @@ class Affiliation(models.Model):
     author = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="affiliations")
     organizations = models.ManyToManyField(Organization)
 
+    class Meta:
+        verbose_name_plural = __("Affiliations")
+
     def __str__(self):
-        return ("Affiliation: (%s) (%s) (%s) " % [str(x) for x in [self.author,self.publication] + self.organizations])
+        return ("Affiliation: (%s) (%s) (%s) " % [str(x) for x in [self.author, self.publication] + self.organizations])
 
 
 class ExternalId(models.Model):
@@ -342,13 +373,16 @@ class ExternalId(models.Model):
 
 
 class Structure(Resource):
+    TYPE = Resource.RESOURCE_TYPES.STRUCTURE
+
     pdbClass = models.CharField(max_length=50, null=True)
     deposit_date = models.DateField(null=True)
     method = models.CharField(max_length=50, null=True)
     org_list = models.TextField(null=True)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        verbose_name_plural = __("Structures")
+
 
     def related_author_names(self):
         ran = []
@@ -364,17 +398,18 @@ class Structure(Resource):
 
 
 class Assembly(Resource):
-
     ASSEMBLY_LEVEL = Choices(
-        [(i, x, _(x)) for i, x in enumerate([
+        *[(i, x, _(x)) for i, x in enumerate([
             "complete", 'chromosome', "scaffold", "contig",
         ])]
     )
     ASSEMBLY_TYPES = Choices(
-        [(i, x, _(x)) for i, x in enumerate([
+        *[(i, x, _(x)) for i, x in enumerate([
             "haploid", 'diploid', "other",
         ])]
     )
+
+    TYPE = Resource.RESOURCE_TYPES.ASSEMBLY
 
     intraspecific_name = models.CharField(max_length=250, null=True)
     species_name = models.CharField(max_length=200, null=True)
@@ -384,6 +419,9 @@ class Assembly(Resource):
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
     assembly_type = models.CharField(max_length=50, null=True, choices=ASSEMBLY_TYPES)
+
+    class Meta:
+        verbose_name_plural = __("Assemblies")
 
     def related_author_names(self):
         ran = []
@@ -399,9 +437,14 @@ class Assembly(Resource):
 
 
 class Expression(Resource):
+    TYPE = Resource.RESOURCE_TYPES.EXPRESSION
+
     pdat = models.DateField(null=True)
     gdstype = models.CharField(max_length=250, null=True)
     submitters = models.TextField(null=True)
+
+    class Meta:
+        verbose_name_plural = __("Expression")
 
     def related_author_names(self):
         ran = []
@@ -417,12 +460,17 @@ class Expression(Resource):
 
 
 class Barcode(Resource):
+    TYPE = Resource.RESOURCE_TYPES.BARCODE
+
     country = models.CharField(max_length=100)
     subdivision = models.CharField(max_length=150)
     marker = models.CharField(max_length=50, null=True)
     image_url = models.URLField(null=True)
     bold_org = models.CharField(max_length=255, null=True)
     collectors = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        verbose_name_plural = __("Barcodes")
 
 
 class ResourceProperty(models.Model):
@@ -437,6 +485,8 @@ class ResourcePropertyValue(models.Model):
 
 
 class Sample(Resource):
+    TYPE = Resource.RESOURCE_TYPES.SAMPLE
+
     origin_props = ['Origin (developed or donated from)', 'geo_loc_name', 'geographic location (country and/or sea)',
                     'birth_location', 'country_of_birth', 'geo-loc-name']
 
@@ -446,6 +496,9 @@ class Sample(Resource):
     publication_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
 
+    class Meta:
+        verbose_name_plural = __("Samples")
+
     def origin_dict(self):
         props = self.properties.prefetch_related("value").filter(
             Q(term__ontology__name="NCBI sample") & Q(term__identifier__in=Sample.origin_props))
@@ -453,5 +506,10 @@ class Sample(Resource):
 
 
 class ReadsArchive(Resource):
+    TYPE = Resource.RESOURCE_TYPES.READS
+
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
+
+    class Meta:
+        verbose_name_plural = __("Reads Archive")
