@@ -5,6 +5,7 @@ from django.db.models import Prefetch
 
 from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology,SeqfeatureQualifierValue
 from bioresources.models import Assembly, Publication,Sample
+from django.db.models import Q
 
 
 class AboutView(TemplateView):
@@ -115,12 +116,12 @@ def publications_from_resource_graph(resource, graph, external_orgs, resource_id
         graph["edges"].append({"from": resource_identifier, "to": x.source.name})
 
         p = Publication.objects.get(id=x.source.id)
-        for i, affiliation in enumerate(p.affiliations.all()):
-            if affiliation.author.arg_affiliation and (affiliation.author.complete_name not in
+        for i, affiliation in enumerate(p.affiliations.filter(organizations__country="Argentina").all()):
+            if (affiliation.author.complete_name not in
                                                        [x["id"] for x in graph["nodes"]]):
                 graph["nodes"].append({"id": affiliation.author.complete_name,
                                        "label": affiliation.author.complete_name() + " #" + str(i),
-                                       "color": "cyan" if affiliation.author.arg_affiliation else "grey"})
+                                       "color": "cyan" })
 
                 for org in affiliation.organizations.all():
                     if org.name not in [y["id"] for y in graph["nodes"]]:
@@ -129,10 +130,10 @@ def publications_from_resource_graph(resource, graph, external_orgs, resource_id
                                                "color": "green" if org.country == "Argentina" else "purple"})
                     graph["edges"].append({"from": x.source.name, "to": org.name})
                     graph["edges"].append({"from": org.name, "to": affiliation.author.complete_name})
-            else:
-                for org in affiliation.organizations.all():
-                    if org not in external_orgs:
-                        external_orgs.append(org)
+        for i, affiliation in enumerate(p.affiliations.filter(~Q(organizations__country="Argentina")).all()):
+            for org in affiliation.organizations.all():
+                if org not in external_orgs:
+                    external_orgs.append(org)
 
 
 from django.db.models import Q

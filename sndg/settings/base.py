@@ -204,4 +204,6 @@ HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD",default='text')
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
 
+OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
+
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),

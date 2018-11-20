@@ -15,7 +15,13 @@ admin.site.register(Identity)
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
-    search_fields = ["accession"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
+
+    # def link(self, obj):
+    #     # https://en.proft.me/2014/10/12/reversing-admin-urls-django/
+    #     return format_html('<a href="{url}?pdb_id={{pdb_id}}">Resources</a>',
+    #                        pdb_id=obj.id, url=reverse('admin:bioresources_resource_changelist'))
 
 
 @admin.register(ResourceRelation)
@@ -34,8 +40,9 @@ class BioProjectAdmin(admin.ModelAdmin):
 
 
 @admin.register(Assembly)
-class AssemblyAdmin(admin.ModelAdmin):
+class AssemblyAdmin(ResourceAdmin):
     autocomplete_fields = ["ncbi_tax"]
+    # search_fields = ["name","description"]
 
 
 @admin.register(Organization)

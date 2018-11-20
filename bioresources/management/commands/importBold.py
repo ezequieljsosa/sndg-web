@@ -46,6 +46,8 @@ class Command(BaseCommand):
 
         data = json.load(open(options["json"]))["bold_records"]["records"].values()
         bcodes = []
+        org_bold = Organization.objects.get_or_create(name="BOLD")[0]
+
         for d in tqdm(data):
             if "sequences" in d:
                 for x in ["species", "genus", "subfamily", "family", "order", "class", "phylum"]:
@@ -90,9 +92,11 @@ class Command(BaseCommand):
                 with transaction.atomic():
                     for bc2 in bcodes_col:
                         bc2.save()
+                        bc2.publishers.add(org_bold)
                     bcodes_col = []
 
         with transaction.atomic():
             for bc2 in bcodes_col:
                 bc2.save()
+                bc2.publishers.add(org_bold)
 

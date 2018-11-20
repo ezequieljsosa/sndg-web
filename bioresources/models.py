@@ -13,7 +13,9 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as __
 from model_utils import Choices
+from django.template.loader import get_template
 
+from django.conf import settings
 
 def get_class(kls):
     parts = kls.split('.')
@@ -90,6 +92,7 @@ class ProcessStatusStepProcessUnit(models.Model):
         return self.__str__()
 
 
+
 class Person(models.Model):
     # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
@@ -149,6 +152,13 @@ class Organization(models.Model):
     def __str__(self):
         return " ".join([x for x in [self.name, "|", self.country, self.city] if x])
 
+class RKeyword(models.Model):
+    name = models.CharField(max_length=200,unique=True)
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Model, self).save(*args, **kwargs)
+
 
 class Resource(models.Model):
     RESOURCE_TYPES = Choices(
@@ -167,9 +177,13 @@ class Resource(models.Model):
 
     id = models.AutoField(primary_key=True)
 
-    type = models.CharField(max_length=10, choices=RESOURCE_TYPES)
+    type = models.PositiveIntegerField(max_length=10, choices=RESOURCE_TYPES)
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
+
+    creators = models.ManyToManyField(Organization,related_name="created_resources")
+    publishers = models.ManyToManyField(Organization,related_name="published_resources")
+    keywords = models.ManyToManyField(RKeyword)
 
     ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",
                                  on_delete=models.SET_NULL, null=True, related_name="bioresources")
@@ -196,7 +210,8 @@ class Resource(models.Model):
         return reverse('bioresources:%s_view' % self.type, args=[str(self.id)])
 
     def compile(self):
-        return compile_data
+        templ = get_template("resources/xoai_resource.txt")
+        return templ.render({"r":self})
 
     def ncbi_tax_keywords(self):
         if self.ncbi_tax:
@@ -205,23 +220,26 @@ class Resource(models.Model):
 
     def taxon_name(self):
         if self.ncbi_tax:
-            return [x for x in self.ncbi_tax.names.all() if x.name_class == "scientific name"][0].name
+            return self.ncbi_tax.scientific_name()
         return None
 
     def oai_public(self):
         return True
 
     def oai_collections(self):
-        return ["collection1"]
+        return [self.type]
 
     def oai_communities(self):
-        return ["community1"]
+        return ["sndg"]
 
     def oai_submitter(self):
         return "sndg"
 
+    def handle(self):
+        return  self.type + "/" + str(self.id)
+
     def permalink(self):
-        return "oai:" + str(self.id)
+        return "oai:" + settings.OAIPMH_DOMAIN + ":" + self.handle()
 
     def metadata_dc_language(self):
         return ["en"]
@@ -230,14 +248,13 @@ class Resource(models.Model):
         return ["info:eu-repo/semantics/openAccess"]
 
     def metadata_dc_format(self):
-        return ["application/pdf"]
+        return ["text/plain"]
+
+    def metadata_dc_creator(self):
+        return [x.name for x in self.creators.all()]
 
     def metadata_dc_publisher(self):
-        return ["Faculdade de Medicina de São José do Rio Preto",
-                "Programa de Pós-Graduação em Ciências da Saúde",
-                "FAMERP",
-                "BR",
-                "Medicina Interna; Medicina e Ciências Correlatas"]
+        return [x.name for x in self.publishers.all()]
 
 
 class ResourceRelation(models.Model):
@@ -279,9 +296,9 @@ class BioProject(Resource):
 
     TYPE = Resource.RESOURCE_TYPES.BIOPROJECT
 
-    sample_scope = models.CharField(max_length=20, choices=SAMPLE_SCOPE_TYPES, null=True)
-    material = models.CharField(max_length=20, choices=MATERIAL_TYPES, null=True)
-    capture = models.CharField(max_length=200, choices=CAPTURE_TYPES, null=True)
+    sample_scope = models.PositiveIntegerField(max_length=20, choices=SAMPLE_SCOPE_TYPES, null=True)
+    material = models.PositiveIntegerField(max_length=20, choices=MATERIAL_TYPES, null=True)
+    capture = models.PositiveIntegerField(max_length=200, choices=CAPTURE_TYPES, null=True)
 
     target = models.CharField(max_length=200, null=True)
     submitters = models.TextField(null=True)
@@ -413,12 +430,12 @@ class Assembly(Resource):
 
     intraspecific_name = models.CharField(max_length=250, null=True)
     species_name = models.CharField(max_length=200, null=True)
-    level = models.CharField(max_length=50, null=True, choices=ASSEMBLY_LEVEL)
+    level = models.PositiveIntegerField(max_length=50, null=True, choices=ASSEMBLY_LEVEL)
 
     ncbi_org = models.CharField(max_length=200, null=True)
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
-    assembly_type = models.CharField(max_length=50, null=True, choices=ASSEMBLY_TYPES)
+    assembly_type = models.PositiveIntegerField(max_length=50, null=True, choices=ASSEMBLY_TYPES)
 
     class Meta:
         verbose_name_plural = __("Assemblies")

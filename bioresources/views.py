@@ -117,6 +117,9 @@ def assembly(request, pk):
     try:
         pk = int(pk)
         assembly = Assembly.objects.prefetch_related("external_ids").get(id=pk)
+        assembly.compile()
+
+
         sqs = assembly.external_ids.filter(type="accession")
         accession = sqs.first().identifier if sqs.exists() else assembly.name
     except ValueError:

@@ -336,6 +336,9 @@ class SeqfeatureRelationship(models.Model):
 
 
 class Taxon(models.Model):
+
+    SCIENTIFIC_NAME = "scientific name"
+
     taxon_id = models.AutoField(primary_key=True)
     ncbi_taxon_id = models.IntegerField(unique=True, blank=True, null=True)
     parent_taxon = models.ForeignKey("self", models.DO_NOTHING, related_name="children", null=True)
@@ -346,7 +349,7 @@ class Taxon(models.Model):
     right_value = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     def scientific_name(self):
-        return self.names.filter(name_class="scientific name").first().name
+        return self.names.filter(name_class=Taxon.SCIENTIFIC_NAME).first().name
 
     def other_names(self):
         return {x.name_class: x.name for x in self.names.filter(name_class__in=["synonym", "common name"])}

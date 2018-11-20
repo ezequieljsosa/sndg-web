@@ -96,8 +96,8 @@ for i,article in enumerate(tqdm(articles)):
                     aff.organizations.add(Organization.objects.get(scopus_id=affdict["$"]))
                 aff.save()
 
-                if not (person.arg_affiliation) and [x for x in author["afid"] if x["$"] in arg]:
-                    person.arg_affiliation = True
+                if [x for x in author["afid"] if x["$"] in arg]:
+                    # person.arg_affiliation = True
                     person.save()
 
 print([err2])

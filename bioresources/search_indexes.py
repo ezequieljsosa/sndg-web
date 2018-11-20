@@ -3,7 +3,7 @@ from tqdm import tqdm
 from haystack import indexes
 from django.db.models import Prefetch
 from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation, \
-    Barcode
+    Barcode,Resource
 from biosql.models import Bioentry, Biodatabase, Tool
 
 """
@@ -12,7 +12,7 @@ python manage.py rebuild_index
 python manage.py update_index
 """
 
-class PublicationIndexOAI(indexes.SearchIndex, indexes.Indexable):
+class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
 
 
     """
@@ -26,7 +26,7 @@ class PublicationIndexOAI(indexes.SearchIndex, indexes.Indexable):
         "item.communities":["com_FAMERP"],
 
     "metadata.dc.language":["por"],
-        "metadata.dc.rights":["info:eu-repo/semantics/openAccess"],
+        "metadata.dc.rights":["info:sa-repo/semantics/openAccess"],
         "metadata.dc.format":["application/pdf"],
         "metadata.dc.publisher":["Faculdade de Medicina de São José do Rio Preto",
           "Programa de Pós-Graduação em Ciências da Saúde",
@@ -60,14 +60,11 @@ class PublicationIndexOAI(indexes.SearchIndex, indexes.Indexable):
     # pubmed_id = indexes.CharField(model_attr='pubmed_id', null=True)
 
     def get_model(self):
-        return Publication
+        return Resource
 
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
-        return self.get_model().objects.prefetch_related(
-            "affiliations", "affiliations__organizations", "affiliations__author", "targets__target"
-        ).filter(deprecated=False, index_updated=False,
-                 targets__target__type__in=["gds", "assembly", "bioproject", "structure"])
+        return self.get_model().objects.oai_compliant()
 
 
 class PublicationIndex(indexes.SearchIndex, indexes.Indexable):
@@ -153,14 +150,7 @@ class AssemblyIndex(indexes.SearchIndex, indexes.Indexable):
         return Assembly
 
     def index_queryset(self, using=None):
-        qs = (Publication.objects.prefetch_related(
-            "affiliations__organizations", "affiliations__author")
-            .filter(affiliations__organizations__country="Argentina"))
-
-        return (self.get_model().objects.prefetch_related("ncbi_tax__names")
-            .prefetch_related(Prefetch("targets__source",
-                                       queryset=qs))
-            .filter(deprecated=False, index_updated=False))
+        return self.get_model().objects.publication_related("Argentina")
 
 
 class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
@@ -252,8 +242,8 @@ class PersonIndex(indexes.SearchIndex, indexes.Indexable):
         #     "affiliations__organizations"))
 
         return (self.get_model().objects
-            .prefetch_related("affiliations__organizations"))
-            #.filter(arg_affiliation=True))  # TODO agregar campos , deprecated=False, index_updated=False
+            .prefetch_related("affiliations__organizations")
+            .filter(deprecated=False, index_updated=False))
 
 
 class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
