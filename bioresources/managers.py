@@ -3,15 +3,15 @@
 import datetime
 from django.db import models
 from django.db.models.query import QuerySet
-from django.db.models import Prefetch
+from django.db.models import Prefetch,Q
 
 
 class ResourceQuerySet(QuerySet):
 
     def oai_compliant(self):
-        return self.prefetch_related(
+        return self.exclude(Q(creators=None) | Q(publishers=None)).prefetch_related(
             "creators", "publishers"
-        ).filter(deprecated=False, index_updated=False).exclude(creators=None, publishers=None)
+        ).filter(deprecated=False, index_updated=False)
 
     def publication_related(self,country):
         from .models import Publication

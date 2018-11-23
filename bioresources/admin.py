@@ -5,11 +5,12 @@ from django.contrib import admin
 from django.urls import reverse
 
 from .models import Person, Organization, Resource, Publication, Identity, Expression, BioProject, Structure, Assembly, \
-    Barcode, ResourceRelation
+    Barcode, ResourceRelation,RKeyword
 
 admin.site.register(Person)
-
 admin.site.register(Identity)
+admin.site.register(RKeyword)
+
 
 
 @admin.register(Resource)
@@ -58,6 +59,8 @@ class StructureAdmin(admin.ModelAdmin):
 @admin.register(Barcode)
 class BarcodeAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
+
+
 
 
 @admin.register(Publication)

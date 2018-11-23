@@ -53,12 +53,6 @@ class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
     metadata_dc_format = indexes.MultiValueField(model_attr='metadata_dc_format',index_fieldname="metadata.dc.format")
     metadata_dc_publisher = indexes.MultiValueField(model_attr='metadata_dc_publisher',index_fieldname="metadata.dc.publisher")
 
-
-    # description = indexes.CharField(model_attr='description')
-    # pub_date = indexes.DateTimeField(model_attr='date_of_publication', null=True)
-    # authors = indexes.MultiValueField(model_attr='author_names', faceted=True)
-    # pubmed_id = indexes.CharField(model_attr='pubmed_id', null=True)
-
     def get_model(self):
         return Resource
 

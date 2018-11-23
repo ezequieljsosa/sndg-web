@@ -17,6 +17,7 @@ from django.template.loader import get_template
 
 from django.conf import settings
 
+
 def get_class(kls):
     parts = kls.split('.')
     module = ".".join(parts[:-1])
@@ -25,13 +26,15 @@ def get_class(kls):
         m = getattr(m, comp)
     return m
 
+
 from django.contrib.auth.models import AbstractUser
+
 
 # class User(AbstractUser):
 #     pass
 
 class ProcessStatus(models.Model):
-    name = models.CharField(max_length=200,help_text=__('Process name'))
+    name = models.CharField(max_length=200, help_text=__('Process name'))
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -92,7 +95,6 @@ class ProcessStatusStepProcessUnit(models.Model):
         return self.__str__()
 
 
-
 class Person(models.Model):
     # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
@@ -120,8 +122,6 @@ class Person(models.Model):
 
     def complete_name(self):
         return self.surname + ", " + self.name
-
-
 
 
 class Identity(models.Model):
@@ -152,12 +152,16 @@ class Organization(models.Model):
     def __str__(self):
         return " ".join([x for x in [self.name, "|", self.country, self.city] if x])
 
+
 class RKeyword(models.Model):
-    name = models.CharField(max_length=200,unique=True)
+    name = models.CharField(max_length=200, unique=True)
 
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
-        super(Model, self).save(*args, **kwargs)
+        super(RKeyword, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 
 class Resource(models.Model):
@@ -177,13 +181,13 @@ class Resource(models.Model):
 
     id = models.AutoField(primary_key=True)
 
-    type = models.PositiveIntegerField(max_length=10, choices=RESOURCE_TYPES)
+    type = models.PositiveIntegerField(choices=RESOURCE_TYPES)
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
 
-    creators = models.ManyToManyField(Organization,related_name="created_resources")
-    publishers = models.ManyToManyField(Organization,related_name="published_resources")
-    keywords = models.ManyToManyField(RKeyword)
+    creators = models.ManyToManyField(Organization, related_name="created_resources",blank=True)
+    publishers = models.ManyToManyField(Organization, related_name="published_resources",blank=True)
+    keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
 
     ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",
                                  on_delete=models.SET_NULL, null=True, related_name="bioresources")
@@ -204,30 +208,28 @@ class Resource(models.Model):
 
     def save(self, *args, **kwargs):
         self.type = self.__class__.TYPE
-        super(Model, self).save(*args, **kwargs)
+        super(Resource, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('bioresources:%s_view' % self.type, args=[str(self.id)])
+        return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower() , args=[str(self.id)])
 
     def compile(self):
-        templ = get_template("resources/xoai_resource.txt")
-        return templ.render({"r":self})
+        templ = get_template("resources/xoai_resource.xml")
+        return templ.render({"r": self})
+
+        #return compile_data
 
     def ncbi_tax_keywords(self):
-        if self.ncbi_tax:
-            return self.ncbi_tax.keywords.text
-        return None
+        return self.ncbi_tax.keywords.text if self.ncbi_tax else None
 
     def taxon_name(self):
-        if self.ncbi_tax:
-            return self.ncbi_tax.scientific_name()
-        return None
+        return self.ncbi_tax.scientific_name() if self.ncbi_tax else None
 
     def oai_public(self):
         return True
 
     def oai_collections(self):
-        return [self.type]
+        return [ "sndg." +  Resource.RESOURCE_TYPES[self.type].lower() ]
 
     def oai_communities(self):
         return ["sndg"]
@@ -236,7 +238,7 @@ class Resource(models.Model):
         return "sndg"
 
     def handle(self):
-        return  self.type + "/" + str(self.id)
+        return Resource.RESOURCE_TYPES[self.type].lower() + "/" + str(self.id)
 
     def permalink(self):
         return "oai:" + settings.OAIPMH_DOMAIN + ":" + self.handle()
@@ -248,7 +250,7 @@ class Resource(models.Model):
         return ["info:eu-repo/semantics/openAccess"]
 
     def metadata_dc_format(self):
-        return ["text/plain"]
+        return []
 
     def metadata_dc_creator(self):
         return [x.name for x in self.creators.all()]
@@ -296,9 +298,9 @@ class BioProject(Resource):
 
     TYPE = Resource.RESOURCE_TYPES.BIOPROJECT
 
-    sample_scope = models.PositiveIntegerField(max_length=20, choices=SAMPLE_SCOPE_TYPES, null=True)
-    material = models.PositiveIntegerField(max_length=20, choices=MATERIAL_TYPES, null=True)
-    capture = models.PositiveIntegerField(max_length=200, choices=CAPTURE_TYPES, null=True)
+    sample_scope = models.PositiveIntegerField(choices=SAMPLE_SCOPE_TYPES, null=True)
+    material = models.PositiveIntegerField(choices=MATERIAL_TYPES, null=True)
+    capture = models.PositiveIntegerField(choices=CAPTURE_TYPES, null=True)
 
     target = models.CharField(max_length=200, null=True)
     submitters = models.TextField(null=True)
@@ -324,7 +326,6 @@ class BioProject(Resource):
 
 
 class Publication(Resource):
-
     TYPE = Resource.RESOURCE_TYPES.PUBLICATION
 
     doi = models.CharField(max_length=100)
@@ -348,7 +349,7 @@ class Publication(Resource):
                     affs.append(org.name)
         return affs
 
-    def author_names(self,country=None):
+    def author_names(self, country=None):
         authors = []
         if country:
             sqs = self.affiliations.filter(organizations__country=country)
@@ -360,10 +361,10 @@ class Publication(Resource):
                 authors.append(affiliation.author.complete_name())
         return authors
 
-    def author_names_idx(self,country=None):
+    def author_names_idx(self, country=None):
         return " ".join(self.author_names(country))
 
-    def affiliation_names_idx(self,country=None):
+    def affiliation_names_idx(self, country=None):
         return " ".join(self.affiliation_names(country))
 
 
@@ -400,7 +401,6 @@ class Structure(Resource):
     class Meta:
         verbose_name_plural = __("Structures")
 
-
     def related_author_names(self):
         ran = []
         for affiliation in self.targets.all():
@@ -417,7 +417,7 @@ class Structure(Resource):
 class Assembly(Resource):
     ASSEMBLY_LEVEL = Choices(
         *[(i, x, _(x)) for i, x in enumerate([
-            "complete", 'chromosome', "scaffold", "contig",
+            "complete genome", 'chromosome', "scaffold", "contig",
         ])]
     )
     ASSEMBLY_TYPES = Choices(
@@ -430,12 +430,12 @@ class Assembly(Resource):
 
     intraspecific_name = models.CharField(max_length=250, null=True)
     species_name = models.CharField(max_length=200, null=True)
-    level = models.PositiveIntegerField(max_length=50, null=True, choices=ASSEMBLY_LEVEL)
+    level = models.PositiveIntegerField(null=True, choices=ASSEMBLY_LEVEL)
 
     ncbi_org = models.CharField(max_length=200, null=True)
     release_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
-    assembly_type = models.PositiveIntegerField(max_length=50, null=True, choices=ASSEMBLY_TYPES)
+    assembly_type = models.PositiveIntegerField(null=True, choices=ASSEMBLY_TYPES)
 
     class Meta:
         verbose_name_plural = __("Assemblies")
@@ -530,3 +530,18 @@ class ReadsArchive(Resource):
 
     class Meta:
         verbose_name_plural = __("Reads Archive")
+
+class Tool(Resource):
+    TYPE = Resource.RESOURCE_TYPES.TOOL
+
+    TYPES = Choices(
+        *[(i, x, _(x)) for i, x in enumerate([
+            'app', 'database', 'library', 'plugin', 'program', 'webserver',
+        ])]
+    )
+
+    tool_type = models.PositiveSmallIntegerField(choices=TYPES)
+    url = models.URLField(null=True)
+
+    class Meta:
+        verbose_name_plural = __("Tools")

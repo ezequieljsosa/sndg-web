@@ -6,6 +6,18 @@ from bioresources.models import Sample, Publication, ExternalId, Resource, Resou
 from biosql.models import Taxon, TaxonName, Term, Ontology
 from django.db import transaction
 
+from urllib.error import URLError
+
+
+def retry(q, n=3):
+    for _ in range(n):
+        try:
+            data = q()
+        except URLError as ex:
+            continue
+        return data
+    raise ex
+
 
 def ncbi_link(dbfrom, id, linkname):
     pass
@@ -21,7 +33,7 @@ def scopus_publication(article):
         publication = Publication.objects.get(name=article["dc:title"][:350])
     else:
         publication = Publication(
-            type=Resource.PUBLICATION,
+            type=Resource.RESOURCE_TYPES.PUBLICATION,
             name=article["dc:title"][:350],
             date_of_publication=datetime.datetime.strptime(article['prism:coverDate'], "%Y-%m-%d"),
         )
@@ -110,7 +122,7 @@ def scopus_extended_publication(article):
 class NCBIBioSampleAdapter:
 
     def fetch(self, ncbi_id):
-        biosampledata = Entrez.read(Entrez.esummary(db="biosample", id=ncbi_id))["DocumentSummarySet"][
+        biosampledata = Entrez.read(retry(lambda: Entrez.esummary(db="biosample", id=ncbi_id)))["DocumentSummarySet"][
             "DocumentSummary"][0]
         return xmltodict.parse(biosampledata["SampleData"])["BioSample"]
 
@@ -126,7 +138,7 @@ class NCBIBioSampleAdapter:
 
         ontology = Ontology.objects.get_or_create(name="NCBI sample", definition="Attributes of an NCBI Sample")[0]
 
-        s = Sample(type=Resource.SAMPLE, name=acc, description=desc)
+        s = Sample(type=Resource.RESOURCE_TYPES.SAMPLE, name=acc, description=desc)
 
         if ("Organism" in summaryData["Description"]) and ("@taxonomy_id" in summaryData["Description"]["Organism"]):
             tax = summaryData["Description"]["Organism"]['@taxonomy_id']
@@ -161,19 +173,19 @@ class NCBIBioSampleAdapter:
 class NCBISRAAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(Entrez.esummary(db="sra", id=ncbi_id))[0]
+        return Entrez.read(retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))[0]
 
     def save(self, summaryData, ncbi_id):
         ncbi_org = Organization.objects.get(name="NCBI")
         expData = xmltodict.parse("<xml>" + Entrez.read(
-            Entrez.esummary(db="sra", id=ncbi_id))[0]["ExpXml"] + "</xml>")["xml"]
+            retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))[0]["ExpXml"] + "</xml>")["xml"]
         acc = expData["Experiment"]["@acc"]
 
         qs = ReadsArchive.objects.filter(external_ids__identifier=acc, external_ids__type="accession")
         if qs.exists():
             return qs.first()
 
-        s = ReadsArchive(type=Resource.READS, name=acc, description=expData["Summary"]["Title"])
+        s = ReadsArchive(type=Resource.RESOURCE_TYPES.READS, name=acc, description=expData["Summary"]["Title"])
         try:
             s.release_date = datetime.datetime.strptime(summaryData["CreateDate"].split(" ")[0], "%Y/%m/%d")
         except ValueError:
@@ -199,7 +211,7 @@ class NCBISRAAdapter:
 class NCBIAssemblyAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(Entrez.esummary(db="assembly", id=ncbi_id))["DocumentSummarySet"][
+        return Entrez.read(retry(lambda: Entrez.esummary(db="assembly", id=ncbi_id)))["DocumentSummarySet"][
             "DocumentSummary"][0]
 
     def save(self, summaryData, ncbi_id):
@@ -213,11 +225,15 @@ class NCBIAssemblyAdapter:
 
         tax = Taxon.objects.filter(ncbi_taxon_id=int(summaryData["Taxid"])).first()
 
-        s = Assembly(type=Resource.ASSEMBLY, name=acc + "_" + name, description=summaryData["AssemblyDescription"],
+        level_dict = {v: k for k, v in dict(Assembly.ASSEMBLY_LEVEL).items()}
+        type_dict = {v: k for k, v in dict(Assembly.ASSEMBLY_TYPES).items()}
+
+        s = Assembly(type=Resource.RESOURCE_TYPES.ASSEMBLY, name=acc + "_" + name,
+                     description=summaryData["AssemblyDescription"],
                      ncbi_tax=tax,
                      ncbi_org=summaryData["SubmitterOrganization"],
-                     level=summaryData["AssemblyStatus"],
-                     assembly_type=summaryData["AssemblyType"],
+                     level=level_dict[summaryData["AssemblyStatus"].lower()],
+                     assembly_type=type_dict[summaryData["AssemblyType"].lower()],
                      species_name=summaryData["SpeciesName"])
 
         try:
@@ -251,7 +267,7 @@ class NCBIAssemblyAdapter:
 class NCBIStructureAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(Entrez.esummary(db="structure", id=ncbi_id))[0]
+        return Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_id)))[0]
 
     def save(self, summaryData, ncbi_id):
 
@@ -261,9 +277,9 @@ class NCBIStructureAdapter:
             return qs.first()
         ncbi_org = Organization.objects.get(name="NCBI")
 
-        s = Structure(type=Resource.STRUCTURE, name=acc, description=summaryData["PdbDescr"],
+        s = Structure(type=Resource.RESOURCE_TYPES.STRUCTURE, name=acc, description=summaryData["PdbDescr"],
                       method=summaryData["ExpMethod"])
-        s.publishers.add(ncbi_org)
+
         try:
             s.deposit_date = datetime.datetime.strptime(summaryData["PdbDepositDate"],
                                                         "%Y/%m/%d %H:%M")  # 2017/08/10 00:00
@@ -288,7 +304,7 @@ class NCBIStructureAdapter:
 class NCBIGDSAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(Entrez.esummary(db="gds", id=ncbi_id))[0]
+        return Entrez.read(retry(lambda: Entrez.esummary(db="gds", id=ncbi_id)))[0]
 
     def save(self, summaryData, ncbi_id):
 
@@ -298,7 +314,7 @@ class NCBIGDSAdapter:
             return qs.first()
         ncbi_org = Organization.objects.get(name="NCBI")
 
-        s = Expression(type=Resource.EXPRESSION, name=acc,
+        s = Expression(type=Resource.RESOURCE_TYPES.EXPRESSION, name=acc,
                        description=summaryData["title"] + "." + summaryData["summary"],
                        gdstype=summaryData["gdsType"])
 

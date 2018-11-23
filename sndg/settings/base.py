@@ -179,7 +179,7 @@ HAYSTACK_CONNECTIONS = {
     },
     'oai': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': 'http://127.0.0.1:8983/solr/oai',
+        'URL': 'http://127.0.0.1:8984/solr/oai',
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',

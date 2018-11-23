@@ -4,6 +4,7 @@ import os
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 import xmltodict
+from datetime import datetime
 
 from Bio import Entrez
 from bioresources.models import Barcode
@@ -14,26 +15,27 @@ import subprocess as sp
 from bioresources.data_import.scopus import ScopusDS
 from bioresources.data_import.adapters import scopus_extended_publication, NCBIGDSAdapter, NCBIAssemblyAdapter, \
     NCBIBioSampleAdapter, NCBISRAAdapter, NCBIStructureAdapter
-from bioresources.models import ProcessStatus, ProcessStatusStep, Organization, ResourceRelation
+from bioresources.models import ProcessStatus, ProcessStatusStep, Organization, ResourceRelation, Resource
+
+from urllib.error import URLError
+
+
+def retry(q, n=3):
+    for _ in range(n):
+        try:
+            data = q()
+        except URLError as ex:
+            continue
+        return data
+    raise ex
 
 
 class Command(BaseCommand):
     """
     pip install -e git+https://github.com/ezequieljsosa/elsapy.git
-
-    https://developer.basespace.illumina.com/docs/content/documentation/rest-api/
-
-    https://api.basespace.illumina.com/v1pre3/projects/84305427/samples?access_token=?&limit10
-    https://api.basespace.illumina.com/v1pre3/samples/150888752/files?access_token=
-    https://api.basespace.illumina.com/v1pre3/files/11596527869/content?access_token=
     """
-    BASEPASE_URL_TEMPLATE = "https://api.basespace.illumina.com/"
-    SAMPLES_PATH = "v1pre3/projects/{project_id}/samples"
-    SAMPLE_FILES_PATH = "/files"
-    FILE_CONTENT_PATH = "/content"
-    params = {"limit": "{limit}", "offset": "{offset}", "access_token": "{access_token}"}
 
-    help = 'Downloads sample files from basespace'
+    help = 'Import resources from ncbi samples and publications for a given country'
 
     links = ["biosample", "assembly",
              "genome", "gds", "sra",
@@ -44,6 +46,7 @@ class Command(BaseCommand):
         parser.add_argument('--email', required=True)
         parser.add_argument('--country', required=True)
         parser.add_argument('--dst_dir', default="./")
+        parser.add_argument('--job', default=datetime.now().strftime('%y-%m-%d'))
         parser.add_argument('--scopus_tmp', default="/tmp/scopus.json")
 
     def download_and_save_scopus(self, options):
@@ -63,14 +66,15 @@ class Command(BaseCommand):
 
     def cross_pubmed_ncbi_data(self, ncbi_id):
 
-        pmc = (Entrez.read(Entrez.esummary(db="pubmed", id=ncbi_id))[0]["ArticleIds"])
+        pmc = Entrez.read(retry(lambda: Entrez.esummary(db="pubmed", id=ncbi_id)))[0]["ArticleIds"]
+
         if "pmc" in pmc:
             pmc_id = pmc["pmc"].replace("PMC", "")
             # https://www.ncbi.nlm.nih.gov/pmc/?Db=nuccore&DbFrom=pmc&Cmd=Link&LinkName=pmc_nuccore&IdsFromResult=5814494
-            with Entrez.elink(dbfrom="pmc", id=pmc_id, db=",".join(Command.links)) as handle:
+            with retry(lambda: Entrez.elink(dbfrom="pmc", id=pmc_id, db=",".join(Command.links))) as handle:
                 links = Entrez.read(handle)[0]
         else:
-            with Entrez.elink(dbfrom="pubmed", id=str(ncbi_id), db=",".join(Command.links)) as handle:
+            with retry(lambda: Entrez.elink(dbfrom="pubmed", id=str(ncbi_id), db=",".join(Command.links))) as handle:
                 links = Entrez.read(handle)[0]
 
         data = []
@@ -85,7 +89,7 @@ class Command(BaseCommand):
 
     def cross_biosample_ncbi_data(self, ncbi_id):
 
-        with Entrez.elink(dbfrom="biosample", id=ncbi_id, db=",".join(Command.links)) as handle:
+        with retry(lambda: Entrez.elink(dbfrom="biosample", id=ncbi_id, db=",".join(Command.links))) as handle:
             pmc_record = Entrez.read(handle)[0]
 
         data = []
@@ -115,9 +119,9 @@ class Command(BaseCommand):
         Entrez.email = options["email"]
         Organization.objects.get_or_create(name="NCBI")
 
-        ps = ProcessStatus.objects.filter(name="test02").first()
+        ps = ProcessStatus.objects.filter(name=options["job"]).first()
         if not ps:
-            ps = ProcessStatus(name="test02")
+            ps = ProcessStatus(name=options["job"])
             ps.save()
             step = ProcessStatusStep(name="load_publications", process_status=ps,
                                      class_identifier="id", class_name="bioresources.models.Publication")
@@ -160,7 +164,7 @@ class Command(BaseCommand):
                 for publication in pbar:
                     if publication.id not in processed_publication_step:
                         if publication.doi:
-                            with Entrez.esearch(db="pubmed", retmax=10, term=publication.doi) as h:
+                            with retry(lambda: Entrez.esearch(db="pubmed", retmax=10, term=publication.doi)) as h:
                                 pubmed_record = Entrez.read(h)
                                 if pubmed_record["IdList"]:
                                     ncbi_id = pubmed_record["IdList"][0]
@@ -175,7 +179,10 @@ class Command(BaseCommand):
                                                     (ResourceRelation.
                                                         objects.get_or_create(source=publication,
                                                                               target=dataset,
-                                                                              role="publication_" + dataset.type))
+                                                                              role=Resource.RESOURCE_TYPES[
+                                                                                       Resource.RESOURCE_TYPES.PUBLICATION] +
+                                                                                   "_" + Resource.RESOURCE_TYPES[
+                                                                                       dataset.type]))
                         processed_publication_step.append(publication.id)
             processed_publication_step.completed = True
             processed_publication_step.save()
@@ -185,14 +192,15 @@ class Command(BaseCommand):
         if not country_samples_step.completed:
             search = '{country}[All Fields] AND "attribute geographic location"[filter]'.format(
                 country=options["country"])
-            esearch = Entrez.read(Entrez.esearch(db="biosample", term=search, retmax=10000))["IdList"]
+            esearch = Entrez.read(retry(lambda: Entrez.esearch(db="biosample", term=search, retmax=10000)))["IdList"]
             for biosample_id in tqdm(esearch):
                 biosample_id = str(biosample_id)
                 if biosample_id not in country_samples_step:
                     dataset_id = None
                     with transaction.atomic():
                         links = Entrez.read(
-                            Entrez.elink(dbfrom="biosample", id=biosample_id, db=",".join(Command.links)))
+                            retry(
+                                lambda: Entrez.elink(dbfrom="biosample", id=biosample_id, db=",".join(Command.links))))
 
                         if len(links[0]['LinkSetDb']) > 0:
                             mapper = self.mapping["biosample"]()
@@ -203,9 +211,10 @@ class Command(BaseCommand):
 
                             sample_geo_props = ['geographic location (country and/or sea)', 'geo_loc_name',
                                                 'Origin (developed or donated from)', "birth_location",
-                                        "geo-loc-name",'country_of_birth']
+                                                "geo-loc-name", 'country_of_birth']
 
-                            if any([options["country"].lower() in attributes.get(x, "").lower() for x in sample_geo_props]):
+                            if any([options["country"].lower() in attributes.get(x, "").lower() for x in
+                                    sample_geo_props]):
                                 biosample = mapper.save(biosampledata, biosample_id)
                                 dataset_id = biosample.id
                                 crossed_data_sets = self.cross_biosample_ncbi_data(biosample_id)
@@ -215,9 +224,13 @@ class Command(BaseCommand):
                                         data = mapper.fetch(crossed_id)
                                         dataset = mapper.save(data, crossed_id)
                                         ResourceRelation.objects.get_or_create(source=biosample, target=dataset,
-                                                                               role="sample_" + dataset.type)
+                                                                               role=
+                                                                               Resource.RESOURCE_TYPES[
+                                                                                   Resource.RESOURCE_TYPES.SAMPLE] +
+                                                                               "_" + Resource.RESOURCE_TYPES[
+                                                                                   dataset.type])
                             else:
-                                print([k for k,v in attributes.items() if options["country"] in v.lower() ])
+                                print([k for k, v in attributes.items() if options["country"] in v.lower()])
                     country_samples_step.append(str(dataset_id), biosample_id)
 
             country_samples_step.completed = True

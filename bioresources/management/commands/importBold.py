@@ -4,9 +4,14 @@ import os
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
-from bioresources.models import Barcode
+from bioresources.models import Barcode,Organization
 from biosql.models import Taxon
 from django.db import transaction
+
+import subprocess as sp
+
+def execute(cmd,**kwargs):
+    sp.call(cmd.format(**kwargs),shell=True)
 
 def download_file(complete_url, target, ovewrite=False, retries=3):
     if not target.strip():
@@ -16,12 +21,12 @@ def download_file(complete_url, target, ovewrite=False, retries=3):
     if os.path.exists(target) and not ovewrite:
         raise OvewriteFileException("%s already exists" % target)
 
-    execute(proxy_vars() + ' wget  --timeout=20 --tries={retries} -O {target} "{url}"',
+    execute(' wget  --timeout=20 --tries={retries} -O {target} "{url}"',
             url=complete_url, retries=retries, target=target)
 
 
 class Command(BaseCommand):
-    help = 'Loads the obo files to the database. Prepared for GO and SO'
+    help = 'Download and loads all barcodes of Bold of a given country'
 
     def __init__(self, stdout=None, stderr=None, no_color=False):
         super().__init__(stdout=stdout, stderr=stderr, no_color=no_color)
