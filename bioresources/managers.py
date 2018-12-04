@@ -3,7 +3,7 @@
 import datetime
 from django.db import models
 from django.db.models.query import QuerySet
-from django.db.models import Prefetch,Q
+from django.db.models import Prefetch, Q
 
 
 class ResourceQuerySet(QuerySet):
@@ -13,16 +13,20 @@ class ResourceQuerySet(QuerySet):
             "creators", "publishers"
         ).filter(deprecated=False, index_updated=False)
 
-    def publication_related(self,country):
+    def publication_related(self, country, only_not_indexed=False):
         from .models import Publication
         qs = (Publication.objects.prefetch_related(
             "affiliations__organizations", "affiliations__author")
             .filter(affiliations__organizations__country=country))
-
+        q = {
+            "deprecated": False
+        }
+        if only_not_indexed:
+            q["index_updated"] = False
         return (self.prefetch_related("ncbi_tax__names")
             .prefetch_related(Prefetch("targets__source",
                                        queryset=qs))
-            .filter(deprecated=False, index_updated=False))
+            .filter(**q))
 
 
 class BioResourceManager(models.Manager):

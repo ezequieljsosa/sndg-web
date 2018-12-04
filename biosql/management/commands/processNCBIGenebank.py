@@ -16,6 +16,12 @@ from tqdm import tqdm
 import math
 from django.db import transaction
 import pandas as pd
+from biosql.data_import.NCBI2SQL import NCBI2SQL
+
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
 
 
 class Command(BaseCommand):
@@ -35,47 +41,13 @@ class Command(BaseCommand):
         parser.add_argument('--driverDB', default="MySQLdb")
         parser.add_argument('--skipAnn', action='store_false')
         parser.add_argument('--workDir', default='/tmp')
-
-    def download(self, assembly, options):
-        arr = assembly.name.split("_")
-        acc = "_".join(arr[:2])
-        name = "_".join(arr[2:])
-        asspath = "/".join([acc[0:3], acc[4:7], acc[7:10], acc[10:13],
-                            acc + "_" + name.replace(" ", "_").replace("#", "_")])
-
-        cmd = 'rsync --recursive --include="*_genomic.gbff.gz" --exclude="*"   rsync://ftp.ncbi.nlm.nih.gov/genomes/all/' + asspath + '/ "' + \
-              options["workDir"] + '"'
-        sp.call(cmd, shell=True)  # , stdout=FNULL
-
-    def connect_to_server(self, options):
-        if "user" in options:
-            user = options["user"]
-        else:
-            data = {x.split("=")[0]: x.split("=")[1].strip() for x in
-                    open(os.path.expanduser(settings.DATABASES["default"]["OPTIONS"]["read_default_file"])).readlines()[
-                    1:]}
-            user = data["user"]
-
-        if "pass" in options:
-            password = options["pass"]
-        else:
-            data = {x.split("=")[0]: x.split("=")[1].strip() for x in
-                    open(os.path.expanduser(settings.DATABASES["default"]["OPTIONS"]["read_default_file"])).readlines()[
-                    1:]}
-            password = data["password"]
-
-        dbname = settings.DATABASES["default"]["NAME"]
-        return BioSeqDatabase.open_database(driver=options["driverDB"], user=user,
-                                            passwd=password, host="localhost", db=dbname)
-
-    def get_or_create_biodb(self, accession, description, server):
-        if accession in server:
-            return server[accession]
-        db = server.new_database(accession, description=description)
-        server.commit()
-        return db
+        parser.add_argument('--jbrowse', default=None)
+        parser.add_argument('--krona', default=None)
 
     def handle(self, *args, **options):
+
+        ncbi2sql = NCBI2SQL()
+
         options["workDir"] = os.path.abspath(options["workDir"])
         assert os.path.exists(options["workDir"]), "%s does not exists" % options["workDir"]
         assemblyqs = Assembly.objects.filter(external_ids__identifier=options["accession"])
@@ -84,57 +56,36 @@ class Command(BaseCommand):
             return 1
         assembly = assemblyqs.first()
 
-        self.download(assembly, options)
-        filename = glob(options["workDir"] + "/" + options["accession"] + "*.gbff.gz")[0]
-        server = self.connect_to_server(options)
-        if not Biodatabase.objects.filter(name=options["accession"]).exists():
-            db = self.get_or_create_biodb(options["accession"], assembly.description, server)
-            with tqdm(bpio.parse(gzip.open(filename, "rt"), "genbank")) as pbar:
-                pbar.set_description("Processing contigs: ")
-                for sequence in pbar:
-                    features = []
-                    for f in sequence.features:
-                        try:
-                            int(f.location.start)
-                            int(f.location.end)
-                            features.append(f)
-                        except ValueError:
-                            pass
-                    sequence.features = features
-                    db.load([sequence])
-                    server.commit()
-        if not Biodatabase.objects.filter(name=options["accession"] + "_prots").exists():
-            db_seqs = server[options["accession"]]
-            db_prot = self.get_or_create_biodb(options["accession"] + "_prots", "", server)
+        ncbi2sql.download(assembly, options["workDir"])
+        genebank = glob(options["workDir"] + "/" + options["accession"] + "*.gbff.gz")[0]
 
-            with tqdm(db_seqs) as pbar:
-                pbar.set_description("Processing contigs")
-                for seqid in pbar:
-                    sequence = db_seqs[seqid]
-                    prots = []
-                    for f in sequence.features:
-                        if "translation" in f.qualifiers and "locus_tag" in f.qualifiers:
-                            r = SeqRecord(id=f.qualifiers["locus_tag"][0], name="", description="",
-                                          seq=Seq(f.qualifiers["translation"][0]))
-                            prots.append(r)
-                    with tqdm(prots) as pbar2:
-                        pbar2.set_description("Saving contig proteins")
-                        db_prot.load(pbar2)
-                        server.commit()
+        if "mysql" in env.db()["ENGINE"]:
+            dbdriver = "MySQLdb"
+        elif "post" in env.db()["ENGINE"]:
+            dbdriver = "psycopg2"
+        else:
+            raise Exception("database not supported")
+
+        dbhost = env.db()["HOST"]
+        dbname = env.db()["NAME"]
+        dbpass = env.db()["PASSWORD"]
+        dbuser = env.db()["USER"]
+        # dbport = env.db()["PORT"]
+        # dbtype = "mysql" if "mysql" in env.db()["ENGINE"] else "pg"
+
+        server = ncbi2sql.connect_to_server(dbuser, dbpass, dbname, dbdriver, dbhost)
+        ncbi2sql.create_contigs(options["accession"],genebank)
+        ncbi2sql.create_proteins(options["accession"])
 
         faa_path = options["workDir"] + "/" + options["accession"] + ".faa"
-        if not os.path.exists(faa_path):
-            db_prot = self.get_or_create_biodb(options["accession"] + "_prots", "", server)
-            with tqdm(db_prot) as pbar:
-                def iter():
-                    for x in pbar:
-                        yield db_prot[x]
+        ncbi2sql.protein_fasta(options["accession"],faa_path)
 
-                bpio.write(iter(), faa_path, "fasta")
+
         self.annotate(options["accession"], faa_path)
-
-        self.jbrowse(options)
-        self.krona(options)
+        if options["jbrowse"]:
+            self.jbrowse(options)
+        if options["krona"]:
+            self.krona(options)
 
     def krona(self):
         pass

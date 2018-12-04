@@ -205,9 +205,10 @@ class Command(BaseCommand):
                         if len(links[0]['LinkSetDb']) > 0:
                             mapper = self.mapping["biosample"]()
                             biosampledata = mapper.fetch(biosample_id)
-
-                            attributes = {x["@attribute_name"]: x["#text"] for x in
-                                          biosampledata["Attributes"]["Attribute"]}
+                            records = biosampledata["Attributes"]["Attribute"]
+                            if isinstance(records, dict):
+                                records = [records]
+                            attributes = {x["@attribute_name"]: x["#text"] for x in records}
 
                             sample_geo_props = ['geographic location (country and/or sea)', 'geo_loc_name',
                                                 'Origin (developed or donated from)', "birth_location",

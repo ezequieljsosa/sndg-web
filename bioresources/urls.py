@@ -22,7 +22,7 @@ urlpatterns = [
     path('barcode/<int:pk>', views.barcode, name='barcode_view'),
 
     path('bioproject/<int:pk>', views.bioproject, name='bioproject_view'),
-    path('organization/<int:pk>', views.organization, name='org_view'),
+    path('organization/<int:pk>', views.organization, name='organization_view'),
     path('person/<int:pk>', views.person, name='person_view'),
     path('expression/<int:pk>', views.expression, name='expression_view'),
     path('assembly/<int:pk>', views.assembly, name='assembly_view'),
@@ -40,5 +40,10 @@ urlpatterns = [
 
     path('upload/', view=ResumableUploadView.as_view(), name='upload'),
     # path('upload_api/', view=ResumableUploadView.as_view(),  name='upload_api'),
+
+
+    path('available_tools/', view=ResumableUploadView.as_view(), name='available_tools'),
+    path('stats/', view=ResumableUploadView.as_view(), name='stats'),
+    path('about/', view=ResumableUploadView.as_view(), name='about'),
 
 ]

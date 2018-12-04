@@ -8,7 +8,7 @@ SNDG Web Apps
 pip install  git+https://github.com/ezequieljsosa/elsapy.git@complete_view_fields
 
 
-./manage  build_solr_schema -u default > data/sndg_solr/schema.xml
+./manage.py  build_solr_schema -u default > /data/sndg_solr/schema.xml
 
 docker run -v $PWD/data/sndg_solr:/opt/solr/server/solr/Notes --name sndg_solr7 -d -p 127.0.0.1:8984:8983 -t solr:7 
 docker exec -u root     sndg_solr7 bash -c 'chown 8983:8983 /opt/solr/server/solr/Notes'

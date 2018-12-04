@@ -36,29 +36,29 @@ resources = [
     # {"name": "Genomas", "count": 99, "icon": "circle", "type": "genome"},
     {"name": __("Proteins"), "count": 99,
      "icon": "puzzle-piece",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.PROTEIN].lower()},
+     "type": Resource.RESOURCE_TYPES.PROTEIN},
     {"name": __("Tools"), "count": 99, "icon": "wrench",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.TOOL].lower()},
+     "type": Resource.RESOURCE_TYPES.TOOL},
     {"name": Structure._meta.verbose_name_plural, "count": 99,
      "icon": "sitemap",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.STRUCTURE].lower()},
+     "type": Resource.RESOURCE_TYPES.STRUCTURE},
     {"name": Barcode._meta.verbose_name_plural, "count": 99,
      "icon": "barcode",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.BARCODE].lower()},
+     "type": Resource.RESOURCE_TYPES.BARCODE},
     {"name": Assembly._meta.verbose_name_plural, "count": 99,
      "icon": "adn",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.ASSEMBLY].lower()},
+     "type": Resource.RESOURCE_TYPES.ASSEMBLY},
     {"name": BioProject._meta.verbose_name_plural, "count": 99,
      "icon": "briefcase",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.BIOPROJECT].lower()},
+     "type": Resource.RESOURCE_TYPES.BIOPROJECT},
     {"name": Publication._meta.verbose_name_plural, "count": 99,
      "icon": "book",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.PUBLICATION].lower()},
+     "type": Resource.RESOURCE_TYPES.PUBLICATION},
     {"name": __("Organizations"), "count": 99, "icon": "building", "type": "org"},
     {"name": __("Persons"), "count": 99, "icon": "user", "type": "person"},
     {"name": Expression._meta.verbose_name_plural, "count": 99,
      "icon": "sliders-h",
-     "type": Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.EXPRESSION].lower()},
+     "type": Resource.RESOURCE_TYPES.EXPRESSION},
 
 ]
 
@@ -89,7 +89,7 @@ def index(request):
         rdata = defaultdict(lambda: 0)
     count = 0
     for r in resources:
-        r["count"] = rdata[r["type"]]
+        r["count"] = rdata[str(r["type"])]
         count += rdata[r["type"]]
 
     suggestions = []
@@ -132,7 +132,7 @@ def assembly(request, pk):
 
 def publication(request, pk):
     publication = Publication.objects.prefetch_related("targets__target").get(id=pk)
-    orgs = publication.affiliation_names(all=True)
+    orgs = publication.affiliation_names()
     authors = []
     for aff in publication.affiliations.all():
         author = aff.author.complete_name() + " " + " ".join(
@@ -164,7 +164,9 @@ def organization(request, pk):
                   "?q=*&affiliations=" + organization.name + "&type=")
     return render(request, 'resources/organization.html', {
         "organization": organization, "facets": facets, "search_url": search_url,
-        "sidebarleft": 1, "nameMap": {"person": "Investigadores", "pmc": "Publicaciones"}})
+        "sidebarleft": 1, "nameMap":
+            {"person": Person._meta.verbose_name_plural,
+             Resource.RESOURCE_TYPES.PUBLICATION: Publication._meta.verbose_name_plural}})
 
 
 def person(request, pk):
@@ -180,7 +182,8 @@ def person(request, pk):
 
     return render(request, 'resources/person.html', {
         "person": person, "facets": facets, "search_url": search_url,
-        "nameMap": {"person": "Investigadores", "pmc": "Publicaciones"},
+        "nameMap": {"person": Person._meta.verbose_name_plural,
+                    Resource.RESOURCE_TYPES.PUBLICATION: Publication._meta.verbose_name_plural},
         "sidebarleft": 1, })
 
 
@@ -210,12 +213,12 @@ def tool(request, pk):
         "tool": tool,
         "sidebarleft": 1, })
 
+
 def reads(request, pk):
     tool = Tool.objects.get(id=pk)
     return render(request, 'resources/reads.html', {
         "tool": tool,
         "sidebarleft": 1, })
-
 
 
 from django_filters.views import FilterView
@@ -255,10 +258,6 @@ class BioSearchView(SearchView):
         # authors
         # affiliations
         context["dbtype"] = self.get_form_kwargs()["data"]["type"]
-
-        for x in context["page_obj"].object_list:
-            if x:
-                x.sndg_url = reverse("bioresources:" + context["dbtype"] + '_view', kwargs={"pk": x.object.id})
 
         prange = list(context["page_obj"].paginator.page_range)
 

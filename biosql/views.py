@@ -4,7 +4,7 @@ from django.views.generic import TemplateView, DetailView
 from django.db.models import Prefetch
 
 from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology,SeqfeatureQualifierValue
-from bioresources.models import Assembly, Publication,Sample
+from bioresources.models import Assembly, Publication,Sample,Resource
 from django.db.models import Q
 
 
@@ -110,7 +110,7 @@ def publications_from_resource_graph(resource, graph, external_orgs, resource_id
     if not resource_identifier:
         resource_identifier = resource.name
 
-    for x in resource.sources.filter(source__type="pmc").all():
+    for x in resource.sources.filter(source__type=Resource.RESOURCE_TYPES.PUBLICATION).all():
 
         graph["nodes"].append({"id": x.source.name, "label": labelize(x.source.name), "color": "SlateBlue"})
         graph["edges"].append({"from": resource_identifier, "to": x.source.name})

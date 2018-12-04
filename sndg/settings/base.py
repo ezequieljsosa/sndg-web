@@ -175,7 +175,7 @@ HAYSTACK_CONNECTIONS = {
         'INCLUDE_SPELLING': True,
         # ...or for multicore...
         # 'URL': 'http://127.0.0.1:8983/solr/mysite',
-        'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndexOAI'],
+        'EXCLUDED_INDEXES': ['bioresources.search_indexes.ResourceIndexOAI'],
     },
     'oai': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',

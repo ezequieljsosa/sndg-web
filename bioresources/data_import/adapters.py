@@ -9,7 +9,7 @@ from django.db import transaction
 from urllib.error import URLError
 
 
-def retry(q, n=3):
+def retry(q, n=4):
     for _ in range(n):
         try:
             data = q()
@@ -138,7 +138,7 @@ class NCBIBioSampleAdapter:
 
         ontology = Ontology.objects.get_or_create(name="NCBI sample", definition="Attributes of an NCBI Sample")[0]
 
-        s = Sample(type=Resource.RESOURCE_TYPES.SAMPLE, name=acc, description=desc)
+        s = Sample( name=acc, description=desc)
 
         if ("Organism" in summaryData["Description"]) and ("@taxonomy_id" in summaryData["Description"]["Organism"]):
             tax = summaryData["Description"]["Organism"]['@taxonomy_id']
@@ -156,7 +156,11 @@ class NCBIBioSampleAdapter:
         s.save()
         s.publishers.add(ncbi_org)
 
-        for x in summaryData["Attributes"]["Attribute"]:
+        records = summaryData["Attributes"]["Attribute"]
+        if isinstance(records, dict):
+            records = [records]
+
+        for x in records:
             if x["#text"].strip() and (x["#text"] != "."):
                 term = Term.objects.get_or_create(
                     ontology=ontology, name=x["@attribute_name"], identifier=x["@attribute_name"][:255])[0]
@@ -177,8 +181,8 @@ class NCBISRAAdapter:
 
     def save(self, summaryData, ncbi_id):
         ncbi_org = Organization.objects.get(name="NCBI")
-        expData = xmltodict.parse("<xml>" + Entrez.read(
-            retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))[0]["ExpXml"] + "</xml>")["xml"]
+        sra_record = Entrez.read(  retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))
+        expData = xmltodict.parse("<xml>" + sra_record[0]["ExpXml"] + "</xml>")["xml"]
         acc = expData["Experiment"]["@acc"]
 
         qs = ReadsArchive.objects.filter(external_ids__identifier=acc, external_ids__type="accession")

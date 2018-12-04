@@ -3,8 +3,12 @@ from tqdm import tqdm
 from haystack import indexes
 from django.db.models import Prefetch
 from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation, \
-    Barcode,Resource
-from biosql.models import Bioentry, Biodatabase, Tool
+    Barcode, Resource, Tool, ResourceRelation
+from biosql.models import Bioentry, Biodatabase
+from django.conf import settings
+import sys
+
+only_not_indexed = sys.argv[1] in ["rebuild_index", "update_index"]  # for solr index updating
 
 """
 python manage.py build_solr_schema > /opt/solr-7.3.1/server/solr/eze_core/schema.xml
@@ -12,9 +16,8 @@ python manage.py rebuild_index
 python manage.py update_index
 """
 
+
 class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
-
-
     """
     "item.id":1,
         "item.handle":"oai:localhost:tede/5",
@@ -35,23 +38,25 @@ class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
           "Medicina Interna; Medicina e Ciências Correlatas"],
 
     """
-    text = indexes.CharField(document=True, use_template=True,index_fieldname="metadata.search")
+    text = indexes.CharField(document=True, use_template=True, index_fieldname=settings.HAYSTACK_DOCUMENT_FIELD)
 
-    item_id =  indexes.IntegerField(model_attr='id',index_fieldname="item.id")
-    item_handle = indexes.CharField(model_attr='permalink',index_fieldname="item.handle")
-    item_lastmodified = indexes.DateTimeField(model_attr='updated_at',index_fieldname="item.lastmodified")
-    item_submitter = indexes.CharField(model_attr='oai_submitter',index_fieldname="item.submitter")
-    item_deleted = indexes.BooleanField(model_attr='deprecated',index_fieldname="item.deleted")
-    item_public = indexes.BooleanField(model_attr='oai_public',index_fieldname="item.public")
-    item_collections = indexes.MultiValueField(model_attr='oai_collections',index_fieldname="item.collections")
-    item_communities = indexes.MultiValueField(model_attr='oai_communities',index_fieldname="item.communities")
+    item_id = indexes.IntegerField(model_attr='id', index_fieldname="item.id")
+    item_handle = indexes.CharField(model_attr='permalink', index_fieldname="item.handle")
+    item_lastmodified = indexes.DateTimeField(model_attr='updated_at', index_fieldname="item.lastmodified")
+    item_submitter = indexes.CharField(model_attr='oai_submitter', index_fieldname="item.submitter")
+    item_deleted = indexes.BooleanField(model_attr='deprecated', index_fieldname="item.deleted")
+    item_public = indexes.BooleanField(model_attr='oai_public', index_fieldname="item.public")
+    item_collections = indexes.MultiValueField(model_attr='oai_collections', index_fieldname="item.collections")
+    item_communities = indexes.MultiValueField(model_attr='oai_communities', index_fieldname="item.communities")
 
-    item_compile = indexes.CharField(model_attr='compile',index_fieldname="item.compile")
+    item_compile = indexes.CharField(model_attr='compile', index_fieldname="item.compile")
 
-    metadata_dc_language = indexes.MultiValueField(model_attr='metadata_dc_language',index_fieldname="metadata.dc.language")
-    metadata_dc_rights = indexes.MultiValueField(model_attr='metadata_dc_rights',index_fieldname="metadata.dc.rights")
-    metadata_dc_format = indexes.MultiValueField(model_attr='metadata_dc_format',index_fieldname="metadata.dc.format")
-    metadata_dc_publisher = indexes.MultiValueField(model_attr='metadata_dc_publisher',index_fieldname="metadata.dc.publisher")
+    metadata_dc_language = indexes.MultiValueField(model_attr='metadata_dc_language',
+                                                   index_fieldname="metadata.dc.language")
+    metadata_dc_rights = indexes.MultiValueField(model_attr='metadata_dc_rights', index_fieldname="metadata.dc.rights")
+    metadata_dc_format = indexes.MultiValueField(model_attr='metadata_dc_format', index_fieldname="metadata.dc.format")
+    metadata_dc_publisher = indexes.MultiValueField(model_attr='metadata_dc_publisher',
+                                                    index_fieldname="metadata.dc.publisher")
 
     def get_model(self):
         return Resource
@@ -84,11 +89,7 @@ class PublicationIndex(indexes.SearchIndex, indexes.Indexable):
         return Publication
 
     def index_queryset(self, using=None):
-        """Used when the entire index for model is updated."""
-        return self.get_model().objects.prefetch_related(
-            "affiliations", "affiliations__organizations", "affiliations__author", "targets__target"
-        ).filter(deprecated=False, index_updated=False,
-                 targets__target__type__in=["gds", "assembly", "bioproject", "structure"])
+        return (self.get_model().objects.filter(targets__isnull=False)).distinct()
 
 
 class StructureIndex(indexes.SearchIndex, indexes.Indexable):
@@ -113,13 +114,7 @@ class StructureIndex(indexes.SearchIndex, indexes.Indexable):
 
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
-        qs = (Publication.objects.prefetch_related(
-            "affiliations__organizations", "affiliations__author")
-            .filter(affiliations__organizations__country="Argentina"))
-        return (self.get_model().objects.prefetch_related("ncbi_tax__names")
-            .prefetch_related(Prefetch("targets__source",
-                                       queryset=qs))
-            .filter(deprecated=False, index_updated=False))
+        return self.get_model().objects.publication_related("Argentina", only_not_indexed)
 
 
 class AssemblyIndex(indexes.SearchIndex, indexes.Indexable):
@@ -144,7 +139,7 @@ class AssemblyIndex(indexes.SearchIndex, indexes.Indexable):
         return Assembly
 
     def index_queryset(self, using=None):
-        return self.get_model().objects.publication_related("Argentina")
+        return self.get_model().objects.publication_related("Argentina", only_not_indexed)
 
 
 class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
@@ -165,19 +160,14 @@ class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
         return Expression
 
     def index_queryset(self, using=None):
-        qs = (Publication.objects.prefetch_related(
-            "affiliations__organizations", "affiliations__author")
-            .filter(affiliations__organizations__country="Argentina"))
-        return (self.get_model().objects.prefetch_related("ncbi_tax__names")
-            .prefetch_related(Prefetch("targets__source", queryset=qs))
-            .filter(deprecated=False, index_updated=False))
+        return self.get_model().objects.publication_related("Argentina", only_not_indexed)
 
 
 class ToolIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr='name')
     description = indexes.CharField(model_attr='description')
-    type = indexes.CharField(model_attr='rtype', faceted=True)
+    type = indexes.CharField(model_attr='type', faceted=True)
 
     def get_model(self):
         return Tool
@@ -209,14 +199,7 @@ class BioProjectIndex(indexes.SearchIndex, indexes.Indexable):
         return BioProject
 
     def index_queryset(self, using=None):
-        qs = (Publication.objects.prefetch_related(
-            "affiliations__organizations", "affiliations__author")
-            .filter(affiliations__organizations__country="Argentina"))
-
-        return (self.get_model().objects.prefetch_related("ncbi_tax__names")
-            .prefetch_related(Prefetch("targets__source",
-                                       queryset=qs))
-            .filter(deprecated=False, index_updated=False))
+        return self.get_model().objects.publication_related("Argentina", only_not_indexed)
 
 
 class PersonIndex(indexes.SearchIndex, indexes.Indexable):
@@ -232,12 +215,11 @@ class PersonIndex(indexes.SearchIndex, indexes.Indexable):
         return Person
 
     def index_queryset(self, using=None):
-        # qs = (Affiliation.objects.select_related(
-        #     "affiliations__organizations"))
+        # q = { "deprecated": False }
+        # if only_not_indexed:
+        #     q["index_updated"] = False
 
-        return (self.get_model().objects
-            .prefetch_related("affiliations__organizations")
-            .filter(deprecated=False, index_updated=False))
+        return (self.get_model().objects.filter(affiliations__publication__targets__isnull=False).distinct())
 
 
 class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
@@ -251,7 +233,11 @@ class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
         return Organization
 
     def index_queryset(self, using=None):
-        return (self.get_model().objects.filter(country="Argentina"))  # TODO deprecated=False, index_updated=False
+        q = {"country": "Argentina",
+             "deprecated": False}
+        if only_not_indexed:
+            q["index_updated"] = False
+        return self.get_model().objects.filter(affiliations__publication__targets__isnull=False, **q).distinct()
 
 
 class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
@@ -268,8 +254,8 @@ class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
         return Barcode
 
     def index_queryset(self, using=None):
-        return (self.get_model().objects.filter(country="Argentina",
-                                                deprecated=False, index_updated=False))
-
-
-
+        q = {"country": "Argentina",
+             "deprecated": False}
+        if only_not_indexed:
+            q["index_updated"] = False
+        return (self.get_model().objects.filter(**q))

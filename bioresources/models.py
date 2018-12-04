@@ -103,11 +103,22 @@ class Person(models.Model):
     scopus_names = models.TextField(null=True)
     email = models.EmailField()
 
+    deprecated = models.BooleanField(default=False)
+    index_updated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = __("Persons")
+
     def __str__(self):
         return self.name + " " + self.surname
 
     def rtype(self):
         return "person"
+
+    def get_absolute_url(self):
+        return reverse('bioresources:person_view', args=[str(self.id)])
 
     def organizations(self):
         organizations = []
@@ -146,8 +157,19 @@ class Organization(models.Model):
     scopus_id = models.CharField(max_length=200, null=True)
     scopus_names = models.TextField(null=True)
 
+    deprecated = models.BooleanField(default=False)
+    index_updated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = __("Organizations")
+
     def rtype(self):
         return "org"
+
+    def get_absolute_url(self):
+        return reverse('bioresources:organization_view', args=[str(self.id)])
 
     def __str__(self):
         return " ".join([x for x in [self.name, "|", self.country, self.city] if x])
@@ -185,8 +207,8 @@ class Resource(models.Model):
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
 
-    creators = models.ManyToManyField(Organization, related_name="created_resources",blank=True)
-    publishers = models.ManyToManyField(Organization, related_name="published_resources",blank=True)
+    creators = models.ManyToManyField(Organization, related_name="created_resources", blank=True)
+    publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
     keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
 
     ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",
@@ -211,13 +233,13 @@ class Resource(models.Model):
         super(Resource, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower() , args=[str(self.id)])
+        return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower(), args=[str(self.id)])
 
     def compile(self):
         templ = get_template("resources/xoai_resource.xml")
         return templ.render({"r": self})
 
-        #return compile_data
+        # return compile_data
 
     def ncbi_tax_keywords(self):
         return self.ncbi_tax.keywords.text if self.ncbi_tax else None
@@ -229,7 +251,7 @@ class Resource(models.Model):
         return True
 
     def oai_collections(self):
-        return [ "sndg." +  Resource.RESOURCE_TYPES[self.type].lower() ]
+        return ["sndg." + Resource.RESOURCE_TYPES[self.type].lower()]
 
     def oai_communities(self):
         return ["sndg"]
@@ -270,8 +292,8 @@ class ResourceRelation(models.Model):
         verbose_name_plural = __("Resource Relations")
 
     def __str__(self):
-        return ("(" + self.source.type + ":" + str(self.source.id) +
-                ") -> " + "(" + self.target.type + ":" + str(self.target.id) + ")")
+        return ("(" + str(self.source.type) + ":" + str(self.source.id) +
+                ") -> " + "(" + str(self.target.type) + ":" + str(self.target.id) + ")")
 
 
 class BioProject(Resource):
@@ -371,13 +393,14 @@ class Publication(Resource):
 class Affiliation(models.Model):
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name="affiliations")
     author = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="affiliations")
-    organizations = models.ManyToManyField(Organization)
+    organizations = models.ManyToManyField(Organization, related_name="affiliations")
 
     class Meta:
         verbose_name_plural = __("Affiliations")
 
     def __str__(self):
-        return ("Affiliation: (%s) (%s) (%s) " % [str(x) for x in [self.author, self.publication] + self.organizations])
+        return ("Affiliation: (%s) (%s) (%s) " % [str(x) for x in [self.author, self.publication] + [x.name for x in
+                                                                                                     self.organizations.all()]])
 
 
 class ExternalId(models.Model):
@@ -422,7 +445,7 @@ class Assembly(Resource):
     )
     ASSEMBLY_TYPES = Choices(
         *[(i, x, _(x)) for i, x in enumerate([
-            "haploid", 'diploid', "other",
+            "haploid", 'diploid', "other", "unresolved-diploid"
         ])]
     )
 
@@ -530,6 +553,7 @@ class ReadsArchive(Resource):
 
     class Meta:
         verbose_name_plural = __("Reads Archive")
+
 
 class Tool(Resource):
     TYPE = Resource.RESOURCE_TYPES.TOOL
