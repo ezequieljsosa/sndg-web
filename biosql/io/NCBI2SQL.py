@@ -43,7 +43,8 @@ class NCBI2SQL():
 
         cmd = 'rsync --recursive --include="*_genomic.gbff.gz" --exclude="*"   rsync://ftp.ncbi.nlm.nih.gov/genomes/all/' + asspath + '/ "' + \
               workdir + '"'
-        sp.call(cmd, shell=True)
+        with open(os.devnull, 'w') as FNULL:
+            sp.call(cmd, shell=True,stdout=FNULL)
 
     def create_contigs(self, accession, genebank,description=""):
         if not Biodatabase.objects.filter(name=accession).exists():

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.test import TestCase
 
-from bioresources.data_import.adapters import NCBIGDSAdapter
+from bioresources.io.adapters import NCBIGDSAdapter
 
 import unittest
 

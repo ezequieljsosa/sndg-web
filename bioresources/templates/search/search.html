@@ -90,7 +90,7 @@ color : red;
                 <h3>Search <strong>{{page_obj.paginator.count}}</strong> results for "<strong>{{query}}</strong>"</h3>
                </div>
                 <div class="col-md-6">
-                <nav aria-label="Page navigation example">
+                <nav aria-label="Page navigation">
                 {{page_obj}}
                     <ul class="pagination justify-content-left">
                       <li class="page-item"><a class="page-link" href="?page=1&q={{query}}&{{params|qs_without_parameter:'page'}}">First</a></li>

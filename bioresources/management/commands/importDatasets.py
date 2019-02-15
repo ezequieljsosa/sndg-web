@@ -12,8 +12,8 @@ from biosql.models import Taxon
 from django.db import transaction
 import requests
 import subprocess as sp
-from bioresources.data_import.scopus import ScopusDS
-from bioresources.data_import.adapters import scopus_extended_publication, NCBIGDSAdapter, NCBIAssemblyAdapter, \
+from bioresources.io.scopus import ScopusDS
+from bioresources.io.adapters import scopus_extended_publication, NCBIGDSAdapter, NCBIAssemblyAdapter, \
     NCBIBioSampleAdapter, NCBISRAAdapter, NCBIStructureAdapter
 from bioresources.models import ProcessStatus, ProcessStatusStep, Organization, ResourceRelation, Resource
 

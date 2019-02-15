@@ -8,9 +8,10 @@ urlpatterns = [
     path('tax/<int:pk>', views.TaxView.as_view(), name='tax_view'),
     path('seq/<int:pk>', views.sequence_view, name='seq_view'),
     path('assembly/<int:pk>', views.assembly_view, name='assembly_view'),
-    path('sequence/<int:pk>', views.TaxView.as_view(), name='sequence_view'),
     path('seq/<str:locus_tag>', views.sequence_lt_view, name='sequence_lt_view'),
 
+    path('geneproducts', views.gene_product_list_view, name='gene_product_list'),
+    path('protein', views.protein_list_view, name='protein_list'),
 
 
     path('variant/<int:pk>', views.TaxView.as_view(), name='variant_view'),

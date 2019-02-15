@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument('--ontology', required=True, choices=["go", "so"])
 
     def create_base_terms(self):
-        sfs_ontology = Ontology.objects.get_or_create(name="SeqFeature Sources")[0]
+        sfs_ontology = Ontology.objects.get_or_create(name=Ontology.SFS)[0]
         Term.objects.get_or_create(identifier="manual", name="manual", version=1, ontology=sfs_ontology,
                                    definition="added or corrected by a person")
         Term.objects.get_or_create(identifier="bibliography", name="bibliography", version=1, ontology=sfs_ontology,
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         Term.objects.get_or_create(identifier="other", name="other", version=1, ontology=sfs_ontology,
                                    definition="")
 
-        graph_ontology = Ontology.objects.get_or_create(name="Graph", definition="")[0]
+        graph_ontology = Ontology.objects.get_or_create(name=Ontology.GRAPH, definition="")[0]
 
         self.is_a = \
         Term.objects.get_or_create(identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")[0]
@@ -234,9 +234,9 @@ class Command(BaseCommand):
             options["relationships_obo_path"] = options["obo_path"]
         self.relationships_obo_path = options["relationships_obo_path"]
         if options["ontology"] == "go":
-            self.ontology_name = "Gene Ontology"
+            self.ontology_name = Ontology.GO
         elif options["ontology"] == "so":
-            self.ontology_name = "Sequence Ontology"
+            self.ontology_name = Ontology.SO
 
         self.obo_path = options["obo_path"]
 

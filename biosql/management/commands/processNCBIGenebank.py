@@ -16,7 +16,7 @@ from tqdm import tqdm
 import math
 from django.db import transaction
 import pandas as pd
-from biosql.data_import.NCBI2SQL import NCBI2SQL
+from biosql.io.NCBI2SQL import NCBI2SQL
 
 import environ
 
@@ -47,6 +47,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         ncbi2sql = NCBI2SQL()
+        dbhost = env.db()["HOST"]
+        dbname = env.db()["NAME"]
+        dbpass = env.db()["PASSWORD"]
+        dbuser = env.db()["USER"]
+        # dbport = env.db()["PORT"]
+        # dbtype = "mysql" if "mysql" in env.db()["ENGINE"] else "pg"
+
 
         options["workDir"] = os.path.abspath(options["workDir"])
         assert os.path.exists(options["workDir"]), "%s does not exists" % options["workDir"]
@@ -55,27 +62,20 @@ class Command(BaseCommand):
             self.stderr.write(options["accession"] + " not found")
             return 1
         assembly = assemblyqs.first()
+        if not Biodatabase.objects.filter(name=options["accession"]).exists():
+            ncbi2sql.download(assembly.name, options["workDir"])
+            genebank = glob(options["workDir"] + "/" + options["accession"] + "*.gbff.gz")[0]
 
-        ncbi2sql.download(assembly, options["workDir"])
-        genebank = glob(options["workDir"] + "/" + options["accession"] + "*.gbff.gz")[0]
+            if "mysql" in env.db()["ENGINE"]:
+                dbdriver = "MySQLdb"
+            elif "post" in env.db()["ENGINE"]:
+                dbdriver = "psycopg2"
+            else:
+                raise Exception("database not supported")
 
-        if "mysql" in env.db()["ENGINE"]:
-            dbdriver = "MySQLdb"
-        elif "post" in env.db()["ENGINE"]:
-            dbdriver = "psycopg2"
-        else:
-            raise Exception("database not supported")
-
-        dbhost = env.db()["HOST"]
-        dbname = env.db()["NAME"]
-        dbpass = env.db()["PASSWORD"]
-        dbuser = env.db()["USER"]
-        # dbport = env.db()["PORT"]
-        # dbtype = "mysql" if "mysql" in env.db()["ENGINE"] else "pg"
-
-        server = ncbi2sql.connect_to_server(dbuser, dbpass, dbname, dbdriver, dbhost)
-        ncbi2sql.create_contigs(options["accession"],genebank)
-        ncbi2sql.create_proteins(options["accession"])
+            ncbi2sql.connect_to_server(dbuser, dbpass, dbname, dbdriver, dbhost)
+            ncbi2sql.create_contigs(options["accession"],genebank)
+            ncbi2sql.create_proteins(options["accession"])
 
         faa_path = options["workDir"] + "/" + options["accession"] + ".faa"
         ncbi2sql.protein_fasta(options["accession"],faa_path)
@@ -102,7 +102,7 @@ class Command(BaseCommand):
         cols = "query_name,seed_eggNOG_ortholog,seed_ortholog_evalue,seed_ortholog_score,predicted_gene_name,GO_terms,KEGG_KOs,BiGG_reactions,Annotation_tax_scope,OGs,bestOG|evalue|score,COG cat,eggNOG annot"
         df_egg = pd.read_table(ann_eggnog, comment="#", names=cols.split(","))
         GO_ROOT_TERMS = ["GO:0008150", "GO:0005575", "GO:0003674"]
-        go_ontology = Ontology.objects.filter(name="Gene Ontology").get()
+        go_ontology = Ontology.objects.filter(name=Ontology.GO).get()
         df_egg = df_egg.fillna(value=False)
         for _, row in tqdm(df_egg.iterrows(), total=len(df_egg)):
             with transaction.atomic():

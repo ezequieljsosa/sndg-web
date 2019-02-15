@@ -39,3 +39,5 @@ class BioResourceManager(models.Manager):
         if attr.startswith("_"):
             raise AttributeError
         return getattr(self.get_query_set(), attr, *args)
+
+

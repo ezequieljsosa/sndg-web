@@ -9,11 +9,14 @@ from django.db import models
 from collections import defaultdict
 
 from itertools import groupby
+from .managers import SeqfeatureManager,BioentryManager
+
+from django.shortcuts import redirect, reverse
 
 """
-ALTER TABLE taxon_name ADD COLUMN id INT auto_increment PRIMARY KEY;
-ALTER TABLE bioentry_qualifier_value  ADD COLUMN id INT auto_increment PRIMARY KEY;
-ALTER TABLE term_synonym  ADD COLUMN id INT auto_increment PRIMARY KEY;
+ALTER TABLE taxon_name ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
+ALTER TABLE bioentry_qualifier_value  ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
+ALTER TABLE term_synonym  ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
 ALTER TABLE term ADD version INT UNSIGNED DEFAULT 1;
 
 """
@@ -29,6 +32,9 @@ class Biodatabase(models.Model):
         managed = True
         db_table = 'biodatabase'
 
+    def get_absolute_url(self):
+        return reverse('biosql:assembly_view', args=[str(self.biodatabase_id)])
+
 
 class Bioentry(models.Model):
     bioentry_id = models.AutoField(primary_key=True)
@@ -41,10 +47,17 @@ class Bioentry(models.Model):
     description = models.TextField(blank=True, null=True)
     version = models.PositiveSmallIntegerField(default=1, null=True)
 
+    index_updated = models.BooleanField(default=False)
+
+    objects = BioentryManager()
+
     class Meta:
         managed = True
         db_table = 'bioentry'
         unique_together = (('accession', 'biodatabase', 'version'), ('identifier', 'biodatabase'),)
+
+    def get_absolute_url(self):
+        return reverse('biosql:seq_view', args=[str(self.bioentry_id)])
 
     def groupedFeatures(self):
         group = defaultdict(lambda: [])
@@ -59,17 +72,54 @@ class Bioentry(models.Model):
             data[f.type_term.name] += 1
         return dict(data)
 
+    def genes(self):
+        beg = Biodatabase.objects.get(name=self.biodatabase.name.replace("_prots", ""))
+        feature = Seqfeature.objects.seqfeature_from_locus_tag(beg.biodatabase_id, self.accession)
+        feature = list(feature)[0]
+        return [x.value for x in
+                feature.qualifiers.filter(
+                    term__name__in=["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"])]
+
+    def description(self):
+        qs = self.qualifiers.filter(term__name="product")
+        return qs.value if qs.exists() else None
+
+    def molecular_weight(self):
+        qs = self.qualifiers.filter(term__name="molecular_weight")
+        return qs.value if qs.exists() else None
+
+
+
+    def go_terms(self, database):
+        return self.qualifiers.filter(term__dbxrefs__dbxref__dbname="go",
+                                      term__dbxrefs__dbxref__accession=database)
+        # term__dbxrefs__dbxref__accession="goslim_generic",
+
+    def biological_process(self):
+        return self.go_terms("biological_process")
+
+    def molecular_function(self):
+        return self.go_terms("molecular_function")
+
+    def cellular_component(self):
+        return self.go_terms("cellular_component")
+
+    def ftype(self):
+        return "protein"
+
+
+
 
 class BioentryDbxref(models.Model):
     bioentry_dbxref_id = models.AutoField(primary_key=True)
-    bioentry = models.ForeignKey(Bioentry, models.CASCADE,  related_name="dbxrefs")
+    bioentry = models.ForeignKey(Bioentry, models.CASCADE, related_name="dbxrefs")
     dbxref = models.ForeignKey('Dbxref', models.DO_NOTHING)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True
         db_table = 'bioentry_dbxref'
-        unique_together = (('bioentry', 'dbxref','rank'),)
+        unique_together = (('bioentry', 'dbxref', 'rank'),)
 
 
 class BioentryPath(models.Model):
@@ -90,7 +140,7 @@ class BioentryQualifierValue(models.Model):
     bioentry = models.ForeignKey(Bioentry, models.CASCADE, related_name="qualifiers")
     term = models.ForeignKey('Term', models.DO_NOTHING)
     value = models.TextField(blank=True, null=True)
-    rank = models.IntegerField(default=1,null=True)
+    rank = models.IntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -104,7 +154,7 @@ class BioentryReference(models.Model):
     reference = models.ForeignKey('Reference', models.DO_NOTHING)
     start_pos = models.IntegerField(blank=True, null=True)
     end_pos = models.IntegerField(blank=True, null=True)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -117,7 +167,7 @@ class BioentryRelationship(models.Model):
     object_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="object_bioentry_relationship")
     subject_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="subject_bioentry_relationship")
     term = models.ForeignKey('Term', models.DO_NOTHING)
-    rank = models.IntegerField(default=1,null=True)
+    rank = models.IntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -141,7 +191,7 @@ class Comment(models.Model):
     comment_id = models.AutoField(primary_key=True)
     bioentry = models.ForeignKey(Bioentry, models.CASCADE)
     comment_text = models.TextField()
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -167,7 +217,7 @@ class Dbxref(models.Model):
 class DbxrefQualifierValue(models.Model):
     dbxref = models.OneToOneField(Dbxref, models.DO_NOTHING, primary_key=True)
     term = models.ForeignKey('Term', models.DO_NOTHING)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
     value = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -184,12 +234,15 @@ class Location(models.Model):
     start_pos = models.IntegerField(blank=True, null=True)
     end_pos = models.IntegerField(blank=True, null=True)
     strand = models.IntegerField()
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True
         db_table = 'location'
         unique_together = (('seqfeature', 'rank'),)
+
+    def __str__(self):
+        return "%i-%i(%s)" % (self.start_pos, self.end_pos, "+" if self.strand == 1 else "-")
 
 
 class LocationQualifierValue(models.Model):
@@ -205,6 +258,12 @@ class LocationQualifierValue(models.Model):
 
 
 class Ontology(models.Model):
+    GO = "Gene Ontology"
+    SO = "Sequence Ontology"
+    EC = "Enzyme Commission number"
+    SFS = "SeqFeature Sources"
+    GRAPH = "Graph"
+
     ontology_id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=32)
     definition = models.TextField(blank=True, null=True)
@@ -268,27 +327,50 @@ class ToolRun(models.Model):
 
 
 class Seqfeature(models.Model):
+
+    ENTRY_TYPES = ["CDS","rRNA","tRNA","regulatory","ncRNA","mRNA","repeat"]
+
     seqfeature_id = models.AutoField(primary_key=True)
     bioentry = models.ForeignKey(Bioentry, models.CASCADE, related_name="features")
     type_term = models.ForeignKey('Term', models.DO_NOTHING, related_name="features_of_type")
     source_term = models.ForeignKey('Term', models.DO_NOTHING, related_name="source_of")
     display_name = models.CharField(max_length=64, blank=True, null=True)
-    rank = models.PositiveSmallIntegerField(default=1,null=True)
+    rank = models.PositiveSmallIntegerField(default=1, null=True)
+
+    index_updated = models.BooleanField(default=False)
 
     def qualifiers_dict(self):
         return {x.term.name: x.value for x in self.qualifiers.all()}
+
+    objects = SeqfeatureManager()
 
     class Meta:
         managed = True
         db_table = 'seqfeature'
         unique_together = (('bioentry', 'type_term', 'source_term', 'rank'),)
 
+    def locus_tag(self):
+        return self.qualifiers.get(term__name='locus_tag').value
+
+    def genes(self):
+        return [x.value for x in
+                self.qualifiers.filter(term_name__in=["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"])]
+
+    def description(self):
+        qs = self.qualifiers.filter(term__name='product')
+        if qs.exists():
+            return qs.get().value
+        return self.type_term.name
+
+    def length(self):
+        return sum([abs(x.end_pos - x.start_pos) for x in self.locations])
+
 
 class SeqfeatureDbxref(models.Model):
     seqfeature_dbxref_id = models.AutoField(primary_key=True)
     seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="dbxrefs")
     dbxref = models.ForeignKey(Dbxref, models.DO_NOTHING)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -313,13 +395,19 @@ class SeqfeatureQualifierValue(models.Model):
     seqfeature_qualifiervalue_id = models.AutoField(primary_key=True)
     seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="qualifiers")
     term = models.ForeignKey('Term', models.DO_NOTHING)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
     value = models.TextField()
 
     class Meta:
         managed = True
         db_table = 'seqfeature_qualifier_value'
         unique_together = (('seqfeature', 'term', 'rank'),)
+        indexes = [
+            models.Index(fields=['term']),
+        ]
+
+    def __str__(self):
+        return str(self.term.name) + ":" + self.value
 
 
 class SeqfeatureRelationship(models.Model):
@@ -327,7 +415,7 @@ class SeqfeatureRelationship(models.Model):
     object_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="object_relationships")
     subject_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="subject_relationships")
     term = models.ForeignKey('Term', models.DO_NOTHING)
-    rank = models.IntegerField(default=1,null=True)
+    rank = models.IntegerField(default=1, null=True)
 
     class Meta:
         managed = True
@@ -336,7 +424,6 @@ class SeqfeatureRelationship(models.Model):
 
 
 class Taxon(models.Model):
-
     SCIENTIFIC_NAME = "scientific name"
 
     taxon_id = models.AutoField(primary_key=True)
@@ -385,7 +472,7 @@ class TaxonName(models.Model):
 
 class Term(models.Model):
     term_id = models.AutoField(primary_key=True)
-    name = models.TextField(blank=True,null=True)
+    name = models.TextField(blank=True, null=True)
     definition = models.TextField(blank=True, null=True)
     identifier = models.CharField(unique=True, max_length=255, blank=True, null=True)
     is_obsolete = models.CharField(max_length=1, blank=True, null=True)
@@ -395,7 +482,7 @@ class Term(models.Model):
     class Meta:
         managed = True
         db_table = 'term'
-        #unique_together = (('name', 'ontology', 'is_obsolete'),)
+        # unique_together = (('name', 'ontology', 'is_obsolete'),)
 
     def __str__(self):
         return "%s - %s (%i)" % (self.identifier, self.name, self.ontology.ontology_id)
@@ -405,7 +492,7 @@ class TermDbxref(models.Model):
     term_dbxref_id = models.AutoField(primary_key=True)
     term = models.ForeignKey(Term, models.CASCADE, related_name="dbxrefs")
     dbxref = models.ForeignKey(Dbxref, models.DO_NOTHING)
-    rank = models.SmallIntegerField(default=1,null=True)
+    rank = models.SmallIntegerField(default=1, null=True)
 
     class Meta:
         managed = True

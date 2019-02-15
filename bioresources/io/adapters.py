@@ -164,7 +164,7 @@ class NCBIBioSampleAdapter:
             if x["#text"].strip() and (x["#text"] != "."):
                 term = Term.objects.get_or_create(
                     ontology=ontology, name=x["@attribute_name"], identifier=x["@attribute_name"][:255])[0]
-                prop = ResourceProperty.objects.create(term=term, resource=s, organization=ncbi_org)
+                prop = ResourceProperty.objects.get_or_create(term=term, resource=s, organization=ncbi_org)[0]
                 ResourcePropertyValue.objects.create(property=prop, value=x["#text"][:200])
 
         ExternalId(resource=s, organization=ncbi_org,
