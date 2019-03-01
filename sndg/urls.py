@@ -26,7 +26,7 @@ urlpatterns = [
     path('', include('bioresources.urls')),
     path('bioseq/', include('biosql.urls')),
     path('pdbdb/', include('pdbdb.urls')),
-    # path('', include('vardb.urls')),
+    path('strainq/', include('vardb.urls')),
     url(r'^crud/',  include('crudbuilder.urls')),
 
 

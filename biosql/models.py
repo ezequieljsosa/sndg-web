@@ -13,6 +13,8 @@ from .managers import SeqfeatureManager,BioentryManager
 
 from django.shortcuts import redirect, reverse
 
+
+
 """
 ALTER TABLE taxon_name ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
 ALTER TABLE bioentry_qualifier_value  ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
@@ -80,7 +82,7 @@ class Bioentry(models.Model):
                 feature.qualifiers.filter(
                     term__name__in=["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"])]
 
-    def description(self):
+    def product_description(self):
         qs = self.qualifiers.filter(term__name="product")
         return qs.value if qs.exists() else None
 

@@ -10,7 +10,7 @@ from BioSQL import BioSeqDatabase
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from bioresources.models import Assembly
+# from bioresources.models import Assembly
 from biosql.models import Biodatabase, Term, Bioentry, Ontology, BioentryQualifierValue, Dbxref, BioentryDbxref
 from tqdm import tqdm
 import math
@@ -21,8 +21,15 @@ from biosql.io.NCBI2SQL import NCBI2SQL
 import environ
 
 env = environ.Env()
-environ.Env.read_env()
+if env.str('ENV_PATH', '.env'):
+    environ.Env.read_env(env.str('ENV_PATH', '.env'))
+else:
+    environ.Env.read_env()
 
+# import logging
+# log = logging.getLogger('django.db.backends')
+# log.setLevel(logging.DEBUG)
+# log.addHandler(logging.StreamHandler())
 
 class Command(BaseCommand):
     help = 'Loads and '
@@ -45,7 +52,7 @@ class Command(BaseCommand):
         parser.add_argument('--krona', default=None)
 
     def handle(self, *args, **options):
-
+        #GCF_002103795.1 test
         ncbi2sql = NCBI2SQL()
         dbhost = env.db()["HOST"]
         dbname = env.db()["NAME"]
@@ -57,13 +64,17 @@ class Command(BaseCommand):
 
         options["workDir"] = os.path.abspath(options["workDir"])
         assert os.path.exists(options["workDir"]), "%s does not exists" % options["workDir"]
-        assemblyqs = Assembly.objects.filter(external_ids__identifier=options["accession"])
-        if not assemblyqs.exists():
-            self.stderr.write(options["accession"] + " not found")
-            return 1
-        assembly = assemblyqs.first()
-        if not Biodatabase.objects.filter(name=options["accession"]).exists():
-            ncbi2sql.download(assembly.name, options["workDir"])
+
+
+        # assemblyqs = Assembly.objects.filter(external_ids__identifier=options["accession"])
+        # if not assemblyqs.exists():
+        #     self.stderr.write(options["accession"] + " not found")
+        #     return 1
+        # assembly = assemblyqs.first()
+        #ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/195/955/GCF_000195955.2_ASM19595v2/GCF_000195955.2_ASM19595v2_genomic.gbff.gz
+        acc = "_".join( options["accession"].split("_")[:2])
+        if not Biodatabase.objects.filter(name=acc).exists():
+            ncbi2sql.download(options["accession"], options["workDir"])
             genebank = glob(options["workDir"] + "/" + options["accession"] + "*.gbff.gz")[0]
 
             if "mysql" in env.db()["ENGINE"]:
@@ -74,18 +85,18 @@ class Command(BaseCommand):
                 raise Exception("database not supported")
 
             ncbi2sql.connect_to_server(dbuser, dbpass, dbname, dbdriver, dbhost)
-            ncbi2sql.create_contigs(options["accession"],genebank)
-            ncbi2sql.create_proteins(options["accession"])
+            ncbi2sql.create_contigs(acc,genebank)
+            ncbi2sql.create_proteins(acc)
 
-        faa_path = options["workDir"] + "/" + options["accession"] + ".faa"
-        ncbi2sql.protein_fasta(options["accession"],faa_path)
+        faa_path = options["workDir"] + "/" + acc + ".faa"
+        ncbi2sql.protein_fasta(acc,faa_path)
 
 
-        self.annotate(options["accession"], faa_path)
-        if options["jbrowse"]:
-            self.jbrowse(options)
-        if options["krona"]:
-            self.krona(options)
+        # self.annotate(options["accession"], faa_path)
+        # if options["jbrowse"]:
+        #     self.jbrowse(options)
+        # if options["krona"]:
+        #     self.krona(options)
 
     def krona(self):
         pass

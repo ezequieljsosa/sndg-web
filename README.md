@@ -1,6 +1,11 @@
 # sndg-web
 SNDG Web Apps
 
+
+ALTER TABLE `sndg5`.`bioentry` 
+CHANGE COLUMN `index_updated` `index_updated` TINYINT(1) NOT NULL DEFAULT 0 ;
+
+
 /opt/solr-7.3.1/bin/solr start
 ./manage.py shell_plus --ipython --print-sql
 
