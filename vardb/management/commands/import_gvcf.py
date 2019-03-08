@@ -12,7 +12,7 @@ import json
 import os
 import logging
 from biosql.models import Bioentry, Biodatabase, Seqfeature
-from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect
+from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect,AlleleEffect
 import vcf
 import subprocess
 from tqdm import tqdm
@@ -144,7 +144,7 @@ class Command(BaseCommand):
         if sample.called:
             alt = str(variant.ALT[int(sample.data.GT) - 1])
         elif sample.data.GT == ".":
-            alt = "."
+            return
         else:
             raise Exception("Not expected...")
 
@@ -152,40 +152,51 @@ class Command(BaseCommand):
         if not allele_query.exists():
             new_allele = Allele(variant_fk=new_variant, alt=alt)
             new_allele.save()
-            if sample.data.GT != ".":
-                first = True
-                for effect in effects:
 
-                    if effect.alt == alt:
-                        new_effect = Effect(allele_fk=new_allele, transcript=effect.gene,
-                                            variant_type="|".join(effect.annotation))
-                        if effect.aa_pos:
-                            new_effect.aa_pos = effect.aa_pos
-                            new_effect.aa_ref = effect.aa_ref
-                            new_effect.aa_alt = effect.aa_alt
-                            new_effect.hgvs_p = str(effect.hgvs_p)
+            effect = effects[0]
+
+            if effect.alt == alt:
+                if effect.aa_pos:
+                    effect_query = Effect.objects.filter(transcript=effect.geneid,
+                                                         variant_type="|".join(effect.annotation),
+                                                         hgvs_p = str(effect.hgvs_p))
+                    if not effect_query.exists():
+                        new_effect = effect_query.get()
+                    else:
+                        new_effect = Effect( transcript=effect.geneid,
+                                             variant_type="|".join(effect.annotation))
+                        new_effect.aa_pos = effect.aa_pos
+                        new_effect.aa_ref = effect.aa_ref
+                        new_effect.aa_alt = effect.aa_alt
+                        new_effect.hgvs_p = str(effect.hgvs_p)
                         new_effect.save()
-                        if not new_variant.gene:
-                            if effect.feature_id in self.gene_cache:
-                                gene = self.gene_cache[effect.feature_id ]
-                            else:
-                                gene = Seqfeature.objects.get(Q(bioentry=new_variant.contig, type_term__name="gene") &
-                                                             Q(qualifiers__value=effect.feature_id,
-                                                               qualifiers__term__name="locus_tag"))
-                                self.gene_cache[effect.feature_id ] = gene
 
-                            new_variant.gene = gene
-                            new_variant.gene_pos = effect.gene_pos
-                            new_variant.save()
+                    AlleleEffect(allele_fk=new_allele,    effect_fk=new_effect).save()
+                else:
+                    new_effect = Effect( transcript=effect.gene,
+                                         variant_type="|".join(effect.annotation))
+                new_effect.save()
+                AlleleEffect(allele_fk=new_allele,    effect_fk=new_effect).save()
 
-                        if first:
-                            new_allele.main_effect = new_effect
-                            new_allele.hgvs_c = str(effect.hgvs_c)
-                            new_allele.save()
-                            first = False
 
-            else:
-                new_allele = allele_query.get()
+                if not new_variant.gene:
+                    if effect.feature_id in self.gene_cache:
+                        gene = self.gene_cache[effect.feature_id ]
+                    else:
+                        gene = Seqfeature.objects.get(Q(bioentry=new_variant.contig, type_term__name="gene") &
+                                                     Q(qualifiers__value=effect.feature_id,
+                                                       qualifiers__term__name="locus_tag"))
+                        self.gene_cache[effect.feature_id ] = gene
+
+                    new_variant.gene = gene
+                    new_variant.gene_pos = effect.gene_pos
+                    new_variant.save()
+
+
+                new_allele.main_effect = new_effect
+                new_allele.hgvs_c = str(effect.hgvs_c)
+                new_allele.save()
+
 
             assignment = Variantassignment(variant_collection_fk=vc, variant_fk=new_variant, allele_fk=new_allele)
             assignment.save()
