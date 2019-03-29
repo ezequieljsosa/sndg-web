@@ -1,5 +1,9 @@
+from collections import defaultdict
+from Bio.Seq import Seq
 from django.db import models
 from django.db.models import Q
+from model_utils import Choices
+from django.utils.translation import gettext as _
 from biosql.models import Biodatabase, Bioentry, Seqfeature, Term, Ontology
 from .managers import VariantannotationManager, ReportedAlleleManager, VariantassignmentManager
 
@@ -8,8 +12,19 @@ class Allele(models.Model):
     id = models.AutoField(primary_key=True)
     variant_fk = models.ForeignKey('Variant', models.DO_NOTHING, db_column='variant_fk', related_name="alleles")
     alt = models.CharField(max_length=255)
-    main_effect_fk = models.ForeignKey('Effect', models.DO_NOTHING, db_column='main_effect_fk', blank=True, null=True)
-    hgvs_c = models.CharField(max_length=255, blank=True, null=True)
+    main_effect_fk = models.ForeignKey('Effect', models.DO_NOTHING, db_column='main_effect_fk')
+    hgvs_c = models.CharField(max_length=255)
+
+    def check_effect(self, seq_str):
+        mut = Seq(seq_str[:self.variant_fk.pos] + self.alt + seq_str[self.variant_fk.pos + len(self.alt) - len(
+            self.variant_fk.ref):])
+        loc = self.main_effect_fk.gene.locations.all()[0]
+        start, end = loc.start_pos, loc.end_pos
+        mut = mut[start:end]
+        if loc.strand == -1:
+            mut = mut.reverse_complement()
+
+        return self.main_effect_fk.aa_alt == str(mut.translate())[self.main_effect_fk.aa_pos + 1]
 
     class Meta:
         unique_together = (('variant_fk', 'alt'),)
@@ -26,8 +41,8 @@ class AlleleEffect(models.Model):
 class Effect(models.Model):
     id = models.AutoField(primary_key=True)
 
-    transcript = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    gene = models.ForeignKey(Seqfeature, models.CASCADE, related_name="effects", null=True)
+    transcript = models.CharField(max_length=255, blank=True, db_index=True)
+    gene = models.ForeignKey(Seqfeature, models.CASCADE, related_name="effects")
     variant_type = models.CharField(max_length=255)
 
     predicted_impact = models.CharField(max_length=255, blank=True, null=True)
@@ -46,8 +61,8 @@ class Variant(models.Model):
     id = models.AutoField(primary_key=True)
     pos = models.IntegerField()
     # gene = models.CharField(max_length=255, blank=True, null=True)
-    gene = models.ForeignKey(Seqfeature, models.CASCADE, related_name="variants", null=True)
-    gene_pos = models.IntegerField(blank=True, null=True)
+    gene = models.ForeignKey(Seqfeature, models.CASCADE, related_name="variants")
+    gene_pos = models.IntegerField(blank=True)
 
     description = models.CharField(max_length=255, blank=True, null=True)
 
@@ -100,11 +115,17 @@ class Variantassignment(models.Model):
 
 class Variantcollection(models.Model):
     id = models.AutoField(primary_key=True)
-    ref_organism = models.ForeignKey(Biodatabase, models.CASCADE, "strains", null=True)
+    ref_organism = models.ForeignKey(Biodatabase, models.CASCADE, "strains")
     sample = models.CharField(max_length=255)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(max_length=255, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.sample
+
+    def __repr__(self):
+        return str(self)
 
     class Meta:
         unique_together = (('ref_organism', 'sample'),)
@@ -114,6 +135,12 @@ class Phenotype(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
 
 
 class AntibioticResistance(Phenotype):
@@ -125,27 +152,23 @@ class AntibioticResistance(Phenotype):
     def __repr__(self):
         return str(self)
 
-    def process_variant_collection(self, variant_collection, depth=30):
+    def process_variant_collection(self, genotype, variant_collection, depth=30):
         """
         processes a variant collection and creates a GenotypeSupport if needed
         :param vc: variant collection
         :return:
         """
-        genotype = Genotype.objects.filter(phenotype=self, variant_collection=variant_collection)
-        if genotype.exists():
-            genotype = genotype.get()
-        else:
-            genotype = Genotype(phenotype=self, variant_collection=variant_collection)
+
         support = []
         status_ontology = Ontology.objects.get(name=GenotypeSupport.STATUS_ONTOLOGY)
         status_conclusive = Term.objects.get(ontology=status_ontology, name="Conclusive")
         status_possible = Term.objects.get(ontology=status_ontology, name="Possible")
         status_hint = Term.objects.get(ontology=status_ontology, name="Hint")
 
-        low_conf_alleles = [x.assignment_fk.allele_fk for x in
-                            Variantannotation.objects.dp_filter(variant_collection, depth).prefetch_related(
-                                "assignment_fk__allele_fk")]
-
+        # low_conf_alleles = [x.assignment_fk.allele_fk for x in
+        #                     Variantannotation.objects.dp_filter(variant_collection, depth).prefetch_related(
+        #                         "assignment_fk__allele_fk")]
+        low_conf_alleles = []
         exact_reported = list(ReportedAllele.objects.exact_reported(self, variant_collection).exclude(
             allele__in=low_conf_alleles))
 
@@ -162,16 +185,16 @@ class AntibioticResistance(Phenotype):
             allele_fk__in=low_conf_alleles)
 
         for assignment in gene_variants:
-            if assignment not in exact_reported and assignment not in pos_reported:
+            if (assignment.allele_fk not in [r.allele for r in exact_reported]) and (
+                    assignment.allele_fk not in [r.allele for r in pos_reported]):
 
                 if (assignment.allele_fk.main_effect_fk and
                         assignment.allele_fk.main_effect_fk.variant_type == "frameshift_variant"):
-                    gene = [x for x in reported_genes if x.allele == assignment.allele_fk][0]
+                    gene = [x for x in reported_genes if x == assignment.allele_fk.variant_fk.gene][0]
                     variant_fs = [x for x in gene.effects.all() if "frameshift_variant" in x.variant_type]
 
                     if variant_fs:
-                        gs = GenotypeSupport(genotype=genotype, status=status_conclusive, assignment=assignment,
-                                             reported_genes=variant_fs[0].reported.first())
+                        gs = GenotypeSupport(genotype=genotype, status=status_conclusive, assignment=assignment)
                     else:
                         gs = GenotypeSupport(genotype=genotype, status=status_possible, assignment=assignment)
 
@@ -179,7 +202,7 @@ class AntibioticResistance(Phenotype):
                     gs = GenotypeSupport(genotype=genotype, status=status_hint, assignment=assignment)
 
                 support.append(gs)
-        return genotype, support
+        return support
 
     def get_genotype_support(self, reported_qs, variant_collection, status_term, genotype):
         support = []
@@ -187,7 +210,7 @@ class AntibioticResistance(Phenotype):
             if reported.allele:
 
                 assignment = Variantassignment.objects.get(variant_collection_fk=variant_collection,
-                                                       variant_fk=reported.allele.variant_fk)
+                                                           variant_fk=reported.allele.variant_fk)
             else:
                 alleles = [x.allele_fk for x in reported.effect.alleles.all()]
                 assignment = Variantassignment.objects.get(variant_collection_fk=variant_collection,
@@ -206,42 +229,119 @@ class AntibioticResistance(Phenotype):
 
 class Protocol(models.Model):
     id = models.AutoField(primary_key=True)
-    phenotype = models.ForeignKey(Phenotype, models.CASCADE, "protocols", null=True)
+    phenotype = models.ForeignKey(Phenotype, models.CASCADE, related_name="protocols")
     name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
 
 
 class Assay(models.Model):
+    ASSAY_ONTOLOGY = "Assay Results"
+
     id = models.AutoField(primary_key=True)
-    protocol = models.ForeignKey(Protocol, models.CASCADE, "assays", null=True)
-    variant_collection = models.ForeignKey(Variantcollection, models.CASCADE)
+    protocol = models.ForeignKey(Protocol, models.CASCADE, related_name="assays")
+    variant_collection = models.ForeignKey(Variantcollection, models.CASCADE, related_name="assays")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     result = models.ForeignKey(Term, models.DO_NOTHING)
 
+    def __str__(self):
+        return "%s %s %s" % (self.variant_collection.sample, self.protocol.phenotype.name, self.result.identifier)
+
+    def __repr__(self):
+        return str(self)
+
 
 class Genotype(models.Model):
     id = models.AutoField(primary_key=True)
-    phenotype = models.ForeignKey(Phenotype, models.CASCADE, "genotypes", null=True)
-    variant_collection = models.ForeignKey(Variantcollection, models.CASCADE)
+    phenotype = models.ForeignKey(Phenotype, models.CASCADE, related_name="genotypes")
+    variant_collection = models.ForeignKey(Variantcollection, models.CASCADE,related_name="genotypes")
+
+    def __str__(self):
+        return "%s %s" % (self.phenotype.name, self.variant_collection.sample)
 
 
 class ReportedAllele(models.Model):
     id = models.AutoField(primary_key=True)
     allele = models.ForeignKey(Allele, models.CASCADE, null=True, related_name="reported")
-    effect = models.ForeignKey(Effect, models.CASCADE, null=True, related_name="reported")
-    phenotype = models.ForeignKey(Phenotype, models.CASCADE, "reported", null=True)
+    effect = models.ForeignKey(Effect, models.CASCADE, related_name="reported")
+    phenotype = models.ForeignKey(Phenotype, models.CASCADE, "reported")
     reported_in = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = ReportedAlleleManager()
 
+    class Meta:
+        unique_together = (('effect', 'phenotype'),)
+
+    def __str__(self):
+        return (("%s %s %s" % (self.allele.hgvs_c, self.phenotype.name, self.effect.variant_type))
+        if self.allele else ("%s %s" % (str(self.effect), self.phenotype.name)))
+
 
 class GenotypeSupport(models.Model):
     STATUS_ONTOLOGY = "Genotype Support Status"
 
     id = models.AutoField(primary_key=True)
-    genotype = models.ForeignKey(Genotype, models.CASCADE, "supportedby")
+    genotype = models.ForeignKey(Genotype, models.CASCADE, related_name="supportedby")
     status = models.ForeignKey(Term, models.DO_NOTHING)
     reported_allele = models.ForeignKey(ReportedAllele, models.DO_NOTHING, null=True)
     assignment = models.ForeignKey(Variantassignment, models.DO_NOTHING)
+
+    def __str__(self):
+        return "%s ->  %s (%s)" % (self.genotype.variant_collection.sample,
+                                   str(self.reported_allele), self.status)
+
+
+class VariantCollectionSet(models.Model):
+    STAT_METRICS = ["sensitivity", "specificity", "TP", "TN", "FN", "FP"]
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(default="")
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
+
+    def samples(self):
+        return [x.variant_collection for x in self.assignments.all() if
+                x.status == VariantCollectionSetAssignment.VCSTATUS.active]
+
+    def phenotypes(self):
+        return [x.phenotype for x in self.studied_phenotypes.all() if
+                x.status == StudiedPhenotype.PSTATUS.active]
+
+
+
+
+
+class VariantCollectionSetAssignment(models.Model):
+    VCSTATUS = Choices((1, "active", _("+")),
+                       (2, "inactive", _("-")),
+                       )
+    variant_collection = models.ForeignKey(Variantcollection, models.CASCADE, related_name="collection_sets")
+    collection_set = models.ForeignKey(VariantCollectionSet, models.CASCADE, related_name="assignments")
+    status = models.PositiveIntegerField(choices=VCSTATUS, default=VCSTATUS.active)
+
+
+class StudiedPhenotype(models.Model):
+    PSTATUS = Choices((1, "active", _("+")),
+                      (2, "inactive", _("-")),
+                      )
+    phenotype = models.ForeignKey(Phenotype, models.CASCADE, related_name="studiedin")
+    collection_set = models.ForeignKey(VariantCollectionSet, models.CASCADE, related_name="studied_phenotypes")
+    status = models.PositiveIntegerField(choices=PSTATUS, default=PSTATUS.active)
+
+    def __str__(self):
+        return "%s %s %s" % (self.phenotype.name, self.collection_set.name, StudiedPhenotype.PSTATUS[self.status])
+
+    def __repr__(self):
+        return str(self)

@@ -12,7 +12,7 @@ import json
 import os
 import pandas as pd
 
-from vardb.models import Protocol, AntibioticResistance,ReportedAllele,Allele,Effect,GenotypeSupport
+from vardb.models import Protocol, AntibioticResistance,ReportedAllele,Allele,Effect,GenotypeSupport,Assay
 from biosql.models import Term, Ontology,Biodatabase,Bioentry
 
 from tqdm import tqdm
@@ -34,8 +34,8 @@ class Command(BaseCommand):
          https://www.ncbi.nlm.nih.gov/biosample/docs/beta-lactamase/
         """
         # Ontology Assay Result
-        if not Ontology.objects.filter(name="Assay Results").exists():
-            aro = Ontology(name="Assay Results")
+        if not Ontology.objects.filter(name=Assay.ASSAY_ONTOLOGY).exists():
+            aro = Ontology(name=Assay.ASSAY_ONTOLOGY)
             aro.save()
             Term(name="Positive", identifier="Positive", ontology=aro).save()
             Term(name="Negative", identifier="Negative", ontology=aro).save()
@@ -54,27 +54,40 @@ class Command(BaseCommand):
         if not Ontology.objects.filter(name="Antibiotics").exists():
             ao = Ontology(name="Antibiotics")
             ao.save()
+        else:
+            ao = Ontology.objects.get(name="Antibiotics")
 
-            for l in """streptomycin\tSTR
-                        isoniazid\tINH
-                        rifampicin\tRIF
-                        ethambutol\tEMB
-                        kanamycin\tKAN
-                        amikacin\tAMK
-                        capreomycin\tCAP
-                        ethionamide\tETH
-                        fluoroquinolone\tFLQ
-                        aminoglycoside\tAMI
-                        clofazimine\tCLO
-                        bedaquilin\t
-                        viomycin\tVIO
-                        linezolid\tZD                  
-                        para-aminosalicylic_acid\tPAS""".split("\n"):
-                name, ident = [x.strip() for x in l.split("\t")][:2]
-
+        for l in """streptomycin\tSTR
+                    isoniazid\tINH
+                    rifampicin\tRIF
+                    ethambutol\tEMB
+                    kanamycin\tKAN
+                    amikacin\tAMK
+                    capreomycin\tCAP
+                    ethionamide\tETH
+                    fluoroquinolone\tFLQ
+                    aminoglycoside\tAMI
+                    clofazimine\tCLO
+                    bedaquilin\t
+                    viomycin\tVIO
+                    fosfomycin\tFOF
+                    linezolid\tZD
+                    pyrazinamide\tPZA                  
+                    para-aminosalicylic_acid\tPAS""".split("\n"):
+            name, ident = [x.strip() for x in l.split("\t")][:2]
+            tquery = Term.objects.filter(name=name, identifier=ident, ontology=ao)
+            if not tquery.exists():
                 t = Term(name=name, identifier=ident, ontology=ao)
                 t.save()
-                p = AntibioticResistance(name="%s resistant" % name, antibiotic=t).save()
+            else:
+                t = tquery.get()
+            aquery = AntibioticResistance.objects.filter(name="%s resistant" % name, antibiotic=t)
+            if not aquery.exists():
+                p = AntibioticResistance(name="%s resistant" % name, antibiotic=t)
+                p.save()
+            else:
+                p = aquery.get()
+            if not Protocol.objects.filter(name="%s antibiogram" % name, phenotype=p).exists():
                 Protocol(name="%s antibiogram" % name, phenotype=p).save()
 
 

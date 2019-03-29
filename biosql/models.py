@@ -9,11 +9,9 @@ from django.db import models
 from collections import defaultdict
 
 from itertools import groupby
-from .managers import SeqfeatureManager,BioentryManager
+from .managers import SeqfeatureManager, BioentryManager
 
 from django.shortcuts import redirect, reverse
-
-
 
 """
 ALTER TABLE taxon_name ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY;
@@ -53,6 +51,9 @@ class Bioentry(models.Model):
 
     objects = BioentryManager()
 
+    def __str__(self):
+        return self.identifier + " " + self.biodatabase.name
+
     class Meta:
         managed = True
         db_table = 'bioentry'
@@ -90,8 +91,6 @@ class Bioentry(models.Model):
         qs = self.qualifiers.filter(term__name="molecular_weight")
         return qs.value if qs.exists() else None
 
-
-
     def go_terms(self, database):
         return self.qualifiers.filter(term__dbxrefs__dbxref__dbname="go",
                                       term__dbxrefs__dbxref__accession=database)
@@ -108,8 +107,6 @@ class Bioentry(models.Model):
 
     def ftype(self):
         return "protein"
-
-
 
 
 class BioentryDbxref(models.Model):
@@ -171,6 +168,8 @@ class BioentryRelationship(models.Model):
     term = models.ForeignKey('Term', models.DO_NOTHING)
     rank = models.IntegerField(default=1, null=True)
 
+
+
     class Meta:
         managed = True
         db_table = 'bioentry_relationship'
@@ -183,6 +182,8 @@ class Biosequence(models.Model):
     length = models.IntegerField(blank=True, null=True)
     alphabet = models.CharField(max_length=10, blank=True, null=True)
     seq = models.TextField(blank=True, null=True)
+
+
 
     class Meta:
         managed = True
@@ -329,8 +330,7 @@ class ToolRun(models.Model):
 
 
 class Seqfeature(models.Model):
-
-    ENTRY_TYPES = ["CDS","rRNA","tRNA","regulatory","ncRNA","mRNA","repeat"]
+    ENTRY_TYPES = ["CDS", "rRNA", "tRNA", "regulatory", "ncRNA", "mRNA", "repeat"]
 
     seqfeature_id = models.AutoField(primary_key=True)
     bioentry = models.ForeignKey(Bioentry, models.CASCADE, related_name="features")
@@ -345,6 +345,11 @@ class Seqfeature(models.Model):
         return {x.term.name: x.value for x in self.qualifiers.all()}
 
     objects = SeqfeatureManager()
+
+    def __str__(self):
+        ls = list(self.locations.all())
+        return "%s:%i-%i %s" % (self.bioentry.name, ls[0].start_pos, ls[-1].end_pos,
+                                "|".join([k + ":" + v for k, v in self.qualifiers_dict().items()]))
 
     class Meta:
         managed = True
@@ -478,7 +483,7 @@ class Term(models.Model):
     definition = models.TextField(blank=True, null=True)
     identifier = models.CharField(unique=True, max_length=255, blank=True, null=True)
     is_obsolete = models.CharField(max_length=1, blank=True, null=True)
-    ontology = models.ForeignKey(Ontology, models.DO_NOTHING)
+    ontology = models.ForeignKey(Ontology, models.DO_NOTHING,related_name="terms")
     version = models.PositiveSmallIntegerField(default=1, null=True)
 
     class Meta:

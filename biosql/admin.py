@@ -6,7 +6,7 @@ admin.site.register(Biosequence)
 admin.site.register(Biodatabase)
 
 admin.site.register(Ontology)
-admin.site.register(Term)
+
 
 
 @admin.register(Tool)
@@ -22,15 +22,19 @@ from easy_select2 import select2_modelform
 
 BioentryForm = select2_modelform(Bioentry, attrs={'width': '250px'})
 
-
 @admin.register(Bioentry)
 class BiosequenceAdmin(admin.ModelAdmin):
+    search_fields = ["name","accession","identifier"]
     form = BioentryForm
     # fields = ('name','biodatabase','accession','identifier','division','version')
     raw_id_fields = (
         'taxon',
     )
     # readonly_fields = ('taxon_id',)
+
+@admin.register(Term)
+class BiosequenceAdmin(admin.ModelAdmin):
+    search_fields = ["name","identifier"]
 
 
 @admin.register(BioentryQualifierValue)
@@ -42,9 +46,13 @@ class BioentryQualifierValueAdmin(admin.ModelAdmin):
 
 @admin.register(Seqfeature)
 class SeqfeatureAdmin(admin.ModelAdmin):
+    search_fields = ["type_term__name","qualifiers__value"]
     raw_id_fields = (
         'bioentry', "type_term", "source_term"
     )
+
+    def get_search_results(self,request, qs, term,**kwargs):
+        return super().get_search_results(request, qs, term,**kwargs)
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
@@ -59,7 +67,6 @@ class DbxrefAdmin(admin.ModelAdmin):
 
 @admin.register(SeqfeatureDbxref)
 class SeqfeatureDbxrefAdmin(admin.ModelAdmin):
-
     autocomplete_fields = ["dbxref"]
     raw_id_fields = (
         'seqfeature',

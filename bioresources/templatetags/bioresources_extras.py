@@ -46,6 +46,7 @@ def url_without_parameter(arg1, arg2):
 
     return arg1.get_full_path()
 
+
 @register.filter(name='qs_without_parameter')
 def qs_without_parameter(arg1, arg2):
     """
@@ -58,7 +59,6 @@ def qs_without_parameter(arg1, arg2):
         arg2: parameter to remove
     """
 
-
     parameters = {}
     for key, value in arg1.items():
         if parameters.get(key, None) is None and arg2 != key:
@@ -69,17 +69,15 @@ def qs_without_parameter(arg1, arg2):
 
     return "&".join(
         [k + "=" + v
-         for k,v in  parameters.items() ])
-
-
+         for k, v in parameters.items()])
 
 
 @register.filter(name='index')
 def index(List, i):
     return List[int(i)]
 
-numeric_test = re.compile("^\d+$")
 
+numeric_test = re.compile("^\d+$")
 
 
 @register.filter(name='getattribute')
@@ -94,3 +92,8 @@ def getattribute(value, arg):
         return value[int(arg)]
     else:
         return ""
+
+
+@register.inclusion_tag('paginator.html')
+def paginator(query, page_obj,params):
+    return {"query": query, "page_obj": page_obj,'params':params}

@@ -12,14 +12,15 @@ import json
 import os
 import logging
 from biosql.models import Bioentry, Biodatabase, Seqfeature
-from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect,AlleleEffect
+from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect, AlleleEffect
 import vcf
 import subprocess
 from tqdm import tqdm
 import hgvs.parser
+import gzip
+from functools import reduce
 
 _log = logging.getLogger(__name__)
-
 
 
 # log = logging.getLogger('django.db.backends')
@@ -55,7 +56,7 @@ class SnpeffEffect():
         self.c_dna_pos = c_dna_pos
         self.cds_pos = cds_pos
         self.aa_pos = aa_pos
-        self.dist_to_feature = dist_to_feature
+        self.dist_to_feature = int(dist_to_feature) if dist_to_feature else None
         self.errors = errors
         self.aa_len = aa_len
         self.aa_ref = ""
@@ -111,7 +112,10 @@ class VcfSnpeffIO():
         if hasattr(vcf_path, "read"):
             h = vcf_path
         else:
-            h = open(vcf_path)
+            if vcf_path.endswith(".gz"):
+                h = gzip.open(vcf_path)
+            else:
+                h = open(vcf_path)
 
         try:
             variantes = vcf.VCFReader(h)
@@ -136,6 +140,58 @@ class Command(BaseCommand):
         self.gene_cache = {}
         self.contig_cache = {}
 
+    def search_gene(self, ref, gid):
+        if gid in self.gene_cache:
+            gene = self.gene_cache[gid]
+        else:
+            gene = Seqfeature.objects.get(Q(bioentry=ref, type_term__name="gene") &
+                                          Q(qualifiers__value=gid,
+                                            qualifiers__term__name="locus_tag"))
+            self.gene_cache[gid] = gene
+        return gene
+
+    # def search_gene_pos(self, ref, pos):
+    #     gene = Seqfeature.objects.filter(bioentry=ref, type_term__name="gene", locations__start_pos__lte=pos,
+    #                                      locations__end_pos__gt=pos)
+    #     if gene.exists():
+    #         gene = gene.get()
+    #     else:
+    #         gene_fw = Seqfeature.objects.filter(bioentry=ref, type_term__name="gene", locations__strand=1,
+    #                                             locations__start_pos__gt=pos).order_by("locations__start_pos")
+    #         gene_rv = Seqfeature.objects.filter(bioentry=ref, type_term__name="gene", locations__strand=-1,
+    #                                             locations__start_pos__lt=pos).order_by("locations__start_pos")
+    #         if gene_fw.exists() and gene_rv.exists():
+    #             gene_fw = gene_fw[0]
+    #             gene_rv = gene_rv[gene_rv.count()-1]
+    #             gene = gene_fw if (abs(gene_fw.locations.all()[0].start_pos - pos) < abs(
+    #                 (gene_rv.locations.all()[0].end_pos - pos))) else gene_rv
+    #         elif gene_fw.exists():
+    #             gene = gene_fw[0]
+    #         else:
+    #             gene = gene_rv[gene_rv.count()-1]
+    #
+    #     return gene
+
+    def select_effect(self, effects, alt):
+        allele_effects = [x for x in effects if x.alt == alt]
+        allele_effects2 = allele_effects
+        intergenic = [(i, x) for i, x in enumerate(allele_effects) if "intragenic_variant" in x.annotation]
+        if intergenic:
+            i, intergenic = intergenic[0]
+            if (("upstream_gene_variant" in allele_effects[0].annotation)
+                    or ("downstream_gene_variant" in allele_effects[0].annotation)):
+                allele_effects2 = [allele_effects[i]] + allele_effects[:i - 1] + allele_effects[i:]
+        if len(set(reduce(lambda x, y: x + y, [x.annotation for x in allele_effects])) - set(
+                ["upstream_gene_variant", "downstream_gene_variant", "intergenic_region"])) == 0:
+
+            allele_effects2 = sorted(
+                [x for x in allele_effects if x.dist_to_feature and "upstream_gene_variant" in x.annotation],
+                key=lambda x: x.dist_to_feature)
+            if not allele_effects2:
+                allele_effects2 = sorted([x for x in allele_effects if x.dist_to_feature],
+                                        key=lambda x: x.dist_to_feature)
+        return allele_effects2[0]
+
     def add_allele(self, sample, vc, variant, new_variant, effects):
         if sample.data.GT in ["CN" + x for x in [""] + [str(y) for y in range(20)]]:
             self.stderr.write("GT ERROR %s" % sample.data.GT)
@@ -148,70 +204,66 @@ class Command(BaseCommand):
         else:
             raise Exception("Not expected...")
 
+        effect = self.select_effect(effects, alt)
+
         allele_query = Allele.objects.prefetch_related("variant_fk").filter(variant_fk=new_variant, alt=alt)
         if not allele_query.exists():
             new_allele = Allele(variant_fk=new_variant, alt=alt)
+            self.add_effect(effect, new_allele, new_variant, vc)
+            new_allele.hgvs_c = str(effect.hgvs_c)
             new_allele.save()
+        else:
+            new_allele = allele_query.get()
+            assert set(new_allele.main_effect_fk.variant_type.split("|")) & set(effect.annotation)
 
-            effect = effects[0]
+        # assert new_variant.gene_pos == effect.gene_pos, [new_variant.gene_pos, effect.gene_pos]
+        # assert abs(abs(new_variant.gene_pos) - abs(effect.gene_pos))<= max(len(variant.REF),len(new_allele.alt)), [new_variant.gene_pos, effect.gene_pos]
 
-            if effect.alt == alt:
-                if effect.aa_pos:
-                    effect_query = Effect.objects.filter(transcript=effect.geneid,
-                                                         variant_type="|".join(effect.annotation),
-                                                         hgvs_p = str(effect.hgvs_p))
-                    if not effect_query.exists():
-                        new_effect = effect_query.get()
-                    else:
-                        new_effect = Effect( transcript=effect.geneid,
-                                             variant_type="|".join(effect.annotation))
-                        new_effect.aa_pos = effect.aa_pos
-                        new_effect.aa_ref = effect.aa_ref
-                        new_effect.aa_alt = effect.aa_alt
-                        new_effect.hgvs_p = str(effect.hgvs_p)
-                        new_effect.save()
-
-                    AlleleEffect(allele_fk=new_allele,    effect_fk=new_effect).save()
-                else:
-                    new_effect = Effect( transcript=effect.gene,
-                                         variant_type="|".join(effect.annotation))
-                new_effect.save()
-                AlleleEffect(allele_fk=new_allele,    effect_fk=new_effect).save()
-
-
-                if not new_variant.gene:
-                    if effect.feature_id in self.gene_cache:
-                        gene = self.gene_cache[effect.feature_id ]
-                    else:
-                        gene = Seqfeature.objects.get(Q(bioentry=new_variant.contig, type_term__name="gene") &
-                                                     Q(qualifiers__value=effect.feature_id,
-                                                       qualifiers__term__name="locus_tag"))
-                        self.gene_cache[effect.feature_id ] = gene
-
-                    new_variant.gene = gene
-                    new_variant.gene_pos = effect.gene_pos
-                    new_variant.save()
-
-
-                new_allele.main_effect = new_effect
-                new_allele.hgvs_c = str(effect.hgvs_c)
-                new_allele.save()
-
-
+        if not Variantassignment.objects.filter(variant_collection_fk=vc, variant_fk=new_variant,
+                                                allele_fk=new_allele).exists():
             assignment = Variantassignment(variant_collection_fk=vc, variant_fk=new_variant, allele_fk=new_allele)
             assignment.save()
 
-            if sample.data.GT != ".":
-                for k, v in sample.data._asdict().items():
-                    val = "|".join(map(str, v)) if isinstance(v, (list, tuple)) else str(v)
-                    Variantannotation(
-                        source_type="prediction", source="VC",
-                        assignment_fk=assignment, prop=k, value=val).save()
-
-                qual_va = Variantannotation(
+            assert sample.data.GT != "."
+            for k, v in sample.data._asdict().items():
+                val = "|".join(map(str, v)) if isinstance(v, (list, tuple)) else str(v)
+                Variantannotation(
                     source_type="prediction", source="VC",
-                    assignment_fk=assignment, prop="qual", value=variant.QUAL)
-                qual_va.save()
+                    assignment_fk=assignment, prop=k, value=val).save()
+
+            qual_va = Variantannotation(
+                source_type="prediction", source="VC",
+                assignment_fk=assignment, prop="qual", value=variant.QUAL)
+            qual_va.save()
+
+    def add_effect(self, effect, new_allele, new_variant, vc):
+
+        gene = self.search_gene(new_variant.contig, effect.feature_id)
+        if effect.aa_pos:
+            effect_query = Effect.objects.filter(transcript=effect.geneid, ref_organism=vc.ref_organism,
+                                                 variant_type="|".join(effect.annotation),
+                                                 aa_pos=effect.aa_pos, aa_ref=effect.aa_ref, aa_alt=effect.aa_alt)
+            if effect_query.exists():
+                new_effect = effect_query.get()
+            else:
+                new_effect = Effect(transcript=effect.geneid, ref_organism=vc.ref_organism,
+                                    variant_type="|".join(effect.annotation), gene=gene)
+                new_effect.aa_pos = effect.aa_pos
+                new_effect.aa_ref = effect.aa_ref
+                new_effect.aa_alt = effect.aa_alt
+                new_effect.hgvs_p = str(effect.hgvs_p)
+        else:
+            new_effect = Effect(transcript=effect.geneid, ref_organism=vc.ref_organism,
+                                variant_type="|".join(effect.annotation), gene=gene)
+        assert gene == new_variant.gene
+        new_effect.save()
+        new_allele.main_effect_fk = new_effect
+        new_allele.save()
+
+        if not AlleleEffect.objects.filter(allele_fk=new_allele, effect_fk=new_effect).exists():
+            AlleleEffect(allele_fk=new_allele, effect_fk=new_effect).save()
+
+        return new_effect
 
     def add_variant(self, ref_organism, samples_dict, var, effects):
         if var.CHROM in self.contig_cache:
@@ -223,8 +275,21 @@ class Command(BaseCommand):
             pos=var.POS, contig=seq, ref=var.REF)
 
         if not variant_query.exists():
-            new_variant = Variant(contig=seq, pos=var.POS, ref=var.REF)
+            # gene = self.search_gene_pos(seq, var.POS)
+            effect = self.select_effect(effects,str(var.ALT[int(var.samples[0].data.GT) - 1]))
+            gene = self.search_gene(seq, effect.feature_id)
+
+            genepos = (
+                          var.POS - gene.locations.all()[0].start_pos + 1
+                          if gene.locations.all()[0].strand == 1
+                          else gene.locations.all()[0].end_pos - var.POS + 1)
+
+            if genepos < 0:
+                genepos = genepos - 1
+
+            new_variant = Variant(contig=seq, pos=var.POS, gene_pos=genepos, ref=var.REF, gene=gene)
             new_variant.save()
+
         else:
             new_variant = variant_query.get()
 
@@ -244,36 +309,43 @@ class Command(BaseCommand):
         variants: array of (variant,effects ) tuple
         '''
         samples_dict = {}
+
         for sample in samples:
-            if self.exists_sample(ref_organism, sample.sample):
+            sample_name = sample.sample.split(".variant")[0]
+            if self.exists_sample(ref_organism, sample_name):
                 # raise VariantcollectionExistsError(ref_organism, sample.sample)
-                vc = Variantcollection.objects.get(ref_organism=ref_organism, sample=sample.sample)
+                vc = Variantcollection.objects.get(ref_organism=ref_organism, sample=sample_name)
             else:
-                vc = Variantcollection(ref_organism=ref_organism, sample=sample.sample)
+                vc = Variantcollection(ref_organism=ref_organism, sample=sample_name)
                 vc.save()
             samples_dict[sample.sample] = vc
 
         process = []
-        for idx,(var, effects) in enumerate(tqdm(variants, total=total),1):
+        for idx, (var, effects) in enumerate(tqdm(variants, total=total), 1):
             process.append([ref_organism, samples_dict, var, effects])
-            if (idx % 100) == 0 :
+            if len(process) == 100:
                 with transaction.atomic():
-                    for x in process:
+                    for x in tqdm(process):
                         self.add_variant(*x)
                 process = []
         with transaction.atomic():
-            for x in process:
+            for i,x in tqdm(enumerate(process)):
                 self.add_variant(*x)
-
 
     def add_arguments(self, parser):
         parser.add_argument('--vcf', required=True)
         parser.add_argument('--reference', required=True)
 
     def handle(self, *args, **options):
+        # try:
+        if options["vcf"].endswith(".gz"):
+            h = gzip.open(options["vcf"], 'r')
+        else:
+            h = open(options["vcf"])
+        variant = next(vcf.VCFReader(h))
+        # finally:
+        #     h.close()
 
-        with open(options["vcf"]) as h:
-            variant = next(vcf.VCFReader(h))
         ref_organism = Biodatabase.objects.get(name=options["reference"])
         total = int(subprocess.check_output("grep -v ^#  " + options["vcf"] + " | wc -l", shell=True).split()[0])
         self.load_variants(VcfSnpeffIO.parse(options["vcf"]), ref_organism, variant.samples, total)

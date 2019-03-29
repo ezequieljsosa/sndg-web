@@ -13,7 +13,7 @@ import os
 import pandas as pd
 
 from vardb.models import Protocol, AntibioticResistance, ReportedAllele, Allele, Effect, Variant, AlleleEffect
-from biosql.models import Term, Ontology, Biodatabase, Bioentry
+from biosql.models import Term, Ontology, Biodatabase, Bioentry, Seqfeature
 
 from tqdm import tqdm
 import Bio.SeqIO as bpio
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         def search_cds(locus_tag):
             return [x for x in ann.features if x.type == "gene" and locus_tag in x.qualifiers["locus_tag"]][0]
 
-        path_db = "/home/eze/Downloads/andytb - andytb (1).csv"
+        path_db = "/home/eze/Downloads/andytb - andytb (2).csv"
         self.resist = pd.read_csv(path_db)
         self.resist["AApos"] = [int(x) if x != "-" else "" for x in self.resist.AApos]
         self.resist["LocusTag"] = [x.split("_")[0] for x in self.resist.GeneID]
@@ -129,108 +129,218 @@ class Command(BaseCommand):
         bdb = Biodatabase.objects.get(name="GCF_000195955.2")
         seq = Bioentry.objects.get(biodatabase=bdb, identifier="NC_000962.3")
         cache_lt = {}
+
         def search_gene(locustag):
             if locustag in cache_lt:
-                 return cache_lt[locustag]
+                return cache_lt[locustag]
             else:
-                f =  Seqfeature.objects.get(Q(bioentry=seq, type_term__name="gene") &
-                                    Q(qualifiers__value=locustag,
-                                   qualifiers__term__name="locus_tag"))
+                f = Seqfeature.objects.get(Q(bioentry=seq, type_term__name="gene") &
+                                           Q(qualifiers__value=locustag,
+                                             qualifiers__term__name="locus_tag"))
                 cache_lt[locustag] = f
                 return f
-
 
         map_antibiotic_name = {x.antibiotic.name: x for x in
                                AntibioticResistance.objects.filter(antibiotic__ontology__name="Antibiotics")}
 
         for i, r in tqdm(self.resist.iterrows(), total=len(self.resist)):
 
-            if r.Drug.lower() not in ["-"]:
+            if r.Drug.lower() in ["-"]:
+                self.stderr.write(
+                    "Phylogeny marker not loaded: " + json.dumps(r.to_dict()))
+                continue
 
-                pheno = (map_antibiotic_name[r.Drug.lower()] if r.Drug.lower() in map_antibiotic_name
-                            else map_antibiotic_name[r.Drug.lower()[:-1]])
+            if r.NucleotidePosH37 and (str(ann.seq)[r.NucleotidePosH37 - 1] != r.REF[0]):
+                self.stderr.write(
+                    "Reference base does not match the reference " + json.dumps(r.to_dict()))
+                continue
+
+            pheno = (map_antibiotic_name[r.Drug.lower()]
+            if r.Drug.lower() in map_antibiotic_name
+            else map_antibiotic_name[r.Drug.lower()[:-1]])
+
+            gene = search_gene(r.LocusTag)
+
+            try:
+                cds = search_cds(r.LocusTag)
+            except IndexError:
+                self.stderr.write(
+                    ("Error loading entry  locus tag not found (%s) " % r.LocusTag) + json.dumps(r.to_dict()))
+                continue
+
+            if r.NucleotidePosH37:
+                if ReportedAllele.objects.filter(phenotype=pheno, allele__variant_fk__pos=r.NucleotidePosH37 - 1,
+                                                 allele__variant_fk__ref=r.REF,
+                                                 allele__alt=r.ALT).exists():
+                    self.stdout.write("Known entry")
+                    continue
+            if r.AApos and (r.AApos != "-"):
+                if ReportedAllele.objects.filter(phenotype=pheno, effect__aa_pos=r.AApos,
+                                                 effect__aa_ref=r.AAref,
+                                                 effect__aa_alt=r.AAalt.replace("fs", "*").replace("STOP",
+                                                                                                   "*")).exists():
+                    self.stdout.write("Known entry")
+                    continue
+
+            if r.Effect in ["S531", "+nt420:GG", "+nt349:CACTG"]:
+                self.stderr.write(
+                    ("Not parseable effect (%s) " % r.LocusTag) + json.dumps(r.to_dict()))
+                continue
+            record = cds.extract(ann)
+
+            with transaction.atomic():
+
                 ra = ReportedAllele(phenotype=pheno, reported_in=r.Source)
-                gene = search_gene(r.LocusTag)
+                if r.NucleotidePosH37:
 
-                with transaction.atomic():
+                    self.process_position(bdb, cds, gene, r, ra, seq, record, ann)
+                elif r.AApos:
 
-                    try:
-                        cds = search_cds(r.LocusTag)
-                    except:
-                        self.stderr.write("locus tag not found: '%s'\n" % r.LocusTag  )
-                        continue
-                    record = cds.extract(ann)
-                    allele = None
-                    new_effect = None
+                    self.process_aa_position(bdb, gene, r, ra, record, None)
+                else:
+                    self.stderr.write("Error loading entry: " + json.dumps(r.to_dict()))
 
-                    if r.NucleotidePosH37:
+    def process_aa_position(self, bdb, gene, r, ra, record, genepos):
+        ref_ann = str(record.seq.translate())[r.AApos - 1]
+        if r.AAref != ref_ann:
+            self.stderr.write(
+                ("Reference AA does not match the current annotation '%s' != '%s' " % (ref_ann, r.AAref))
+                + json.dumps(r.to_dict()))
+            return None
+        if genepos:
+            mut = record.seq[:genepos - 1] + Seq(r.ALT) + record.seq[genepos - 2 + len(r.ALT):]
+            alt_ann = str(mut.translate())[r.AApos - 1]
+            if r.AAalt == "fs" and (len(r.ALT) - 1) % 3 != 0:
+                self.stderr.write(
+                    ("Invalid FS" + json.dumps(r.to_dict())))
+                return None
 
-                        variant_query = Variant.objects.filter(
-                            pos=r.NucleotidePosH37, contig=seq, ref=r.REF)
+            if (r.AAalt != "fs") and (alt_ann != r.AAalt):
+                self.stderr.write(
+                    ("Alternative AA does not match the nucleotide mutation effect '%s' != '%s' " % (
+                        ref_ann, r.AAref))
+                    + json.dumps(r.to_dict()))
+                return None
 
-                        if not variant_query.exists():
-                            gene = Seqfeature.objects.get(Q(bioentry=new_variant.contig, type_term__name="gene") &
-                                                   Q(qualifiers__value=r.LocusTag,
-                                                     qualifiers__term__name="locus_tag"))
+        effect_query = Effect.objects.filter(transcript=r.LocusTag, gene=gene, ref_organism=bdb,
+                                             aa_pos=r.AApos, aa_ref=r.AAref, aa_alt=r.AAalt)
+        # hgvs_p="%s%i%s" % (r.AAref, r.AApos, r.AAalt))
+        if not effect_query.exists():
+            variant_type = 'frameshift_variant' if "fs" == r.AAalt else (
+                'stop_gained' if "STOP" == r.AAalt else "missense_variant"
+                if r.AAref != r.AAalt else 'synonymous_variant')
 
-                            new_variant = Variant(contig=seq, pos=r.NucleotidePosH37, ref=r.REF,gene=gene)
-                            new_variant.save()
-                        else:
-                            new_variant = variant_query.get()
+            new_effect = Effect(transcript=r.LocusTag, ref_organism=bdb,
+                                variant_type=variant_type, gene=gene)
+            new_effect.aa_pos = r.AApos
+            new_effect.aa_ref = r.AAref
+            new_effect.aa_alt = "*" if r.AAalt in ["fs", "STOP"] else r.AAalt
+            new_effect.hgvs_p = (
+                    (seq3(new_effect.aa_ref) if new_effect.aa_ref != "*" else "*") +
+                    str(new_effect.aa_pos) +
+                    (seq3(new_effect.aa_alt) if new_effect.aa_alt != "*" else "*"))
+            new_effect.save()
 
-                        allele_query = Allele.objects.filter(variant_fk=new_variant, alt=r.ALT)
-                        if not allele_query.exists():
-                            if cds.strand == -1:
-                                genepos = cds.location.end - r.NucleotidePosH37
-                            else:
-                                genepos = r.NucleotidePosH37 - cds.location.start
 
-                            hgvs_c = str(genepos) + r.REF + ">" + r.ALT
-                            allele = Allele(variant_fk=new_variant, alt=r.ALT, hgvs_c=hgvs_c)
-                            allele.save()
+        else:
+            new_effect = effect_query.get()
 
-                            if genepos < 0:
-                                new_effect = Effect(transcript=r.LocusTag,ref_organism=bdb,gene=gene,
-                                                    variant_type='upstream_gene_variant')
-                                new_effect.save()
-                                allele.main_effect_fk = new_effect
-                                allele.save()
-                                AlleleEffect(allele_fk=allele, effect_fk=new_effect).save()
+        ra.effect = new_effect
+        ra.save()
+        return new_effect
 
-                        else:
-                            allele = allele_query.get()
+    def process_position(self, bdb, cds, gene, r, ra, seq, record, ann):
+        new_effect = None
+        if cds.strand == -1:
+            genepos = cds.location.end - r.NucleotidePosH37
+        else:
+            genepos = r.NucleotidePosH37 - cds.location.start
+        # if r.NucleotidePosGene:
+        #     assert int(r.NucleotidePosGene.split("/")[0]) == genepos
 
-                            ra.allele = allele
-                            ra.save()
+        variant_query = Variant.objects.filter(
+            pos=r.NucleotidePosH37, contig=seq, ref=r.REF)
 
-                    if r.AApos:
-                        if r.Effect in ["S531", "+nt420:GG", "+nt349:CACTG"]:
-                            continue
+        if not variant_query.exists():
+            new_variant = Variant(contig=seq, gene_pos=genepos, pos=r.NucleotidePosH37, ref=r.REF, gene=gene)
+            new_variant.save()
+        else:
+            new_variant = variant_query.get()
 
-                        if r.AAref == str(record.seq.translate())[r.AApos - 1]:
+        allele_query = Allele.objects.filter(variant_fk=new_variant, alt=r.ALT)
+        if not allele_query.exists():
+            if genepos > 0:
+                if cds.strand == 1:
+                    assert r.REF[0] == str(record.seq[genepos - 1]), [r.REF, str(record.seq[genepos - 1])]
+                else:
+                    assert r.REF[0] == str(Seq(record.seq[genepos]).reverse_complement()), [r.REF[0], str(
+                        Seq(record.seq[genepos]).reverse_complement())]
 
-                            effect_query = Effect.objects.filter(transcript=r.LocusTag,
-                                                                 aa_pos=r.AApos, aa_ref=r.AAref, aa_alt=r.AAalt)
-                            if not effect_query.exists():
-                                variant_type = 'frameshift_variant' if "fs" == r.AAalt else (
-                                    'stop_gained' if "STOP" == r.AAalt else "missense_variant"
-                                    if r.AAref != r.AAalt else 'synonymous_variant')
+            hgvs_c = str(genepos) + r.REF + ">" + r.ALT
 
-                                new_effect = Effect(transcript=r.LocusTag,ref_organism=bdb,
-                                                    variant_type=variant_type)
-                                new_effect.aa_pos = r.AApos
-                                new_effect.aa_ref = r.AAref
-                                new_effect.aa_alt = "*" if r.AAalt in ["fs", "STOP"] else r.AAalt
-                                new_effect.hgvs_p = (
-                                        (seq3(new_effect.aa_ref) if new_effect.aa_ref != "*" else "*") +
-                                        str(new_effect.aa_pos) +
-                                        (seq3(new_effect.aa_alt) if new_effect.aa_alt != "*" else "*"))
-                                new_effect.save()
-                            else:
-                                new_effect = effect_query.get()
-                            ra.effect = new_effect
-                            ra.save()
-                            if r.NucleotidePosH37:
-                                allele.main_effect_fk = new_effect
-                                allele.save()
-                                AlleleEffect(allele_fk=allele, effect_fk=new_effect).save()
+            allele = Allele(variant_fk=new_variant, alt=r.ALT, hgvs_c=hgvs_c)
+
+            if r.AApos:
+
+                new_effect = self.process_aa_position(bdb, gene, r, ra, record, genepos)
+                if not new_effect:
+                    return None
+            elif genepos < 0:
+                new_effect = Effect(transcript=r.LocusTag, ref_organism=bdb, gene=gene,
+                                    variant_type='upstream_gene_variant')
+                new_effect.save()
+            elif not r.AApos:
+                if r.LocusTag in ["Rvnr01", "Rvnr02"]:
+                    new_effect = Effect(transcript=r.LocusTag, ref_organism=bdb, gene=gene,
+                                        variant_type='intragenic_variant')
+                    new_effect.save()
+                else:
+                    assert (len(r.REF) > 1) or (len(r.ALT) > 1)
+                    if len(r.REF) > 1:
+                        assert (len(r.REF) - 1) % 3 == 0
+                        new_effect = Effect(transcript=r.LocusTag, ref_organism=bdb, gene=gene,
+                                            variant_type='conservative_inframe_deletion')
+                        new_effect.save()
+                    elif len(r.ALT) > 1:
+                        assert (len(r.ALT) - 1) % 3 == 0
+                        new_effect = Effect(transcript=r.LocusTag, ref_organism=bdb, gene=gene,
+                                            variant_type='conservative_inframe_insertion')
+                        new_effect.save()
+
+            if new_effect:
+                allele.main_effect_fk = new_effect
+                if ("missense_variant" in new_effect.variant_type.split("|")) and not allele.check_effect(str(ann.seq)):
+                    self.stdout.write("Nucleotide replacement does not match the effect" + str(r.to_dict()))
+                return None
+                allele.save()
+                if not AlleleEffect.objects.filter(allele_fk=allele, effect_fk=new_effect).exists():
+                    AlleleEffect(allele_fk=allele, effect_fk=new_effect).save()
+            else:
+                self.stderr.write("effect couldn't be created for: " + json.dumps(r.to_dict()))
+                return None
+
+        else:
+            allele = allele_query.get()
+
+        if new_effect:
+            ra.effect = new_effect
+
+            if ("missense_variant" in new_effect.variant_type.split("|")) and not allele.check_effect(str(ann.seq)):
+                self.stdout.write("Nucleotide replacement does not match the effect" + str(r.to_dict()))
+                return None
+        else:
+            ra.effect = allele.main_effect_fk
+            if r.AApos and ("frameshift_variant" not in allele.main_effect_fk.variant_type.split("|")):
+                try:
+                    allele.check_effect(str(ann.seq))
+                except:
+                    pass
+                assert allele.main_effect_fk.aa_alt == r.AAalt.replace("STOP", "*").replace("fs", "*"), [
+                    allele.main_effect_fk.aa_alt, r.AAalt]
+
+        if (ReportedAllele.objects.filter(phenotype=ra.phenotype, allele=allele).exists()):
+            self.stdout.write("Known entry")
+            return None
+        ra.allele = allele
+        ra.save()
+        return allele
