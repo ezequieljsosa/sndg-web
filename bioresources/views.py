@@ -15,7 +15,7 @@ from django_tables2 import RequestConfig
 from .models import Publication, Structure, Assembly, Expression, Person, Organization, Barcode, BioProject, \
     Affiliation, Resource, Sample
 from .tables import PublicationTable
-from .filters import PublicationFilter
+# from .filters import PublicationFilter
 from .forms import BioSearchForm, AssemblyForm
 
 from collections import defaultdict
@@ -221,17 +221,17 @@ def reads(request, pk):
         "sidebarleft": 1, })
 
 
-from django_filters.views import FilterView
-from django_tables2.views import SingleTableMixin
+# from django_filters.views import FilterView
+# from django_tables2.views import SingleTableMixin
 
 
-class FilteredPersonListView(SingleTableMixin, FilterView):
-    table_class = PublicationTable
-    model = Publication
-    template_name = 'publications/list.html'
-
-    filterset_class = PublicationFilter
-    paginate = {'per_page': 25}
+# class FilteredPersonListView(SingleTableMixin, FilterView):
+#     table_class = PublicationTable
+#     model = Publication
+#     template_name = 'publications/list.html'
+#
+#     filterset_class = PublicationFilter
+#     paginate = {'per_page': 25}
 
 
 class BioSearchView(SearchView):

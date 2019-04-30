@@ -1,5 +1,6 @@
 from collections import defaultdict
 import copy
+from ..models import Variantcollection
 
 
 class PhenoGenoTable():
@@ -81,9 +82,12 @@ class PhenoGenoTable():
             self._pheno_sample.append(pheno)
         return self._pheno_sample
 
+    def _get_strain(self, sample_name):
+        return [x for x in self.variant_collection_set.samples() if x.sample == sample_name][0]
+
     def pheno_sample_stats(self, variant_collection_set, pos, neg, conclusive, possible, hint,
                            geno_status_filter=lambda g: True):
-
+        self.variant_collection_set = variant_collection_set
         self._pheno_sample = self.pheno_sample(variant_collection_set)
         self.stats = {x["name"]: {} for x in self._pheno_sample}
         self.stats_genetic = {x["name"]: defaultdict(lambda: defaultdict(lambda: [])) for x in self._pheno_sample}
@@ -96,62 +100,8 @@ class PhenoGenoTable():
                     gtpt_evaluations -= 1
 
         for pheno_dict in self._pheno_sample:
-            pheno = pheno_dict["name"]
-            samples = pheno_dict["samples"]
+            self._process_phenotype(conclusive, geno_status_filter, hint, neg, pheno_dict, pos, possible)
 
-            self.stats[pheno]["TP"] = {}
-            for x in samples:
-                reported_variants = [gs for gs in x["genotype"] if gs.status in [conclusive, possible]]
-                if (x["phenotype"] == pos.identifier) and reported_variants:
-                    self.stats[pheno]["TP"][x["sample"]] = reported_variants
-                    for rv in reported_variants:
-
-                        if geno_status_filter(rv) and (
-                                x["sample"] not in self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["TP"]):
-                            self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["TP"].append(x["sample"])
-
-            self.stats[pheno]["TN"] = {}
-            for x in samples:
-                hinted_variants = [gs for gs in x["genotype"] if gs.status == hint]
-                if (x["phenotype"] == neg.identifier) and (
-                        len([gs for gs in x["genotype"] if gs.status not in [conclusive, possible]]) == 0):
-                    self.stats[pheno]["TN"][x["sample"]] = hinted_variants
-                    for rv in hinted_variants:
-                        if geno_status_filter(rv) and (
-                                x["sample"] not in self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["TN"]):
-                            self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["TN"].append(x["sample"])
-
-            self.stats[pheno]["FP"] = {}
-            for x in samples:
-                reported_variants = [gs for gs in x["genotype"] if gs.status == conclusive]
-                if (x["phenotype"] == neg.identifier) and reported_variants:
-                    self.stats[pheno]["FP"][x["sample"]] = reported_variants
-                    for rv in reported_variants:
-                        if geno_status_filter(rv) and (
-                                x["sample"] not in self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["FP"]):
-                            self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["FP"].append(x["sample"])
-
-            self.stats[pheno]["FN"] = {}
-            for x in samples:
-                hinted_variants = [gs for gs in x["genotype"] if gs.status == hint]
-                if (x["phenotype"] == pos.identifier) and (
-                        len([gs for gs in x["genotype"] if gs.status in [conclusive, possible]]) == 0):
-                    self.stats[pheno]["FN"][x["sample"]] = hinted_variants
-                    for rv in hinted_variants:
-                        if geno_status_filter(rv) and (
-                                x["sample"] not in self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["FN"]):
-                            self.stats_genetic[pheno][rv.assignment.allele_fk.hgvs_c]["FN"].append(x["sample"])
-
-            resistant = len(self.stats[pheno]["TP"]) + len(self.stats[pheno]["FN"])
-            if resistant:
-                self.stats[pheno]["sensitivity"] = len(self.stats[pheno]["TP"]) * 1.0 / resistant
-            else:
-                self.stats[pheno]["sensitivity"] = 0
-            sensible = len(self.stats[pheno]["TN"]) + len(self.stats[pheno]["FP"])
-            if sensible:
-                self.stats[pheno]["specificity"] = len(self.stats[pheno]["TN"]) * 1.0 / sensible
-            else:
-                self.stats[pheno]["specificity"] = 0
         self.stats["total"] = {
             x: sum([(len(self.stats[p][x]) if len(x) == 2 else self.stats[p][x]) for p in self.stats])
             for x in ["TP", "TN", "FP", "FN"]}
@@ -167,3 +117,75 @@ class PhenoGenoTable():
             self.stats["total"]["specificity"] = 0
         self.stats["total"]["tested"] = gtpt_evaluations
         return self.stats, self.stats_genetic, self._pheno_sample
+
+    def _process_phenotype(self, conclusive, geno_status_filter, hint, neg, pheno_dict, pos, possible):
+        pheno = pheno_dict["name"]
+        samples = pheno_dict["samples"]
+
+        no_assays = [sample for sample in samples if len([x for x in self._get_strain(sample["sample"]).assays.all() if
+                                                          x.protocol.phenotype.name == pheno_dict["name"]]) == 0]
+
+        self.stats[pheno]["TP"] = {}
+        for x in samples:
+            reported_variants = [gs for gs in x["genotype"] if gs.status in [conclusive, possible]]
+            if (x["phenotype"] == pos.identifier) and reported_variants:
+                self.stats[pheno]["TP"][x["sample"]] = reported_variants
+                for rv in reported_variants:
+                    gene = rv.assignment.allele_fk.variant_fk.gene.locus_tag()
+                    if geno_status_filter(rv) and (
+                            x["sample"] not in self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c][
+                        "TP"]):
+                        self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c]["TP"].append(x["sample"])
+        self.stats[pheno]["TN"] = {}
+        for x in samples:
+            hinted_variants = [gs for gs in x["genotype"] if gs.status == hint]
+            if (x["phenotype"] == neg.identifier) and (
+                    len([gs for gs in x["genotype"] if gs.status in [conclusive, possible]]) == 0):
+                self.stats[pheno]["TN"][x["sample"]] = hinted_variants
+                for rv in hinted_variants:
+                    gene = rv.assignment.allele_fk.variant_fk.gene.locus_tag()
+                    if geno_status_filter(rv) and (
+                            x["sample"] not in self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c][
+                        "TN"]):
+                        self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c]["TN"].append(x["sample"])
+        self.stats[pheno]["FP"] = {}
+        for x in samples:
+            reported_variants = [gs for gs in x["genotype"] if gs.status in [conclusive, possible]]
+            if (x["phenotype"] == neg.identifier) and reported_variants:
+                self.stats[pheno]["FP"][x["sample"]] = reported_variants
+                for rv in reported_variants:
+                    gene = rv.assignment.allele_fk.variant_fk.gene.locus_tag()
+                    if geno_status_filter(rv) and (
+                            x["sample"] not in self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c][
+                        "FP"]):
+                        self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c]["FP"].append(x["sample"])
+        self.stats[pheno]["FN"] = {}
+        for x in samples:
+            hinted_variants = [gs for gs in x["genotype"] if gs.status == hint]
+            if (x["phenotype"] == pos.identifier) and (
+                    len([gs for gs in x["genotype"] if gs.status in [conclusive, possible]]) == 0):
+                self.stats[pheno]["FN"][x["sample"]] = hinted_variants
+                for rv in hinted_variants:
+                    gene = rv.assignment.allele_fk.variant_fk.gene.locus_tag()
+                    if geno_status_filter(rv) and (
+                            x["sample"] not in self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c][
+                        "FN"]):
+                        self.stats_genetic[pheno][gene + " " + rv.assignment.allele_fk.hgvs_c]["FN"].append(x["sample"])
+        resistant = len(self.stats[pheno]["TP"]) + len(self.stats[pheno]["FN"])
+        if resistant:
+            self.stats[pheno]["sensitivity"] = len(self.stats[pheno]["TP"]) * 1.0 / resistant
+        else:
+            self.stats[pheno]["sensitivity"] = 0
+        sensible = len(self.stats[pheno]["TN"]) + len(self.stats[pheno]["FP"])
+        if sensible:
+            self.stats[pheno]["specificity"] = len(self.stats[pheno]["TN"]) * 1.0 / sensible
+        else:
+            self.stats[pheno]["specificity"] = 0
+
+        # Chequeo set([x["sample"] for x in samples]) - set( reduce(    for x in ["TP","TN","FN","FP"], lambda x,y:x+y) )
+        tot = []
+        for x in ["TP", "TN", "FN", "FP"]:
+            tot += self.stats[pheno][x].keys()
+        assert len(tot) == len(set(tot))
+
+        assert (len(tot) + len(no_assays)) == len(samples), [len(tot), len(no_assays), len(samples)]

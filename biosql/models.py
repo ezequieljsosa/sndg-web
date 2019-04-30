@@ -481,7 +481,7 @@ class Term(models.Model):
     term_id = models.AutoField(primary_key=True)
     name = models.TextField(blank=True, null=True)
     definition = models.TextField(blank=True, null=True)
-    identifier = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    identifier = models.CharField(max_length=255, blank=True, null=True)
     is_obsolete = models.CharField(max_length=1, blank=True, null=True)
     ontology = models.ForeignKey(Ontology, models.DO_NOTHING,related_name="terms")
     version = models.PositiveSmallIntegerField(default=1, null=True)
@@ -489,7 +489,7 @@ class Term(models.Model):
     class Meta:
         managed = True
         db_table = 'term'
-        # unique_together = (('name', 'ontology', 'is_obsolete'),)
+        unique_together = (('identifier', 'ontology', 'is_obsolete'),)
 
     def __str__(self):
         return "%s - %s (%i)" % (self.identifier, self.name, self.ontology.ontology_id)

@@ -20,6 +20,7 @@ environ.Env.read_env()
 # DATABASE_URL=mysql://user:%23password@127.0.0.1:3306/dbname
 DATABASES = {
     'default': env.db(),
+    'chembl_25':env.db("CHEMBL_DATABASE_URL")
 }
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'pdbdb',
     'vardb',
     'bioresources',  # importante que este antes de allauth
+    'chembl_model',
 
     'django_select2',
     'easy_select2',
@@ -52,7 +54,7 @@ INSTALLED_APPS = [
     'haystack',
     # 'solrtest',
 
-    'django_filters',
+    # 'django_filters',
     'bootstrap3',
     'django_tables2',
     'crudbuilder',

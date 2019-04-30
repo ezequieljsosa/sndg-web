@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .models import Variantcollection, Phenotype, Genotype, Assay, Allele, Effect, ReportedAllele, Variant, \
-    Variantassignment, VariantCollectionSet,GenotypeSupport
+    Variantassignment, VariantCollectionSet, GenotypeSupport
 from biosql.models import Term
 from django.db.models import Q, Count
 from django.http import HttpResponseBadRequest
@@ -9,6 +9,7 @@ from collections import Counter
 from .io.PhenoGenoTable import PhenoGenoTable
 
 import math
+import json
 
 
 class Page:
@@ -105,7 +106,14 @@ def collection_set(request, pk):
     hint = Term.objects.get(ontology__name=GenotypeSupport.STATUS_ONTOLOGY, identifier="Hint")
 
     stats, stats_genetic, pheno_sample = pgt.pheno_sample_stats(vcs, pos, neg, conclusive, possible, hint)
-    _, stats_genetic_conclusive, _ = pgt.pheno_sample_stats(vcs, pos, neg, conclusive, possible, hint,lambda g:g.status == conclusive)
+    _, stats_genetic_conclusive, _ = pgt.pheno_sample_stats(vcs, pos, neg, conclusive, possible, hint,
+                                                            lambda g: g.status == conclusive)
+    for p, gts in list(stats_genetic_conclusive.items()):
+        for gt, ms in list(gts.items()):
+            if len(ms["TP"]) == 0 and len(ms["FP"]) == 0:
+                del stats_genetic_conclusive[p][gt]
+        stats_genetic_conclusive[p] = dict(stats_genetic_conclusive[p])
+    stats_genetic_conclusive = dict(stats_genetic_conclusive)
 
     # # summaries
     # Effect.objects.annotate(tcount=Count("variant_type")).filter(allele__assignments__variant_collection_fk=vc)
@@ -114,8 +122,18 @@ def collection_set(request, pk):
 
     queryset = Variant.objects.prefetch_related(
         "assignments__allele_fk__reported", "contig", "assignments__annotations",
-        "gene__qualifiers", "assignments__allele_fk__main_effect_fk", ).filter(
-        assignments__variant_collection_fk__in=vcs.samples())
+        "gene__qualifiers", "assignments__allele_fk__main_effect_fk").filter(
+        # assignments__annotations__prop="DP",assignments__annotations__value__gt=50,
+        assignments__variant_collection_fk__in=vcs.samples()).annotate(
+        alleles_count=Count('assignments__allele_fk__alt'))
+
+    # queryset = Variantassignment.objects.prefetch_related("allele_fk__reported","variant_fk__contig",
+    #     "annotations","variant_fk__gene__qualifiers",
+    #     "allele_fk__main_effect_fk").filter(variant_collection_fk__in=vcs.samples())
+
+    if "only_diff" in request.GET:
+        queryset = queryset.filter(alleles_count__lt=len(vcs.samples()))
+    queryset = queryset.distinct()
     page = page_from_request(queryset.count(), request)
     queryset = queryset[page.offset:page.offset + page.size]
 
@@ -123,32 +141,40 @@ def collection_set(request, pk):
     for v in queryset:
         alleles_dict = {"pos": v.pos, "chrom": v.contig.name, "ref": v.ref, "id": v.id,
                         "gene": v.gene.qualifiers_dict()["locus_tag"], "gene_pos": v.gene_pos, "samples": []}
-        variant_dict.append(alleles_dict)
 
         for s in vcs.samples():
             assignment = [va for va in v.assignments.all() if va.variant_collection_fk == s]
             if assignment:
                 va = assignment[0].allele_fk
                 sample_dict = {"alt": va.alt, "effect": va.main_effect_fk,
-                               "annotations": assignment[0].annotations.all()}
+                               "annotations": {x.prop:x.value for x in assignment[0].annotations.all()}}
             else:
                 sample_dict = {"alt": v.ref, "effect": None, "annotations": []}
             sample_dict["name"] = s.sample
             alleles_dict["samples"].append(sample_dict)
+
         alleles_dict.update(Counter([x["alt"] for x in alleles_dict["samples"]]))
+
+        variant_dict.append(alleles_dict)
 
     p_total = stats["total"]
     del stats["total"]
 
     query = ""
-
-    return render(request, 'variant_collection_set.html', {
-        "variant_collection_set": vcs, "variants": variant_dict,
-        "pheno_table": sample_pheno, "samples": vcs.samples(), "stats_genetic": stats_genetic,
-        "stats": stats, "pheno_sample": pheno_sample, "p_total": p_total, "query": query, "page_obj": page,
-        "phenotypes": vcs.phenotypes(), "metrics": VariantCollectionSet.STAT_METRICS,
-        "stats_genetic_conclusive": stats_genetic_conclusive
-    })
+    if "format" in request.GET and request.GET["format"] == "json":
+        data = {
+            "variants": variant_dict
+        }
+        from django.http import HttpResponse
+        return HttpResponse(json.dumps(data, indent=4, sort_keys=True,default=lambda obj:obj.__dict__))
+    else:
+        return render(request, 'variant_collection_set.html', {
+            "variant_collection_set": vcs, "variants": variant_dict,
+            "pheno_table": sample_pheno, "samples": vcs.samples(), "stats_genetic": stats_genetic,
+            "stats": stats, "pheno_sample": pheno_sample, "p_total": p_total, "query": query, "page_obj": page,
+            "phenotypes": vcs.phenotypes(), "metrics": VariantCollectionSet.STAT_METRICS,
+            "stats_genetic_conclusive": stats_genetic_conclusive
+        })
 
 
 def page_from_request(count, request):
@@ -173,6 +199,6 @@ def page_from_request(count, request):
     page.num_pages = math.ceil(count / page_size)
     page.paginator = {"show_pages": (prange[max(
         number - 3, 0):number + 2]),
-                      "num_pages": math.ceil(count / page_size)}
+                      "num_pages": math.ceil(count / page_size), "count": count}
 
     return page

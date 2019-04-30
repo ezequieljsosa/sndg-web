@@ -27,33 +27,33 @@
 <h3>Stats</h3>
 <table class="table table-responsive">
 <thead>
-<tr>
-<th>Phenotype</th>
-{% for metric in metrics %}
-<th>{{metric}}</th>
-{% endfor %}
-</tr>
-</thead>
-<tbody>
-{% for p in stats %}
-<tr>
-<td>{{p}}</td>
-{% for metric in metrics %}
+    <tr>
+        <th>Phenotype</th>
+        {% for metric in metrics %}
+        <th>{{metric}}</th>
+        {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in stats %}
+    <tr>
+        <td>{{p}}</td>
+        {% for metric in metrics %}
+            {% if metric|length == 2 %}
+                <td title="{{stats|getattribute:p|getattribute:metric|join:", "}}"> {{stats|getattribute:p|getattribute:metric|length}} </td>
+            {% else %}
+                <td>    {{stats|getattribute:p|getattribute:metric|floatformat:-2}} </td>
+            {% endif %}
+        {% endfor %}
+            </tr>
+    {% endfor %}
 
-{% if metric|length == 2 %}
-<td> {{stats|getattribute:p|getattribute:metric|length}} </td>
-{% else %}
-<td>    {{stats|getattribute:p|getattribute:metric|floatformat:-2}} </td>
-{% endif %}
-{% endfor %}
-</tr>
-{% endfor %}
-<tr>
-<th>Total</th>
-{% for metric in metrics %}
-<th> {{p_total|getattribute:metric|floatformat:-2}} </th>
-{% endfor %}
-</tr>
+    <tr>
+        <th>Total</th>
+        {% for metric in metrics %}
+            <th> {{p_total|getattribute:metric|floatformat:-2}} </th>
+        {% endfor %}
+    </tr>
 </tbody>
 </table>
 
@@ -62,41 +62,41 @@
 <h3>Genetic detail</h3>
 <table class="table table-responsive">
 <thead>
-<tr>
-<th>Phenotype/Variant</th>
-{% for metric in metrics %}
-{% if metric|length == 2%}
-<th>{{metric}}</th>
-{% endif %}
-{% endfor %}
-</tr>
+    <tr>
+    <th>Phenotype/Variant</th>
+    {% for metric in metrics %}
+        {% if metric|length == 2%}
+            <th>{{metric}}</th>
+        {% endif %}
+    {% endfor %}
+    </tr>
 </thead>
 <tbody>
-{% for p in stats_genetic %}
-<tr>
-<td><b>{{p}}</b></td>
-{% for metric in metrics %}
-{% if metric|length == 2 %}
-<td> {{stats|getattribute:p|getattribute:metric|length}} </td>
-{% endif %}
-{% endfor %}
-</tr>
-<tr>
-{% for v in stats_genetic_conclusive|getattribute:p %}
+    {% for p in stats_genetic_conclusive %}
+        <tr>
+            <td><b>{{p}}</b></td>
+            {% for metric in metrics %}
+                {% if metric|length == 2 %}
+                  <td> {{stats|getattribute:p|getattribute:metric|length}} </td>
+                {% endif %}
+            {% endfor %}
+        </tr>
 
-<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{v}}</td>
-{% for metric in metrics %}
-{% if metric|length == 2%}
-<td>  {{stats_genetic_conclusive|getattribute:p|getattribute:v|getattribute:metric|length}} </td>
-{% endif %}
+            {% for v in stats_genetic_conclusive|getattribute:p %}
+            <tr>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{v}}</td>
+                {% for metric in metrics %}
+                    {% if metric|length == 2 %}
+                    <td  title="{{stats_genetic_conclusive|getattribute:p|getattribute:v|getattribute:metric|join:", "}}" >
+                                {{stats_genetic_conclusive|getattribute:p|getattribute:v|getattribute:metric|length}} </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
 
-{% endfor %}
-
-</tr>
-{% endfor %}
 
 
-{% endfor %}
+    {% endfor %}
 </table>
 
 {% endif %}

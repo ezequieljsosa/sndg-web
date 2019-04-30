@@ -31,8 +31,9 @@
                       {% else %}
                       <li class="page-item disabled"><a class="page-link" href="#"><span>&raquo;</span></a></li>
                       {% endif %}
-
+<li>Total: {{page_obj.paginator.count}}</li>
                     </ul>
                     </nav>
+
 </div>
  {% endif %}
