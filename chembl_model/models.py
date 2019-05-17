@@ -57,7 +57,7 @@ class Activities(models.Model):
 
 class ActivityProperties(models.Model):
     ap_id = models.BigIntegerField(primary_key=True)
-    activity = models.ForeignKey(Activities, models.DO_NOTHING)
+    activity = models.ForeignKey(Activities, models.DO_NOTHING, related_name="properties")
     type = models.CharField(max_length=250)
     relation = models.CharField(max_length=50, blank=True, null=True)
     value = models.DecimalField(max_digits=64, decimal_places=30, blank=True, null=True)
@@ -386,7 +386,8 @@ class ComponentSynonyms(models.Model):
 
 
 class CompoundProperties(models.Model):
-    molregno = models.OneToOneField('MoleculeDictionary', models.DO_NOTHING, db_column='molregno')
+    molregno = models.OneToOneField('MoleculeDictionary', models.DO_NOTHING, db_column='molregno',
+                                    related_name="properties", primary_key=True)
     mw_freebase = models.DecimalField(max_digits=9, decimal_places=2, blank=True, null=True)
     alogp = models.DecimalField(max_digits=9, decimal_places=2, blank=True, null=True)
     hba = models.IntegerField(blank=True, null=True)
@@ -532,8 +533,8 @@ class Domains(models.Model):
 
 class DrugIndication(models.Model):
     drugind_id = models.BigIntegerField(primary_key=True)
-    record = models.ForeignKey(CompoundRecords, models.DO_NOTHING)
-    molregno = models.ForeignKey('MoleculeDictionary', models.DO_NOTHING, db_column='molregno', blank=True, null=True)
+    record = models.ForeignKey(CompoundRecords, models.DO_NOTHING,related_name="drugs")
+    molregno = models.ForeignKey('MoleculeDictionary', models.DO_NOTHING, db_column='molregno', blank=True, null=True,related_name="drugs")
     max_phase_for_ind = models.IntegerField(blank=True, null=True)
     mesh_id = models.CharField(max_length=20)
     mesh_heading = models.CharField(max_length=200)
@@ -1121,7 +1122,6 @@ class ZincCompound(models.Model):
     code = models.CharField(primary_key=True, max_length=25)
 
 
-
 class ZincProperty(models.Model):
     id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=25)
@@ -1137,4 +1137,3 @@ class ZincProperty(models.Model):
     SMILES = models.CharField(max_length=500, null=True)
     LogS = models.FloatField(null=True)
     chembl_id = models.FloatField(null=True)
-

@@ -1,15 +1,13 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView, DetailView
+import math
+from collections import defaultdict
 
 from django.db.models import Prefetch
+from django.shortcuts import render
+from django.views.generic import TemplateView
 
-from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, Term, Ontology, SeqfeatureQualifierValue
 from bioresources.models import Assembly, Publication, Sample, Resource
-from django.db.models import Q
-
-from django.shortcuts import redirect, reverse
-
-import math
+from .models import Taxon, Biosequence, Bioentry, Seqfeature, Biodatabase, BioentryQualifierValue, Ontology
+from SNDG import Struct
 
 
 class Page:
@@ -104,19 +102,14 @@ def sequence_view(request, pk):
                 if dbxref.dbxref.accession in functions:
                     functions[dbxref.dbxref.accession].append(qual.term)
 
-    else:
-        beg = be.biodatabase
-
-    graph = entry_graph(be, beg)
-
     if be.biodatabase.name.endswith("prots"):
         return render(request, 'biosql/protein_detail.html', {
-            "functions": functions, "graph": graph, "accession": be.biodatabase.name.replace("_prots", ""),
+            "functions": functions, "accession": be.biodatabase.name.replace("_prots", ""),
             "object": be, "feature": feature, "taxon": taxon, "seq": seq, "start": start, "end": end,
             "sidebarleft": 1})
     else:
         return render(request, 'biosql/biosequence_detail.html', {
-            "object": be, "graph": graph,
+            "object": be,
             "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
 
 
@@ -176,22 +169,26 @@ def gene_product_list_view(query_set, request):
     pass
 
 
-def protein_list_view(request):
+def protein_list_view(request, assembly_id):
     # filters = filter_from_req(request)
 
     # TableAttribute(name,entity,render,query,url,value)
+    be = Biodatabase.objects.get(biodatabase_id=assembly_id)
+    if "_prots" not in be.name:
+        be = Biodatabase.objects.get(name=be.name + "_prots")
+        assembly_id = be.biodatabase_id
+    # taxon = beg.entries.first().taxon
 
     filters = [TableAttribute("assembly", "bioentry", lambda e: e.biodatabase.name,
                               lambda param: Q(biodatabase_id=param), url=lambda e: e.biodatabase.get_absolute_url(),
-                              value=Biodatabase.objects.get(biodatabase_id=388))]
+                              value=Biodatabase.objects.get(biodatabase_id=assembly_id))]
     scorers = []
-
 
     def description(entity):
         beg = Biodatabase.objects.get(name=entity.biodatabase.name.replace("_prots", ""))
         f = Seqfeature.objects.seqfeature_from_locus_tag(beg.biodatabase_id, entity.accession)
         f = list(f)[0]
-        return f.qualifiers.get(term__name="product").value
+        return f.qualifiers.filter(term__name__in=["product","description","note"]).first().value
 
     def location(entity):
         beg = Biodatabase.objects.get(name=entity.biodatabase.name.replace("_prots", ""))
@@ -206,145 +203,74 @@ def protein_list_view(request):
         beg = Biodatabase.objects.get(name=entity.biodatabase.name.replace("_prots", ""))
         f = Seqfeature.objects.seqfeature_from_locus_tag(beg.biodatabase_id, entity.accession)
         f = list(f)[0]
-        return  ", ".join([f.qualifiers.get(term__name=x).value
-                              for x in ["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"]
-                              if f.qualifiers.filter(term__name=x).exists()]),
-
+        return ", ".join([f.qualifiers.get(term__name=x).value
+                          for x in ["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"]
+                          if f.qualifiers.filter(term__name=x).exists()]),
 
     columns = [TableAttribute("Description", "feature", lambda e: description(e),
                               query=lambda param: Q(value__icontains=param)),
                TableAttribute("Accession", "entry", lambda e: e.accession,
                               query=lambda param: Q(accession__contains=param),
-                              url=lambda e:e.get_absolute_url()),
+                              url=lambda e: e.get_absolute_url()),
                TableAttribute("Location", "feature", lambda e: location(e),
                               query=None),
-               TableAttribute("Aliases", "feature", lambda e: ", ".join( genes(e)),
+               TableAttribute("Aliases", "feature", lambda e: ", ".join(genes(e)),
                               query=lambda param: Q(value__icontains=param)),
 
                ]
 
     queryset = Bioentry.objects.prefetch_related("dbxrefs__dbxref", "qualifiers__term").filter(
-        biodatabase_id=388)
+        biodatabase_id=assembly_id)
 
     page = page_from_request(queryset.count(), request)
-
     queryset = queryset[page.offset:page.offset + page.size]
 
-    # beg = Biodatabase.objects.get(name=p.biodatabase.name.replace("_prots", ""))
-    # taxon = beg.entries.first().taxon
-
-
-
-
-
-
     return render(request, 'biosql/protein_list.html', {
-        "objects": enumerate(queryset, page.offset + 1), "filters": filters, "columns": columns, "page_obj": page, "query": "-",
+        "objects": enumerate(queryset, page.offset + 1), "filters": filters, "columns": columns, "page_obj": page,
+        "query": "-",
         "params": request.GET, "sidebarleft": 1})
 
 
-def publications_from_resource_graph(resource, graph, external_orgs, resource_identifier=None):
-    if not resource_identifier:
-        resource_identifier = resource.name
-
-    for x in resource.sources.filter(source__type=Resource.RESOURCE_TYPES.PUBLICATION).all():
-
-        graph["nodes"].append({"id": x.source.name, "label": labelize(x.source.name), "color": "SlateBlue"})
-        graph["edges"].append({"from": resource_identifier, "to": x.source.name})
-
-        p = Publication.objects.get(id=x.source.id)
-        for i, affiliation in enumerate(p.affiliations.filter(organizations__country="Argentina").all()):
-            if (affiliation.author.complete_name not in
-                    [x["id"] for x in graph["nodes"]]):
-                graph["nodes"].append({"id": affiliation.author.complete_name,
-                                       "label": affiliation.author.complete_name() + " #" + str(i),
-                                       "color": "cyan"})
-
-                for org in affiliation.organizations.all():
-                    if org.name not in [y["id"] for y in graph["nodes"]]:
-                        graph["nodes"].append({"id": org.name, "type": "organization",
-                                               "label": labelize(org.name),
-                                               "color": "green" if org.country == "Argentina" else "purple"})
-                    graph["edges"].append({"from": x.source.name, "to": org.name})
-                    graph["edges"].append({"from": org.name, "to": affiliation.author.complete_name})
-        for i, affiliation in enumerate(p.affiliations.filter(~Q(organizations__country="Argentina")).all()):
-            for org in affiliation.organizations.all():
-                if org not in external_orgs:
-                    external_orgs.append(org)
-
-
 from django.db.models import Q
-
-
-def assembly_graph(assembly):
-    external_orgs = []
-    assembly_name = assembly.external_ids.filter(type="accession").first().identifier
-    graph = {"nodes": [{"id": assembly_name, "label": assembly_name, "type": "assembly", "color": "orange"}],
-             "edges": []}
-
-    publications_from_resource_graph(assembly, graph, external_orgs, assembly_name)
-    for rel in assembly.sources.filter(source__type__in=[Resource.RESOURCE_TYPES.PUBLICATION,
-                                                         Resource.RESOURCE_TYPES.SAMPLE]).all():  # .filter(~Q(source__type="publication"))
-        if rel.source.name not in graph["nodes"]:
-
-            graph["edges"].append({"from": assembly_name, "to": rel.source.name})
-            if rel.source.type == Resource.RESOURCE_TYPES.PUBLICATION:
-                graph["nodes"].append(
-                    {"id": rel.source.name, "type": "publication", "label": labelize(rel.source.name),
-                     "color": "SlateBlue"})
-                publications_from_resource_graph(rel.source, graph, external_orgs)
-
-            else:
-                graph["nodes"].append(
-                    {"id": rel.source.name, "type": "sample", "label": labelize(rel.source.name), "color": "Grey"})
-                sample = Sample.objects.get(id=rel.source.id)
-                sample_origin = sample.origin_dict()
-                for k, v in sample_origin.items():
-                    name = k + ": " + v
-                    if name not in graph["nodes"]:
-                        graph["nodes"].append({"id": name, "label": labelize(name), "color": "AliceBlue"})
-                        graph["edges"].append({"from": name, "to": sample.name})
-
-    nodes = []
-    added = []
-    for x in graph["nodes"]:
-        if x["id"] not in added:
-            added.append(x["id"])
-            nodes.append(x)
-    graph["nodes"] = nodes
-    graph["external_orgs"] = external_orgs
-    return graph
-
-
-def entry_graph(be, beg):
-    assembly = Assembly.objects.get(external_ids__identifier=beg.name)
-    graph = assembly_graph(assembly)
-    graph["nodes"].append({"id": be.accession, "label": be.accession, "type": "seq", "color": "red"})
-    graph["edges"].append({"from": be.accession, "to": beg.name})
-    return graph
 
 
 def assembly_view(request, pk):
     be = Biodatabase.objects.get(biodatabase_id=pk)
     if "_prots" in be.name:
         be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-        be = be2.get(name=be.name.replace("_prots",""))#TODO meter en otro lado esta regla
+        be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
     else:
-        be = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-        be = be.get(biodatabase_id=pk)
+        be = Biodatabase.objects.get(biodatabase_id=pk)
 
-    assembly = Assembly.objects.get(external_ids__identifier=be.name)
+    page = None
+    if be.entries.count() < 500:
+        # ontology = Ontology.objects.get(name="Stats")
+        # qvs = BioentryQualifierValue.objects.prefetch_related("bioentry","term").filter(
+        #     bioentry__biodatabase=be, term__ontology=ontology)
+        # qualifiers = defaultdict(lambda: {})
+        # for qv in qvs:
+        #     qualifiers[qv.bioentry.accession][qv.term.identifier.split("_")[-1]] = qv.value
+        # # x.accession: {y.term.identifier.split("_")[-1]: y.value for y in x.qualifiers.all() }
+        be = Biodatabase.objects.prefetch_related("entries__qualifiers__terms").get(biodatabase_id=pk)
+        queryset = be.entries
+    else:
+        queryset = be.entries.prefetch_related("qualifiers__term")
+        page = page_from_request(queryset.count(), request)
+        queryset = queryset[page.offset:page.offset + page.size]
+
+    tax = be.entries.first().taxon
+    assembly = {
+        "name": be.name, "description": be.description, "ncbi_tax": tax, "biodatabase_id": be.biodatabase_id
+    }
     lengths = {}
-    for x in be.entries.all():
+    for x in queryset.all():
         seq = Biosequence.objects.raw("""
         SELECT bioentry_id, version , length , alphabet ,"" seq
         FROM biosequence WHERE bioentry_id = %i ;
         """ % (x.bioentry_id))[0]
         lengths[x.accession] = seq.length
 
-    graph = assembly_graph(assembly)
-
     return render(request, 'biosql/assembly_detail.html', {"lengths": lengths,
-                                                           "object": assembly, "graph": graph,
-                                                           "contigs": be.entries.all(),
+                                                           "object": assembly,
+                                                           "contigs": queryset, "page_obj": page, "query": None,
                                                            "sidebarleft": {}})

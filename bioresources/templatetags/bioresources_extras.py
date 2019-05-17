@@ -80,6 +80,9 @@ def index(List, i):
 numeric_test = re.compile("^\d+$")
 
 
+
+
+
 @register.filter(name='getattribute')
 def getattribute(value, arg):
     """Gets an attribute of an object dynamically from a string name"""
@@ -93,7 +96,10 @@ def getattribute(value, arg):
     else:
         return ""
 
+@register.filter(name='map')
+def map(value, arg):
+    return [getattribute(x,arg) for x in value]
 
-@register.inclusion_tag('paginator.html')
+@register.inclusion_tag('tags/paginator.html')
 def paginator(query, page_obj,params):
     return {"query": query, "page_obj": page_obj,'params':params}

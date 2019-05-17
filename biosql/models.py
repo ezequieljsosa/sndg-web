@@ -124,7 +124,7 @@ class BioentryDbxref(models.Model):
 class BioentryPath(models.Model):
     bioentry_path_id = models.AutoField(primary_key=True)
     object_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="object_bioentry_path")
-    subject_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="subject_bioentry_path")
+    subject_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="subject_bioentry_path") # parent
     term = models.ForeignKey('Term', models.DO_NOTHING)
     distance = models.PositiveIntegerField(blank=True, null=True)
 
@@ -164,7 +164,7 @@ class BioentryReference(models.Model):
 class BioentryRelationship(models.Model):
     bioentry_relationship_id = models.AutoField(primary_key=True)
     object_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="object_bioentry_relationship")
-    subject_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="subject_bioentry_relationship")
+    subject_bioentry = models.ForeignKey(Bioentry, models.DO_NOTHING, related_name="subject_bioentry_relationship") # parent
     term = models.ForeignKey('Term', models.DO_NOTHING)
     rank = models.IntegerField(default=1, null=True)
 
@@ -354,7 +354,7 @@ class Seqfeature(models.Model):
     class Meta:
         managed = True
         db_table = 'seqfeature'
-        unique_together = (('bioentry', 'type_term', 'source_term', 'rank'),)
+        # unique_together = (('bioentry', 'type_term', 'source_term', 'rank'),)
 
     def locus_tag(self):
         return self.qualifiers.get(term__name='locus_tag').value
@@ -388,7 +388,7 @@ class SeqfeatureDbxref(models.Model):
 class SeqfeaturePath(models.Model):
     seqfeature_path_id = models.AutoField(primary_key=True)
     object_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="object_paths")
-    subject_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="subject_paths")
+    subject_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="subject_paths") # parent
     term = models.ForeignKey('Term', models.DO_NOTHING)
     distance = models.PositiveIntegerField(blank=True, null=True)
 
@@ -400,7 +400,7 @@ class SeqfeaturePath(models.Model):
 
 class SeqfeatureQualifierValue(models.Model):
     seqfeature_qualifiervalue_id = models.AutoField(primary_key=True)
-    seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="qualifiers")
+    seqfeature = models.ForeignKey(Seqfeature, models.CASCADE, related_name="qualifiers")
     term = models.ForeignKey('Term', models.DO_NOTHING)
     rank = models.SmallIntegerField(default=1, null=True)
     value = models.TextField()
@@ -420,7 +420,7 @@ class SeqfeatureQualifierValue(models.Model):
 class SeqfeatureRelationship(models.Model):
     seqfeature_relationship_id = models.AutoField(primary_key=True)
     object_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="object_relationships")
-    subject_seqfeature = models.ForeignKey(Seqfeature, models.DO_NOTHING, related_name="subject_relationships")
+    subject_seqfeature = models.ForeignKey(Seqfeature, models.CASCADE, related_name="subject_relationships") # parent
     term = models.ForeignKey('Term', models.DO_NOTHING)
     rank = models.IntegerField(default=1, null=True)
 
@@ -492,7 +492,7 @@ class Term(models.Model):
         unique_together = (('identifier', 'ontology', 'is_obsolete'),)
 
     def __str__(self):
-        return "%s - %s (%i)" % (self.identifier, self.name, self.ontology.ontology_id)
+        return "%s - %s (%s)" % (self.identifier, self.name, self.ontology.name)
 
 
 class TermDbxref(models.Model):
@@ -509,7 +509,7 @@ class TermDbxref(models.Model):
 
 class TermPath(models.Model):
     term_path_id = models.AutoField(primary_key=True)
-    subject_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="subject_termpaths")
+    subject_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="subject_termpaths") # parent
     predicate_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="predicate_termpaths")
     object_term = models.ForeignKey(Term, models.DO_NOTHING, related_name="object_termpaths")
     ontology = models.ForeignKey(Ontology, models.DO_NOTHING)

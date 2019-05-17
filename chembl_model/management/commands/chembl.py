@@ -9,14 +9,59 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import Bio.SeqIO as bpio
 import pandas as pd
-from chembl_model.models import TargetDictionary, ZincCompound,ZincProperty
+from chembl_model.models import TargetDictionary, ZincCompound, ZincProperty, Assays,CompoundProperties
 from itertools import islice
+
 
 class Command(BaseCommand):
     help = 'Loads gene ontology terms'
 
     def add_arguments(self, parser):
         parser.add_argument('command')
+
+    def target2json(self, protein_accession="P47791"):
+        def tofloat(x):
+            try:
+                return float(x)
+            except:
+                return x
+        data = {"target": {"accession": protein_accession, "chemblid": ""}, "assays": []}
+        for a in Assays.objects.using("chembl_25").prefetch_related("activities__properties", "assay_type",
+                                                                    "activities__record__molregno__chembl",
+                                                                    "chembl","activities__record__molregno__properties").filter(
+            tid__components__component__accession=protein_accession):
+
+            data["target"]["chemblid"] = a.tid.chembl.chembl_id
+            assay_data = {
+                "chemblid": a.chembl.chembl_id,
+                "type": a.assay_type.assay_desc,
+
+                "description": a.description,
+                "activities": []
+            }
+            data["assays"].append(assay_data)
+
+            for act in a.activities.all():
+                props = {
+                    k:tofloat(v) for k,v in act.record.molregno.properties.__dict__.items()
+                    if k != "_state"
+                } if  hasattr(act.record.molregno,"properties") else {}
+                act_data = {
+                    "compound": {"key": act.record.compound_key, "name": act.record.compound_name,
+                                 "chemblid": act.record.molregno.chembl.chembl_id,
+                                 "is_drug": bool(act.record.drugs.all()),
+                                 "properties":props},
+                    "standard_relation": act.standard_relation,
+                    "standard_value": tofloat( act.standard_value),
+                    "standard_units": act.standard_units,
+                    "activity_comment": act.activity_comment,
+                    "pchembl_value": tofloat(act.pchembl_value),
+                    "properties": [
+                        {"type": x.type, "relation": x.relation, "value": float(x.value) if x.value else None,
+                         "units": x.units, "text": x.text_value, "comments": x.comments} for x in act.properties.all()]
+                }
+                assay_data["activities"].append(act_data)
+        return data
 
     def handle(self, *args, **options):
         if options["command"] == "fasta":
@@ -58,3 +103,11 @@ class Command(BaseCommand):
                 if i and (i % 1000 == 0):
                     Zinc.objects.bulk_create(bulk)
                     bulk = []
+        if options["command"] == "dump_tp_assays":
+            self.stdout.write ("[")
+            with open("/data/databases/target/processed/chembl_targets.txt") as h:
+                targets = [x.strip() for  x in h]
+
+            for x in tqdm(targets,file=sys.stderr):
+                self.stdout.write(json.dumps(self.target2json(x)) + "\n")
+            self.stdout.write ("]")

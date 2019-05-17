@@ -43,7 +43,7 @@ class SeqfeatureQuerySet(QuerySet):
         ont_sfk = Ontology.objects.get(name="SeqFeature Keys")
         ont_at = Ontology.objects.get(name="Annotation Tags")
 
-        term_cds = Term.objects.get(ontology=ont_sfk, name="CDS")
+        term_cds = Term.objects.get(ontology=ont_sfk, name="mRNA")
         term_lt = Term.objects.get(ontology=ont_at, name="locus_tag")
 
         return Seqfeature.objects.raw("""

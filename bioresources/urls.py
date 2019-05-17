@@ -39,6 +39,7 @@ urlpatterns = [
     # path('upload_api/', view=views.NotConcurrentUploaderView.as_view(), name='upload'),
 
     path('upload/', view=ResumableUploadView.as_view(), name='upload'),
+    path('submission/', view=views.submission, name='submission'),
     # path('upload_api/', view=ResumableUploadView.as_view(),  name='upload_api'),
 
 
