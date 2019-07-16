@@ -100,6 +100,9 @@ class Command(BaseCommand):
             data.append(record)
         return data
 
+
+
+
     def handle(self, *args, **options):
 
         self.mapping = {

@@ -33,13 +33,15 @@ urlpatterns = [
     # forms
     path('ra/new', views.tool, name='ra_new'),
     path('sample/new', views.tool, name='sample_new'),
-    path('assembly/new', views.assembly_new, name='assembly_new'),
+
 
     # path('upload/', view=views.ExampleView.as_view(), name='home'),
     # path('upload_api/', view=views.NotConcurrentUploaderView.as_view(), name='upload'),
 
     path('upload/', view=ResumableUploadView.as_view(), name='upload'),
     path('submission/', view=views.submission, name='submission'),
+    path('submission/assembly', views.assembly_new, name='assembly_new'),
+    path('submission/import', views.import_resource, name='import_resource'),
     # path('upload_api/', view=ResumableUploadView.as_view(),  name='upload_api'),
 
 

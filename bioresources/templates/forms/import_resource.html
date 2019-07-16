@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% load crispy_forms_tags %}
+
+
+
+{% load static %}
+{% load bioresources_extras %}
+
+{% block content %}
+<div class="row">
+<div class="col-lg-9">
+
+{% trans 'Buscar' %} {{ resource }} {% trans 'a importar' %}: <br />
+<form method="post" action="{% url 'bioresources:import_resource' %}">
+{% csrf_token %}
+<input type="search" name="search" value="{{search}}" /><button class="btn">Search</button>
+</form>
+{% if results %}
+
+<table id="results_table" class="table">
+    {% for r in results %}
+    <tr>
+        <td><a href={{r.url}}> {{r.name}} <img src="{% static 'external.png' %}" /> </a></td>
+        <td>{{r.species_name}}</td>
+        <td>{{r.description}}</td>
+        <td>{{r.intraspecific_name}}</td>
+        {% if r.name in collaborate %}
+        <td><button class="btn btn-danger">{% trans 'Colaboracion' %} </button></td>
+        {% elif r.name in collaborated %}
+        <td>Already related with this project</td>
+        {% else %}
+        <td><button class="btn btn-primary">{% trans 'Importar' %} </button></td>
+        {% endif%}
+    </tr>
+    {% endfor %}
+</table>
+{% paginator query page_obj request.GET %}
+
+{% endif %}
+
+
+</div>
+</div>
+{% endblock %}

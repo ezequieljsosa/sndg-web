@@ -251,7 +251,7 @@ def assembly_view(request, pk):
         # for qv in qvs:
         #     qualifiers[qv.bioentry.accession][qv.term.identifier.split("_")[-1]] = qv.value
         # # x.accession: {y.term.identifier.split("_")[-1]: y.value for y in x.qualifiers.all() }
-        be = Biodatabase.objects.prefetch_related("entries__qualifiers__terms").get(biodatabase_id=pk)
+        be = Biodatabase.objects.prefetch_related("entries__qualifiers__term").get(biodatabase_id=pk)
         queryset = be.entries
     else:
         queryset = be.entries.prefetch_related("qualifiers__term")
@@ -272,5 +272,5 @@ def assembly_view(request, pk):
 
     return render(request, 'biosql/assembly_detail.html', {"lengths": lengths,
                                                            "object": assembly,
-                                                           "contigs": queryset, "page_obj": page, "query": None,
+                                                           "contigs": queryset.all(), "page_obj": page, "query": None,
                                                            "sidebarleft": {}})

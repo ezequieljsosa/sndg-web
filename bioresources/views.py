@@ -27,6 +27,8 @@ from biosql.views import labelize
 import urllib
 from haystack.inputs import Exact
 
+from biosql.io.Pagination import Page
+
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as __
@@ -220,9 +222,9 @@ def reads(request, pk):
         "tool": tool,
         "sidebarleft": 1, })
 
-def submission(request):
-    return render(request,"forms/submission.html")
 
+def submission(request):
+    return render(request, "forms/submission.html")
 
 
 # from django_filters.views import FilterView
@@ -236,8 +238,6 @@ def submission(request):
 #
 #     filterset_class = PublicationFilter
 #     paginate = {'per_page': 25}
-
-
 
 
 class BioSearchView(SearchView):
@@ -293,7 +293,7 @@ class BioSearchView(SearchView):
 #     return render(request, 'publications/list.html',
 #                   {"publications": table})
 
-@login_required
+# @login_required
 def assembly_new(request):
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
@@ -309,6 +309,33 @@ def assembly_new(request):
         form = AssemblyForm()
 
     return render(request, 'forms/assembly_new.html', {'form': form})
+
+
+def import_resource(request):
+    current_user = request.user
+    if request.method == 'POST':
+        from .io.NCBISearch import NCBISearch
+        search = request.POST["search"]
+        ncbi_search = NCBISearch()
+        page = Page.from_request(request)
+        records, total = ncbi_search.search(search, retmax=page.size, retstart=page.offset)
+        existing = [x for x in Assembly.objects.filter(name__in=[x.name for x in records])]
+
+        if current_user:
+            collaborated = [x.name for x in existing if
+                           hasattr(current_user, "person") and current_user.person in x.collaborators.all()]
+        else:
+            collaborated = []
+        collaborate = [x.name for x in existing if x.name not in collaborated]
+
+        page.set_count(total)
+        return render(request, 'forms/import_resource.html',
+                      {'resource': "assembly", "search": search, "collaborate": collaborate,
+                       "page_obj": page, "results": records, "collaborated": collaborated})
+    else:
+        search = request.GET.get("search", "")
+        return render(request, 'forms/import_resource.html', {
+            'resource': "assembly", "search": search})
 
 
 # from django_fine_uploader.views import FineUploaderView
@@ -415,7 +442,7 @@ def assembly_view(request, pk):
     be = Biodatabase.objects.get(biodatabase_id=pk)
     if "_prots" in be.name:
         be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-        be = be2.get(name=be.name.replace("_prots",""))#TODO meter en otro lado esta regla
+        be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
     else:
         be = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
         be = be.get(biodatabase_id=pk)
@@ -434,6 +461,7 @@ def assembly_view(request, pk):
                                                            "object": assembly, "graph": graph,
                                                            "contigs": be.entries.all(),
                                                            "sidebarleft": {}})
+
 
 def sequence_view(request, pk):
     be = (Bioentry.objects.select_related("biodatabase").select_related("taxon")

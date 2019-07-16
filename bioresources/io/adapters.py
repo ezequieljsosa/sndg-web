@@ -215,17 +215,16 @@ class NCBISRAAdapter:
 class NCBIAssemblyAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(retry(lambda: Entrez.esummary(db="assembly", id=ncbi_id)))["DocumentSummarySet"][
-            "DocumentSummary"][0]
+        return self.fetch_list(ncbi_id)[0]
 
-    def save(self, summaryData, ncbi_id):
+    def fetch_list(self,ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="assembly", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
 
+    def adapt(self,summaryData):
         name = summaryData["AssemblyName"]
         acc = summaryData["AssemblyAccession"]
-        qs = Assembly.objects.filter(external_ids__identifier=acc, external_ids__type="accession")
-        if qs.exists():
-            return qs.first()
-        ncbi_org = Organization.objects.get(name="NCBI")
+
 
         tax = Taxon.objects.filter(ncbi_taxon_id=int(summaryData["Taxid"])).first()
 
@@ -239,7 +238,7 @@ class NCBIAssemblyAdapter:
                      level=level_dict[summaryData["AssemblyStatus"].lower()],
                      assembly_type=type_dict[summaryData["AssemblyType"].lower()],
                      species_name=summaryData["SpeciesName"])
-
+        s.url = "https://www.ncbi.nlm.nih.gov/assembly/" + acc
         try:
             s.intraspecific_name = str(
                 summaryData["Biosource"]["InfraspeciesList"][0]["Sub_type"]) + " " + \
@@ -257,6 +256,17 @@ class NCBIAssemblyAdapter:
                                                        "%Y/%m/%d")
         except ValueError:
             pass
+
+        return s
+
+    def save(self, summaryData, ncbi_id):
+
+        acc = summaryData["AssemblyAccession"]
+        qs = Assembly.objects.filter(external_ids__identifier=acc, external_ids__type="accession")
+        if qs.exists():
+            return qs.first()
+        ncbi_org = Organization.objects.get(name="NCBI")
+        s = self.adapt(summaryData)
 
         s.save()
         s.publishers.add(ncbi_org)

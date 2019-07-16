@@ -207,6 +207,8 @@ class Resource(models.Model):
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
 
+    collaborators = models.ManyToManyField(Person, related_name="resources", blank=True)
+
     creators = models.ManyToManyField(Organization, related_name="created_resources", blank=True)
     publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
     keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
@@ -239,7 +241,7 @@ class Resource(models.Model):
         templ = get_template("resources/xoai_resource.xml")
         return templ.render({"r": self})
 
-        # return compile_data
+
 
     def ncbi_tax_keywords(self):
         return self.ncbi_tax.keywords.text if self.ncbi_tax else None

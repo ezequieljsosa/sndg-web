@@ -104,10 +104,10 @@ class Command(BaseCommand):
                     Zinc.objects.bulk_create(bulk)
                     bulk = []
         if options["command"] == "dump_tp_assays":
-            self.stdout.write ("[")
+
             with open("/data/databases/target/processed/chembl_targets.txt") as h:
                 targets = [x.strip() for  x in h]
 
             for x in tqdm(targets,file=sys.stderr):
                 self.stdout.write(json.dumps(self.target2json(x)) + "\n")
-            self.stdout.write ("]")
+
