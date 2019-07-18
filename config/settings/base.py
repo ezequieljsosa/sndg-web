@@ -7,7 +7,7 @@ import environ
 ROOT_DIR = (
     environ.Path(__file__) - 3
 )
-APPS_DIR = ROOT_DIR.path("sndg-web")
+APPS_DIR = ROOT_DIR.path("sndg")
 
 env = environ.Env()
 
