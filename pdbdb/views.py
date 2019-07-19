@@ -1,11 +1,8 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.generic import TemplateView, DetailView
-
 from django.db.models import Q
-import json
+from django.http import HttpResponse
+from django.views.generic import TemplateView
 
-from .models import PDB, ResidueSet, PDBResidueSet, Property, ResidueSetProperty, Residue, Atom
+from .models import PDB, ResidueSet, PDBResidueSet, Property, Residue
 
 
 class StructureView(TemplateView):

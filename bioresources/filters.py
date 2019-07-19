@@ -1,12 +1,10 @@
 # import django_filters
 # from django_filters.widgets import RangeWidget
-from .models import Publication
-from .forms import PublicationForm
-from django.db.models import DateField
 from datetime import datetime
 
 now = datetime.now()
 
+# path('publications', views.filteredpersonlistview.as_view(), name='publications'),
 
 def _truncate(dt):
     return dt.date()

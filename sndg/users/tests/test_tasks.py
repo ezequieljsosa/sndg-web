@@ -1,7 +1,6 @@
 import pytest
 from celery.result import EagerResult
 
-
 from sndg.users.tasks import get_users_count
 from sndg.users.tests.factories import UserFactory
 

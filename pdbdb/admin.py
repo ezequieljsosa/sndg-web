@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import Property,ResidueSet,PDB,Residue,Atom,PDBResidueSet
-from django.utils.html import format_html
 from django.urls import reverse
+from django.utils.html import format_html
+
+from .models import Property, ResidueSet, PDB, Residue, PDBResidueSet
+
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):

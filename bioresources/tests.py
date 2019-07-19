@@ -5,11 +5,6 @@ from django.test import TestCase
 
 from bioresources.io.adapters import NCBIGDSAdapter
 
-import unittest
-
-
-
-
 
 class AdaptersTestCase(TestCase):
     def setUp(self):

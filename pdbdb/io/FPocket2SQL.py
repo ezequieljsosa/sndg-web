@@ -1,14 +1,11 @@
+import json
 import os
 import sys
-import traceback
 import warnings
-import json
 
 from Bio import BiopythonWarning, BiopythonParserWarning, BiopythonDeprecationWarning, BiopythonExperimentalWarning
-
 from django.db import transaction
 from django.db.models import Max
-from tqdm import tqdm
 
 from pdbdb.models import PDB, Property, PDBResidueSet, ResidueSet, ResidueSetProperty, ResidueSetResidue, \
     AtomResidueSet, Residue, Atom

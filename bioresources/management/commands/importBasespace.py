@@ -1,14 +1,9 @@
-import json
 import os
+import subprocess as sp
 
+import requests
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
-
-from bioresources.models import Barcode
-from biosql.models import Taxon
-from django.db import transaction
-import requests
-import subprocess as sp
 
 
 class Command(BaseCommand):

@@ -2,6 +2,7 @@ from crudbuilder.abstract import BaseCrudBuilder
 
 from .models import Publication
 
+
 class PublicationCrud(BaseCrudBuilder):
     model = Publication
     search_fields = ['name']

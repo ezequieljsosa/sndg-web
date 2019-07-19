@@ -3,6 +3,7 @@ base settings to build other settings files upon.
 """
 
 import environ
+import os
 
 ROOT_DIR = (
     environ.Path(__file__) - 3
@@ -70,11 +71,23 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "rest_framework",
     "django_celery_beat",
+
+    'haystack',
+
+    # 'captcha',
+    # 'crispy_forms',
+    # "resumable",
+    # 'django_select2',
 ]
 
 LOCAL_APPS = [
     "sndg.users.apps.UsersConfig",
-    # Your stuff: custom apps go here
+
+    'bioseq',
+    # 'pdbdb',
+    # 'vardb',
+    # 'chembl_model',
+    'bioresources',
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -213,7 +226,7 @@ EMAIL_BACKEND = env(
 # ADMIN
 # ------------------------------------------------------------------------------
 # Django Admin URL.
-ADMIN_URL = "admin/"
+ADMIN_URL = "admin_sndg/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
 ADMINS = [("""Ezequiel Sosa""", "ezequieljsosa@gmail.com")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
@@ -288,3 +301,48 @@ INSTALLED_APPS += ["compressor"]
 STATICFILES_FINDERS += ["compressor.finders.CompressorFinder"]
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+HAYSTACK_CONNECTIONS = {
+    # SNDG_SOLR=solr://127.0.0.1:8984/solr/Notes
+    'default': {
+        'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
+        'URL': env('SNDG_SOLR'),  # 'http://127.0.0.1:8984/solr/Notes'
+        'INCLUDE_SPELLING': True,
+        # ...or for multicore...
+        # 'URL': 'http://127.0.0.1:8983/solr/mysite',
+        'EXCLUDED_INDEXES': ['bioresources.search_indexes.ResourceIndexOAI'],
+    },
+    'oai': {
+        'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
+        'URL': 'http://127.0.0.1:8984/solr/oai',
+        'INCLUDE_SPELLING': False,
+        'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
+                             'bioresources.search_indexes.StructureIndex',
+                             'bioresources.search_indexes.AssemblyIndex',
+                             'bioresources.search_indexes.ExpressionIndex',
+                             'bioresources.search_indexes.ToolIndex',
+                             'bioresources.search_indexes.BioProjectIndex',
+                             'bioresources.search_indexes.PersonIndex',
+                             'bioresources.search_indexes.OrganizationIndex',
+                             'bioresources.search_indexes.BarcodeIndex',
+                             ],
+
+    },
+}
+
+
+HAYSTACK_ID_FIELD = env("HAYSTACK_ID_FIELD",default='id')
+HAYSTACK_DJANGO_CT_FIELD = env("HAYSTACK_DJANGO_CT_FIELD",default='django_ct')
+HAYSTACK_DJANGO_ID_FIELD = env("HAYSTACK_DJANGO_ID_FIELD",default='django_id')
+HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD",default='text')
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
+
+OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
+
+
+# STATICFILES_DIRS = (
+#     os.path.abspath(os.path.join(str(ROOT_DIR), "../static/")),
+#     ("jbrowse", "/data/xomeq/JBrowse-1.14.2/"),
+# )

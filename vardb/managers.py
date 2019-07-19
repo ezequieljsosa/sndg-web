@@ -1,13 +1,10 @@
 """
 
 """
-import datetime
 from django.db import models
-from django.db.models.query import QuerySet
-from django.db.models import Prefetch, Q
-
-from django.db.models.functions import Cast
 from django.db.models import IntegerField
+from django.db.models.functions import Cast
+from django.db.models.query import QuerySet
 
 
 class VariantannotationQuerySet(QuerySet):

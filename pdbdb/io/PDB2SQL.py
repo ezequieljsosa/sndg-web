@@ -1,20 +1,15 @@
-from django.core.management.base import BaseCommand, CommandError
+import math
+import os
+import warnings
+
+import pandas as pd
+from Bio import BiopythonWarning, BiopythonParserWarning, BiopythonDeprecationWarning, BiopythonExperimentalWarning
+from Bio.PDB.PDBParser import PDBParser
+from Bio.PDB.Polypeptide import is_aa
 from django.db import transaction
+from tqdm import tqdm
 
 from pdbdb.models import PDB, Residue, Atom
-import os
-import pandas as pd
-from tqdm import tqdm
-from Bio.PDB.Polypeptide import is_aa
-
-from Bio.PDB.PDBParser import PDBParser
-from django.db.utils import IntegrityError
-from bioresources.models import Structure
-
-import math
-import traceback
-import warnings
-from Bio import BiopythonWarning, BiopythonParserWarning, BiopythonDeprecationWarning, BiopythonExperimentalWarning
 
 warnings.simplefilter('ignore', RuntimeWarning)
 warnings.simplefilter('ignore', BiopythonWarning)

@@ -1,24 +1,16 @@
-from django.core.management.base import CommandError
-from django.db import transaction
-from django.db.utils import IntegrityError
-
-from django_tqdm import BaseCommand
-from django.db.models import Q
-
-import traceback
-
-import datetime
 import json
-import os
-import pandas as pd
 
-from vardb.models import Protocol, AntibioticResistance, ReportedAllele, Allele, Effect, Variant, AlleleEffect
-from biosql.models import Term, Ontology, Biodatabase, Bioentry, Seqfeature
-
-from tqdm import tqdm
 import Bio.SeqIO as bpio
+import pandas as pd
 from Bio.Seq import Seq
 from Bio.SeqUtils import seq3
+from biosql.models import Biodatabase, Bioentry, Seqfeature
+from django.db import transaction
+from django.db.models import Q
+from django_tqdm import BaseCommand
+from tqdm import tqdm
+
+from vardb.models import AntibioticResistance, ReportedAllele, Allele, Effect, Variant, AlleleEffect
 
 
 class Command(BaseCommand):

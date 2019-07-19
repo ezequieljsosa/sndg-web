@@ -1,19 +1,14 @@
 import json
 import os
-from datetime import datetime
+
 from tqdm import tqdm
-import pandas as pd
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sndg.settings")
 import django
 
 django.setup()
 
-from bioresources.models import BioProject, Assembly, Structure, Expression, ExternalId, Organization, ResourceRelation, \
-    Publication
-from django.core.exceptions import ObjectDoesNotExist
-
-from biosql.models import Taxon, TaxonName
+from bioresources.models import BioProject, Assembly, Structure, Expression, ResourceRelation
 
 mappings = {}
 assembly_nuc = {}

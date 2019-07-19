@@ -1,12 +1,12 @@
 import datetime
+from urllib.error import URLError
+
 import xmltodict
 from Bio import Entrez
-from bioresources.models import Sample, Publication, ExternalId, Resource, ResourceRelation, Organization, Person, \
-    ReadsArchive, Assembly, Structure, Expression, Affiliation, ResourceProperty, ResourcePropertyValue
 from biosql.models import Taxon, TaxonName, Term, Ontology
-from django.db import transaction
 
-from urllib.error import URLError
+from bioresources.models import Sample, Publication, ExternalId, Resource, Organization, Person, \
+    ReadsArchive, Assembly, Structure, Expression, Affiliation, ResourceProperty, ResourcePropertyValue
 
 
 def retry(q, n=4):

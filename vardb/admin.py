@@ -1,6 +1,7 @@
 from django.contrib import admin
+
 from .models import Variant, Allele, Effect, Phenotype, Genotype, AntibioticResistance, Protocol, Assay, \
-    ReportedAllele, GenotypeSupport,VariantCollectionSet,VariantCollectionSetAssignment,StudiedPhenotype
+    ReportedAllele, GenotypeSupport, VariantCollectionSet, VariantCollectionSetAssignment, StudiedPhenotype
 
 
 @admin.register(Variant)

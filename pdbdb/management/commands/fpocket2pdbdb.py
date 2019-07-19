@@ -1,16 +1,12 @@
 import os
-import sys
 import traceback
 import warnings
-import json
 
 from Bio import BiopythonWarning, BiopythonParserWarning, BiopythonDeprecationWarning, BiopythonExperimentalWarning
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 from tqdm import tqdm
 
-from pdbdb.models import PDB, Property, PDBResidueSet, ResidueSet, ResidueSetProperty, ResidueSetResidue, \
-    AtomResidueSet, Residue, Atom
+from pdbdb.models import PDB
 
 warnings.simplefilter('ignore', RuntimeWarning)
 warnings.simplefilter('ignore', BiopythonWarning)

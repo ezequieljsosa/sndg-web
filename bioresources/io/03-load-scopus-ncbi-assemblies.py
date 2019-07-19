@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+
 from tqdm import tqdm
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sndg.settings")
@@ -8,8 +9,7 @@ import django
 
 django.setup()
 
-from bioresources.models import BioProject, Assembly, Structure, Expression, ExternalId, Organization
-from biosql.models import Taxon, TaxonName
+from bioresources.models import Assembly, ExternalId, Organization
 
 with open("/home/eze/workspace/genomica-arg/data/scopus_ncbi_assemblies.json2") as h:
     lineas = [x for x in h.readlines() if x.strip()]

@@ -1,7 +1,7 @@
-from django.db import models
 from datetime import datetime
 
 from biosql.models import Taxon
+from django.db import models
 
 
 class CustomBinaryCharField(models.CharField):

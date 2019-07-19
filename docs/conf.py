@@ -5,7 +5,9 @@
 # https://medium.freecodecamp.org/sphinx-for-django-documentation-2454e924b3bc
 import os
 import sys
+
 import django
+
 sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'sndg.settings'
 django.setup()

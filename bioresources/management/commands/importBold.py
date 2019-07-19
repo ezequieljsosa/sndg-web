@@ -1,14 +1,14 @@
 import json
 import os
+import subprocess as sp
 
+from bioseq.models import Taxon
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from tqdm import tqdm
 
-from bioresources.models import Barcode,Organization
-from biosql.models import Taxon
-from django.db import transaction
+from bioresources.models import Barcode, Organization
 
-import subprocess as sp
 
 def execute(cmd,**kwargs):
     sp.call(cmd.format(**kwargs),shell=True)

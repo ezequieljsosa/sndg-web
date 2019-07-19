@@ -1,23 +1,17 @@
 import json
 import os
-
-from django.core.management.base import BaseCommand
-from tqdm import tqdm
-import xmltodict
 from datetime import datetime
+from urllib.error import URLError
 
 from Bio import Entrez
-from bioresources.models import Barcode
-from biosql.models import Taxon
+from django.core.management.base import BaseCommand
 from django.db import transaction
-import requests
-import subprocess as sp
-from bioresources.io.scopus import ScopusDS
+from tqdm import tqdm
+
 from bioresources.io.adapters import scopus_extended_publication, NCBIGDSAdapter, NCBIAssemblyAdapter, \
     NCBIBioSampleAdapter, NCBISRAAdapter, NCBIStructureAdapter
+from bioresources.io.scopus import ScopusDS
 from bioresources.models import ProcessStatus, ProcessStatusStep, Organization, ResourceRelation, Resource
-
-from urllib.error import URLError
 
 
 def retry(q, n=3):

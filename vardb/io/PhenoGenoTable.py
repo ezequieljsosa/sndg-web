@@ -1,6 +1,4 @@
 from collections import defaultdict
-import copy
-from ..models import Variantcollection
 
 
 class PhenoGenoTable():

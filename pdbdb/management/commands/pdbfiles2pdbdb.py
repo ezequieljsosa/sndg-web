@@ -1,21 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
-
-from pdbdb.models import PDB, Property, PDBResidueSet, ResidueSet, ResidueSetProperty, ResidueSetResidue, \
-    AtomResidueSet, Residue, Atom
-
 import os
-import pandas as pd
-from tqdm import tqdm
-from Bio.PDB.Polypeptide import is_aa
 
-from Bio.PDB.PDBParser import PDBParser
-from django.db.utils import IntegrityError
-from bioresources.models import Structure
+from django.core.management.base import BaseCommand, CommandError
+from tqdm import tqdm
 
 from pdbdb.io.PDB2SQL import PDB2SQL
-
-
+from pdbdb.models import PDB
 
 
 def iterpdbs(pdbs_dir, pdb_extention=".ent"):

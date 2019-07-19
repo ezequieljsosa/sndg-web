@@ -1,5 +1,7 @@
 from Bio import Entrez
+
 from .adapters import NCBIAssemblyAdapter
+
 
 class NCBISearch():
 

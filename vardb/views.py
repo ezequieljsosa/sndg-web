@@ -1,15 +1,15 @@
-from django.shortcuts import render
-from .models import Variantcollection, Phenotype, Genotype, Assay, Allele, Effect, ReportedAllele, Variant, \
-    Variantassignment, VariantCollectionSet, GenotypeSupport
+import json
+import math
+from collections import Counter
+
 from biosql.models import Term
 from django.db.models import Q, Count
 from django.http import HttpResponseBadRequest
+from django.shortcuts import render
 
-from collections import Counter
 from .io.PhenoGenoTable import PhenoGenoTable
-
-import math
-import json
+from .models import Variantcollection, Phenotype, Genotype, Assay, Allele, Effect, Variant, \
+    Variantassignment, VariantCollectionSet, GenotypeSupport
 
 
 class Page:

@@ -1,12 +1,7 @@
-import datetime
-from tqdm import tqdm
-from haystack import indexes
-from django.db.models import Prefetch
-from .models import Publication, Assembly, BioProject, Expression, Structure, Person, Organization, Affiliation, \
-    Barcode, Resource, Tool, ResourceRelation
-from biosql.models import Bioentry, Biodatabase,Seqfeature
-from django.conf import settings
 import sys
+
+from bioseq.models.Bioentry import Bioentry
+from haystack import indexes
 
 only_not_indexed = sys.argv[1] in ["rebuild_index", "update_index"]  # for solr index updating
 

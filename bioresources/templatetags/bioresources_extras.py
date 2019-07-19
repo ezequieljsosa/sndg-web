@@ -1,7 +1,7 @@
-from django import template
-from urllib.parse import urlparse, parse_qsl
-from django.conf import settings
 import re
+from urllib.parse import urlparse, parse_qsl
+
+from django import template
 
 register = template.Library()
 

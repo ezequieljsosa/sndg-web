@@ -1,24 +1,17 @@
-from django.core.management.base import CommandError
-from django.db import transaction
-from django.db.utils import IntegrityError
-
-from django_tqdm import BaseCommand
-from django.db.models import Q
-
-import traceback
-
-import datetime
-import json
-import os
-import logging
-from biosql.models import Bioentry, Biodatabase, Seqfeature
-from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect, AlleleEffect
-import vcf
-import subprocess
-from tqdm import tqdm
-import hgvs.parser
 import gzip
+import logging
+import subprocess
 from functools import reduce
+
+import hgvs.parser
+import vcf
+from biosql.models import Bioentry, Biodatabase, Seqfeature
+from django.db import transaction
+from django.db.models import Q
+from django_tqdm import BaseCommand
+from tqdm import tqdm
+
+from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect, AlleleEffect
 
 _log = logging.getLogger(__name__)
 

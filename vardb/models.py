@@ -1,10 +1,10 @@
-from collections import defaultdict
 from Bio.Seq import Seq
+from biosql.models import Biodatabase, Bioentry, Seqfeature, Term, Ontology
 from django.db import models
 from django.db.models import Q
-from model_utils import Choices
 from django.utils.translation import gettext as _
-from biosql.models import Biodatabase, Bioentry, Seqfeature, Term, Ontology
+from model_utils import Choices
+
 from .managers import VariantannotationManager, ReportedAlleleManager, VariantassignmentManager
 
 

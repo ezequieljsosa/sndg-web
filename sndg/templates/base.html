@@ -1,0 +1,209 @@
+{% load i18n %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../../../favicon.ico">
+
+    <title>{% block title %} {% trans 'SNDG' %} {% endblock %}</title>
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+
+    <!-- Custom styles for this template -->
+    <style>
+    /* Show it is fixed to the top */
+    body {
+      min-height: 75rem;
+      padding-top: 4.5rem;
+      background: #FAFBFC;
+      color: #333333;
+      width: 100%;
+
+    }
+.big-icon {
+    font-size: 64px;
+}
+.container {
+margin-left: 10px;
+margin-right: 10px;
+}
+
+</style>
+
+   {% block head %}{% endblock %}
+
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+      <a class="navbar-brand" href="{% url 'bioresources:index' %}">SNDG</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'bioresources:index' %}">{% trans 'Home' %} <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'bioresources:available_tools' %}">{% trans 'Tools' %}</a>
+          </li>
+          <li class="nav-item">
+                      <a class="nav-link" href="{% url 'bioresources:stats' %}">{% trans 'Stats' %}</a>
+                    </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'about' %}">{% trans 'Information' %}</a>
+          </li>
+
+
+        </ul>
+
+{% if request.user.username %}
+
+                        <ul class="navbar-nav  pull-right">
+                       <li class="nav-item dropleft ">
+                               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                 <i class="fa fa-user">  </i>&nbsp;{{request.user.username}}
+                               </a>
+                               <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                 <a class="dropdown-item" href="#">{% trans 'Jobs' %}</a>
+                                 <a class="dropdown-item" href="#">{% trans 'Profile' %}</a>
+                                 <div class="dropdown-divider"></div>
+                                 <a class="dropdown-item" href="{% url 'account_logout' %}">{% trans 'Exit' %}</a>
+                               </div>
+                             </li>
+                              <li class="nav-item">
+
+                                   </li>
+                        </ul>
+
+{% else %}
+<ul class="navbar-nav  pull-right">
+          <li class="nav-item">
+
+           <a class="nav-link" href="{% url 'account_login' %}?next={{ request.path }}"><i class="fa fa-user">  </i>&nbsp;{% trans 'Login' %} / {% trans 'Register' %}</a>
+
+
+
+
+          </li>
+          </ul>
+
+{% endif %}
+
+                      </div>
+    </nav>
+
+
+<div class="row">
+
+{% block sidebarleft %}
+
+
+
+
+
+{% endblock %}
+
+
+
+{% if sidebarleft and  sidebarrigth %}
+
+<main role="main"  class="col-md-8">
+
+{% elif   sidebarleft or  sidebarrigth %}
+<main id="main-div" role="main" class="col-md-10">
+
+{% else %}
+<main id="main-div" role="main" class="col-md-12 container">
+
+{% endif %}
+
+      {% block jumbotron %}{% endblock %}
+
+       {% block content %}{% endblock %}
+
+</main>
+{% block sidebarrigth %}
+
+{% if false and sidebarrigth %}
+
+<nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+            {% if sidebarrigth.news %}
+              <li class="nav-item">
+                <h1><i class="fa fa-newspaper">  </i>{% trans 'News' %}</h1>
+                {% for news in  sidebarrigth.news  %}
+                <h2>{{news.title}}</h2>
+                <div>{{news.text}}</div>
+                {% endfor %}
+              </li>
+
+             {% endif %}
+              </ul></div></nav>
+
+{% endif %}
+
+{% endblock %}
+
+
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+
+    </main>
+
+</main>
+</div>
+
+{% block footer %}
+<style>
+.main-footer {
+    background: #fff;
+    padding-bottom: 32px;
+    padding-top: 60px;
+}
+</style>
+<footer class="main-footer">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-3 col-sm-3">
+
+
+
+				</div>
+				<div class="col-md-4 col-sm-4">
+
+                						<img width="100%" src="{% static 'footer_logo.png' %}" class="img-responsive" />
+
+                				</div>
+				<div class="col-md-3 col-sm-6">
+					<section>
+						<ul class="menu nav">
+							<li><a href="/">INICIO</a></li>
+						</ul>
+					</section>
+				</div>
+			</div>
+		</div>
+	</footer>
+{% endblock %}
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+
+
+
+{% block javascripts %}
+
+{% endblock %}
+
+  </body>
+</html>

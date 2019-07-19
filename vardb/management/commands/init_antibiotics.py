@@ -1,21 +1,9 @@
-from django.core.management.base import CommandError
-from django.db import transaction
-from django.db.utils import IntegrityError
-
 from django_tqdm import BaseCommand
-from django.db.models import Q
 
-import traceback
+from biosql.models import Term, Ontology
+from django_tqdm import BaseCommand
 
-import datetime
-import json
-import os
-import pandas as pd
-
-from vardb.models import Protocol, AntibioticResistance,ReportedAllele,Allele,Effect,GenotypeSupport,Assay
-from biosql.models import Term, Ontology,Biodatabase,Bioentry
-
-from tqdm import tqdm
+from vardb.models import Protocol, AntibioticResistance, GenotypeSupport, Assay
 
 
 class Command(BaseCommand):

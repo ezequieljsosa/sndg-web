@@ -1,22 +1,11 @@
-from django.core.management.base import CommandError
-from django.db import transaction
-from django.db.utils import IntegrityError
-
 from django_tqdm import BaseCommand
 from django.db.models import Q
 from django.db import transaction
 
-import traceback
-
-import datetime
-import json
 import os
 import logging
-from biosql.models import Bioentry, Biodatabase, Seqfeature
-from vardb.models import Variant, Allele, Variantannotation, Variantassignment, Variantcollection, Effect, AlleleEffect, \
-    AntibioticResistance, VariantCollectionSet, Genotype, GenotypeSupport
+from vardb.models import Allele, Variantannotation, Variantcollection, AntibioticResistance, VariantCollectionSet, Genotype, GenotypeSupport
 import vcf
-import subprocess
 from tqdm import tqdm
 import hgvs.parser
 
