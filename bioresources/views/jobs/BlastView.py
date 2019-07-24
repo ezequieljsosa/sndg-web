@@ -7,8 +7,8 @@ def blast(request):
         ndatabases.append({"value": db.biodatabase_id, "label": "Genome - " + db.name})
         pdatabases.append({"value": dbp.biodatabase_id, "label": "Proteome - " + db.name})
 
-    return render(request, 'biosql/tools/blast.html', {"ndatabases": ndatabases, "pdatabases": pdatabases})
+    return render(request, 'bioseq/tools/blast.html', {"ndatabases": ndatabases, "pdatabases": pdatabases})
 
 
 def blast_result(request):
-    return render(request, 'biosql/tools/blast_result.html', {})
+    return render(request, 'bioseq/tools/blast_result.html', {})

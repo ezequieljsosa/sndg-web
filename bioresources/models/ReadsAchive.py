@@ -12,4 +12,4 @@ class ReadsArchive(Resource):
     update_date = models.DateField(null=True)
 
     class Meta:
-        verbose_name_plural = __("Reads Archive")
+        verbose_name_plural = _("Reads Archive")

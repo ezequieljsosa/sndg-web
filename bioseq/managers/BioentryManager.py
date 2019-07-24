@@ -7,11 +7,11 @@ from django.db.models.query import QuerySet
 class BioentryQuerySet(QuerySet):
 
     def proteins(self, index_updated=False):
-        from .models import Bioentry
+        from bioseq.models.Bioentry import Bioentry
         return Bioentry.objects.prefetch_related("dbxrefs__dbxref", "qualifiers__term__dbxrefs__dbxref", "seq").filter(
-            index_updated=index_updated,
-            bioentry_id = 3724603,
-            biodatabase_id=388)
+            index_updated=index_updated)
+            # ,bioentry_id = 3724603,
+            # biodatabase_id=388)
 
 
 class BioentryManager(models.Manager):

@@ -4,17 +4,24 @@ from django.utils.translation import gettext_lazy as __
 from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
+from bioresources.models.Publication import Publication
+
 
 def publication(request, pk):
-    publication = Publication.objects.prefetch_related("targets__target").get(id=pk)
+    publication = Publication.objects.prefetch_related("targets__target", "affiliations__author",
+                                                       "affiliations__organizations").get(id=pk)
     orgs = publication.affiliation_names()
+    org_map = {}
     authors = []
     for aff in publication.affiliations.all():
-        author = aff.author.complete_name() + " " + " ".join(
+        author = aff.author
+        author.affs =  " ".join(
             ["(" + str(orgs.index(org.name) + 1) + ")" for org in aff.organizations.all()])
         if author not in authors:
             authors.append(author)
+        for org in aff.organizations.all():
+            org_map[org.name] = org
 
     return render(request, 'resources/publication.html', {
-        "publication": publication,
+        "publication": publication,"authors":authors,"org_map":org_map,
         "sidebarleft": 1})

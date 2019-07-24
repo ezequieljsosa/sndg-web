@@ -34,7 +34,7 @@
 <tr><td><b>Tipo</b></td><td>{{ object.assembly_type }}</td></tr>
 <tr><td><b>Taxon</b></td><td>
 {% if object.ncbi_tax %}
-<a href="{% url 'biosql:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
+<a href="{% url 'bioresources:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
 {% else %}
 ...
 {% endif %}
@@ -65,7 +65,7 @@
 <tbody>
 {% for c in contigs %}
 <tr>
-<td><a href="{% url 'biosql:seq_view' c.bioentry_id %}"> {{c.accession}}</a></td>
+<td><a href="{% url 'bioresources:nucleotide_view' c.bioentry_id %}"> {{c.accession}}</a></td>
 <td>{{lengths|getattribute:c.accession}}</td>
 
 {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
@@ -155,7 +155,7 @@
             //         window.location.href = '{%  url 'bioresources:assembly_view' 0  %}'.replace("/0", "/" + node.id)
             //         break
             //     case "seq":
-            //          window.location.href = '{%  url 'biosql:seq_view' 0  %}'.replace("/0","/" +node.id)
+            //          window.location.href = '{%  url 'bioresources:nucleotide_view' 0  %}'.replace("/0","/" +node.id)
             //          break
             //     case "organization":
             //          window.location.href = '{%  url 'bioresources:organization_view' 0  %}'.replace("/0","/" +node.id)

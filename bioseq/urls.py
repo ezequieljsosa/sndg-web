@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 from .controllers import tools
 
-app_name = 'biosql'
+app_name = 'bioseq'
 urlpatterns = [
     path('about', views.AboutView.as_view(), name='index'),
     path('tax/<int:pk>', views.TaxView.as_view(), name='tax_view'),

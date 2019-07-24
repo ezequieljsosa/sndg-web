@@ -5,6 +5,9 @@ from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 
 from .Resource import Resource
+from .Organization import Organization
+from bioseq.models.Term import Term
+
 
 class ResourceProperty(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.DO_NOTHING)

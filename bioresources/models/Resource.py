@@ -66,7 +66,7 @@ class Resource(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.type = self._class_.TYPE
+        self.type = self.__class__.TYPE
         super(Resource, self).save(*args, **kwargs)
 
     def get_absolute_url(self):

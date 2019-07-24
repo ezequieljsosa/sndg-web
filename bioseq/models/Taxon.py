@@ -49,3 +49,15 @@ class TaxonName(models.Model):
         managed = True
         db_table = 'taxon_name'
         unique_together = (('taxon', 'name', 'name_class'),)
+
+
+class TaxIdx(models.Model):
+    """
+    Created for indexing purposes
+    """
+    tax = models.OneToOneField(Taxon, models.CASCADE, primary_key=True, db_column="tax_id", related_name="keywords")
+    text = models.TextField()
+
+    class Meta:
+        managed = True
+        db_table = 'tax_idx'

@@ -45,12 +45,12 @@ class BioProject(Resource):
 
     def related_author_names(self):
         ran = []
-        for affiliation in self.targets.filter(source__type="pmc").all():
+        for affiliation in self.targets.filter(source__type=Resource.RESOURCE_TYPES.PUBLICATION).all():
             ran += affiliation.source.author_names()
         return list(set(ran))
 
     def related_org_names(self):
         ran = []
-        for affiliation in self.targets.filter(source__type="pmc").all():
+        for affiliation in self.targets.filter(source__type=Resource.RESOURCE_TYPES.PUBLICATION).all():
             ran += affiliation.source.affiliation_names()
         return list(set(ran))

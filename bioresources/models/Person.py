@@ -25,7 +25,7 @@ class Person(models.Model):
         return self.name + " " + self.surname
 
     def rtype(self):
-        return "person"
+        return 20 #"person"
 
     def get_absolute_url(self):
         return reverse('bioresources:person_view', args=[str(self.id)])

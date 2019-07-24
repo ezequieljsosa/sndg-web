@@ -100,6 +100,12 @@ def getattribute(value, arg):
 def map(value, arg):
     return [getattribute(x,arg) for x in value]
 
+@register.filter(name='execute')
+def execute(value, method):
+    method = getattr(value, method)
+    return method()
+
+
 @register.inclusion_tag('tags/paginator.html')
 def paginator(query, page_obj,params):
     return {"query": query, "page_obj": page_obj,'params':params}

@@ -15,4 +15,4 @@ class Biodatabase(models.Model):
         db_table = 'biodatabase'
 
     def get_absolute_url(self):
-        return reverse('biosql:assembly_view', args=[str(self.biodatabase_id)])
+        return reverse('bioseq:assembly_view', args=[str(self.biodatabase_id)])

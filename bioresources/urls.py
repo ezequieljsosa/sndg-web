@@ -12,7 +12,13 @@ from .views.models.ToolView import tool
 from .views.models.BarcodeView import barcode
 from .views.models.ReadsAchiveView import reads
 from .views.models.ExpressionView import expression
+from .views.models.ProteinView import ProteinView
+from .views.models.NucleotideView import NucleotideView
+from .views.models.TaxView import TaxView
+
 from .views.search.BioSearch import BioSearchView
+from .views.search import search_redirect
+
 
 
 
@@ -27,6 +33,7 @@ urlpatterns = [
     path('', index.index, name='stats'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),
+    path('search_redirect/<str:acctype>/<str:acc>',  search_redirect , name='search_redirect'),
 
     # Models
     path('bioproject/<int:pk>',  bioproject, name='bioproject_view'),
@@ -41,6 +48,12 @@ urlpatterns = [
     path('barcode/<int:pk>', barcode, name='barcode_view'),
     path('tool/<int:pk>', tool, name='tool_view'),
     path('reads/<int:pk>', reads, name='reads_view'),
+    path('nucleotide/<int:pk>', NucleotideView, name='nucleotide_view'),
+    path('protein/<int:pk>', ProteinView, name='protein_view'),
+    path('tax/<int:pk>',  TaxView.as_view(), name='tax_view'),
+
+
+
 
     # path('sample/<str:pk>', sample_view, name='sample_view2'),
     # path('assembly/<str:pk>', assembly, name='assembly_view2'),

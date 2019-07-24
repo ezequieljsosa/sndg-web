@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
 
+from .Dbxref import Dbxref
+
 class Ontology(models.Model):
     GO = "Gene Ontology"
     SO = "Sequence Ontology"
@@ -12,11 +14,6 @@ class Ontology(models.Model):
     SFK = 'SeqFeature Keys'
     GRAPH = "Graph"
     ANNTAGS = "Annotation Tags"
-
-
-
-
-
 
     ontology_id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=32)
@@ -31,6 +28,7 @@ class Ontology(models.Model):
 
     @staticmethod
     def load_ann_terms():
+        from .Term import Term
         sfs_ontology = Ontology.objects.get_or_create(name=Ontology.SFS)[0]
         Term.objects.get_or_create(identifier="manual", name="manual", version=1, ontology=sfs_ontology,
                                    definition="added or corrected by a person")
@@ -44,29 +42,30 @@ class Ontology(models.Model):
                                    definition="")
         sfk_ontology = Ontology.objects.get_or_create(name=Ontology.SFK)[0]
         Term.objects.get_or_create(identifier="gene", name="gene", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="CDS", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="tRNA", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="rRNA", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="ncRNA", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="exon", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="mRNA", name="manual", version=1, ontology=sfk_ontology)
-        Term.objects.get_or_create(identifier="miRNA", name="manual", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="CDS", name="CDS", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="tRNA", name="tRNA", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="rRNA", name="rRNA", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="ncRNA", name="ncRNA", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="exon", name="exon", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="mRNA", name="mRNA", version=1, ontology=sfk_ontology)
+        Term.objects.get_or_create(identifier="miRNA", name="miRNA", version=1, ontology=sfk_ontology)
 
-        ann_ontology = Ontology.objects.get_or_create(name=Ontology.AnnTags)[0]
+        ann_ontology = Ontology.objects.get_or_create(name=Ontology.ANNTAGS)[0]
         Term.objects.get_or_create(identifier="locus_tag", name="locus_tag", version=1, ontology=ann_ontology)
         Term.objects.get_or_create(identifier="gene", name="gene", version=1, ontology=ann_ontology)
         Term.objects.get_or_create(identifier="product", name="product", version=1, ontology=ann_ontology)
 
-
-    def load_go_base(self,ontology_name):
+    @staticmethod
+    def load_go_base():
+        from .Term import Term
         graph_ontology = Ontology.objects.get_or_create(name=Ontology.GRAPH, definition="")[0]
 
         is_a = \
             Term.objects.get_or_create(identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")[0]
 
-        ontology = Ontology.objects.get_or_create(name=ontology_name)[0]
+        ontology = Ontology.objects.get_or_create(name=Ontology.GO)[0]
 
-        self.dbmap = {
+        dbmap = {
             "biological_process": Dbxref.objects.get_or_create(dbname="go", accession="biological_process", version=1)[
                 0],
             "molecular_function": Dbxref.objects.get_or_create(dbname="go", accession="molecular_function", version=1)[
@@ -95,7 +94,7 @@ class Ontology(models.Model):
         gosubset_prok "Prokaryotic GO subset"
         virus_checked "Viral overhaul terms" """.split("\n"):
             k = x.strip().split(' ')[0]
-            self.dbmap[k] = Dbxref.objects.get_or_create(dbname="go", accession=k, version=1)[0]
+            dbmap[k] = Dbxref.objects.get_or_create(dbname="go", accession=k, version=1)[0]
 
         part_of = Term.objects.get_or_create(identifier="part_of", ontology=graph_ontology)[0]
         regulates = Term.objects.get_or_create(identifier="regulates", ontology=graph_ontology)[0]
@@ -146,5 +145,5 @@ class Ontology(models.Model):
             "has_part": has_part, "transcribed_to": transcribed_to, "variant_of": variant_of,
             "transcribed_from": transcribed_from, "adjacent_to": adjacent_to,
             "member_of": member_of, "contains": contains, "non_functional_homolog_of": non_functional_homolog_of,
-            "overlaps": overlaps, "guided_by": guided_by
+            "overlaps": overlaps, "guided_by": guided_by,"is_a":is_a
         }

@@ -19,7 +19,7 @@ class TableAttribute:
 
 class TaxView(TemplateView):
     model = Taxon
-    template_name = "biosql/taxon_detail.html"
+    template_name = "bioseq/taxon_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -77,12 +77,12 @@ def sequence_view(request, pk):
                     functions[dbxref.dbxref.accession].append(qual.term)
 
     if be.biodatabase.name.endswith("prots"):
-        return render(request, 'biosql/protein_detail.html', {
+        return render(request, 'bioseq/protein_detail.html', {
             "functions": functions, "accession": be.biodatabase.name.replace("_prots", ""),
             "object": be, "feature": feature, "taxon": taxon, "seq": seq, "start": start, "end": end,
             "sidebarleft": 1})
     else:
-        return render(request, 'biosql/biosequence_detail.html', {
+        return render(request, 'bioseq/biosequence_detail.html', {
             "object": be,
             "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
 
@@ -175,7 +175,7 @@ def protein_list_view(request, assembly_id):
     page = page_from_request(queryset.count(), request)
     queryset = queryset[page.offset:page.offset + page.size]
 
-    return render(request, 'biosql/protein_list.html', {
+    return render(request, 'bioseq/protein_list.html', {
         "objects": enumerate(queryset, page.offset + 1), "filters": filters, "columns": columns, "page_obj": page,
         "query": "-",
         "params": request.GET, "sidebarleft": 1})
@@ -220,7 +220,7 @@ def assembly_view(request, pk):
         """ % (x.bioentry_id))[0]
         lengths[x.accession] = seq.length
 
-    return render(request, 'biosql/assembly_detail.html', {"lengths": lengths,
+    return render(request, 'bioseq/assembly_detail.html', {"lengths": lengths,
                                                            "object": assembly,
                                                            "contigs": queryset.all(), "page_obj": page, "query": None,
                                                            "sidebarleft": {}})

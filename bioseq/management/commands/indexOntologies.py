@@ -1,6 +1,9 @@
-from biosql.models import Taxon, TaxIdx, Term, TermRelationship, Ontology, TermIdx
 from django.db import transaction
 from django_tqdm import BaseCommand
+
+from bioseq.models.Ontology import Ontology
+from bioseq.models.Term import TermRelationship, Term, TermIdx
+from bioseq.models.Taxon import Taxon, TaxonName, TaxIdx
 
 
 class Command(BaseCommand):
@@ -16,7 +19,7 @@ class Command(BaseCommand):
         txt += txt_acc
         for t in Taxon.objects.prefetch_related("names", "children").filter(parent_taxon=parent):
             if t.ncbi_taxon_id != 1:
-                self.travel_tax_child(t, iter_adv, txt,buffer)
+                self.travel_tax_child(t, iter_adv, txt, buffer)
 
         if parent.ncbi_taxon_id != 1:
             buffer["data"][parent.ncbi_taxon_id] = TaxIdx(tax=parent, text=txt)
@@ -36,7 +39,7 @@ class Command(BaseCommand):
                                                            ).filter(subject_term=parent,
                                                                     predicate_term=self.is_a):
             if c.object_term.identifier not in cache:
-                self.travel_go_child(cache, c.object_term, iter_adv, txt,buffer)
+                self.travel_go_child(cache, c.object_term, iter_adv, txt, buffer)
 
         if parent.term_id in cache:
             return
@@ -56,21 +59,20 @@ class Command(BaseCommand):
         count = Taxon.objects.count()
         iter_adv = self.tqdm(total=count)
 
-        buffer = {"data":{}}
-        for c in self.tqdm(root.children.all(),total=root.children.count()):
-            self.travel_tax_child(c, iter_adv, "",buffer)
+        buffer = {"data": {}}
+        for c in self.tqdm(root.children.all(), total=root.children.count()):
+            self.travel_tax_child(c, iter_adv, "", buffer)
         bulk_create(buffer["data"].values())
 
-
-        buffer = {"data":[]}
+        buffer = {"data": []}
         cache = {x.term_id: 1 for x in self.tqdm(TermIdx.objects.select_related("term").all())}
-        go = Ontology.objects.get(name="Gene Ontology")
+        go = Ontology.objects.get(name=Ontology.)
         count = Term.objects.filter(ontology=go).count()
 
         # Term.objects.prefetch_related("synonyms").filter(ontology=go).first() "synonyms",
         iter_adv = self.tqdm(total=count)
-        iter_adv.update( len(cache))
+        iter_adv.update(len(cache))
         gos = list(Term.objects.filter(ontology=go))
         for c in gos:
             iter_adv.set_description(c.identifier)
-            self.travel_go_child(cache, c, iter_adv, "",buffer)
+            self.travel_go_child(cache, c, iter_adv, "", buffer)

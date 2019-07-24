@@ -340,9 +340,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
 
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
+# LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
-
-# STATICFILES_DIRS = (
-#     os.path.abspath(os.path.join(str(ROOT_DIR), "../static/")),
-#     ("jbrowse", "/data/xomeq/JBrowse-1.14.2/"),
-# )
+STATICFILES_DIRS = [
+    os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
+                   # '/home/eze/projects/ST5/raw/SAureusGenomes'
+    ("jbrowse","/data/xomeq/JBrowse-1.14.2/"),
+]

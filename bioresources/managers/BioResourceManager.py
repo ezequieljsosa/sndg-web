@@ -11,7 +11,7 @@ class ResourceQuerySet(QuerySet):
         ).filter(deprecated=False, index_updated=False)
 
     def publication_related(self, country, only_not_indexed=False):
-        from .models import Publication
+        from ..models.Publication import Publication
         qs = (Publication.objects.prefetch_related(
             "affiliations__organizations", "affiliations__author")
             .filter(affiliations__organizations__country=country))

@@ -19,7 +19,7 @@ class Sample(Resource):
     update_date = models.DateField(null=True)
 
     class Meta:
-        verbose_name_plural = __("Samples")
+        verbose_name_plural = _("Samples")
 
     def origin_dict(self):
         props = self.properties.prefetch_related("value").filter(

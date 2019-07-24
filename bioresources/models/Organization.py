@@ -22,7 +22,7 @@ class Organization(models.Model):
         verbose_name_plural = _("Organizations")
 
     def rtype(self):
-        return "org"
+        return 30#"org"
 
     def get_absolute_url(self):
         return reverse('bioresources:organization_view', args=[str(self.id)])

@@ -36,11 +36,14 @@ class SeqfeatureQuerySet(QuerySet):
         #         }
 
     def seqfeature_from_locus_tag(self, biodatabase_id, accession):
-        from .models import Ontology, Term, Seqfeature
-        ont_sfk = Ontology.objects.get(name="SeqFeature Keys")
-        ont_at = Ontology.objects.get(name="Annotation Tags")
+        from ..models.Term import Term
+        from ..models.Ontology import Ontology
+        from ..models.Seqfeature import Seqfeature
 
-        term_cds = Term.objects.get(ontology=ont_sfk, name="mRNA")
+        ont_sfk = Ontology.objects.get(name=Ontology.SFK)
+        ont_at = Ontology.objects.get(name=Ontology.ANNTAGS)
+
+        term_cds = Term.objects.get(ontology=ont_sfk, name="CDS")
         term_lt = Term.objects.get(ontology=ont_at, name="locus_tag")
 
         return Seqfeature.objects.raw("""
@@ -49,7 +52,7 @@ class SeqfeatureQuerySet(QuerySet):
         WHERE bdb.biodatabase_id = %i AND be.biodatabase_id = bdb.biodatabase_id AND 
           sf.bioentry_id = be.bioentry_id AND sf.type_term_id = %i AND 
           sf.seqfeature_id = sfqv.seqfeature_id AND sfqv.term_id = %i AND 
-          sfqv.value = "%s"
+          sfqv.value = '%s'
         """ % (biodatabase_id, term_cds.term_id, term_lt.term_id, accession))
 
 

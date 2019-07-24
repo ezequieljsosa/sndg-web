@@ -15,7 +15,7 @@ class ResourceRelation(models.Model):
 
     class Meta:
         unique_together = (('source', 'target', 'deprecated'),)
-        verbose_name_plural = __("Resource Relations")
+        verbose_name_plural = _("Resource Relations")
 
     def __str__(self):
         return ("(" + str(self.source.type) + ":" + str(self.source.id) +

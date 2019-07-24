@@ -1,10 +1,7 @@
 {% extends "base.html" %}
-
 {% load i18n %}
-
 {% load static %}
-
-
+{% load bioresources_extras %}
 
 {% block content %}
 <div class="container">
@@ -18,13 +15,13 @@
 
     <h1>{{publication.name}}</h1>
     <p>
-    {% for auth in publication.author_names %}
-    {{auth}} ,
+    {% for author in authors %}
+    <a href="{{author.get_absolute_url}}">{{author.complete_name }}</a> <sup>{{author.affs }}</sup>
     {% endfor %}
     </p>
     <ol>
      {% for org in publication.affiliation_names %}
-       <li> {{ org }}</li>
+       <li> <a href="{{ org_map|getattribute:org|execute:'get_absolute_url' }}">{{org}}</a></li>
      {% endfor %}
     </ol>
     </div>
@@ -56,7 +53,7 @@
     <h3>{% trans 'Referenced resources' %}</h3>
     <table class="table table-bordered">
     {% for r in publication.targets.all %}
-    <tr><td>{{r.type}}</td><td> <a href="{{r.get_absolute_url}}"> {{r.name}}</a></td></tr>
+    <tr><td>{{r.role|split:'_|1|2'|index:0 }}</td><td> <a href="{{r.target.get_absolute_url}}"> {{r.target.name}}</a></td></tr>
     {% endfor %}
     </table>
     </div></div>

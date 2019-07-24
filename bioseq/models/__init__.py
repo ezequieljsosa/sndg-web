@@ -73,19 +73,6 @@ ALTER TABLE term ADD version INT UNSIGNED DEFAULT 1;
 #     query_end = models.IntegerField()
 #     query_strand = models.IntegerField(default=1)
 
-# class TaxIdx(models.Model):
-#     tax = models.OneToOneField(Taxon, models.CASCADE, primary_key=True, db_column="tax_id", related_name="keywords")
-#     text = models.TextField()
-#
-#     class Meta:
-#         managed = True
-#         db_table = 'tax_idx'
+
 #
 #
-# class TermIdx(models.Model):
-#     term = models.OneToOneField(Term, models.CASCADE, primary_key=True, db_column="term_id", related_name="keywords")
-#     text = models.TextField()
-#
-#     class Meta:
-#         managed = True
-#         db_table = 'term_idx'

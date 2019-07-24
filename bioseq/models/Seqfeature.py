@@ -52,6 +52,9 @@ class Seqfeature(models.Model):
     def length(self):
         return sum([abs(x.end_pos - x.start_pos) for x in self.locations])
 
+    def subfeatures(self):
+        return [x.object_seqfeature for x in self.object_relationships.all()]
+
 
 class SeqfeatureDbxref(models.Model):
     seqfeature_dbxref_id = models.AutoField(primary_key=True)

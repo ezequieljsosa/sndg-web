@@ -40,11 +40,11 @@ def sequence_view(request, pk):
     graph = entry_graph(be, beg)
 
     if be.biodatabase.name.endswith("prots"):
-        return render(request, 'biosql/protein_detail.html', {
+        return render(request, 'bioseq/protein_detail.html', {
             "functions": functions, "graph": graph, "accession": be.biodatabase.name.replace("_prots", ""),
             "object": be, "feature": feature, "taxon": taxon, "seq": seq, "start": start, "end": end,
             "sidebarleft": 1})
     else:
-        return render(request, 'biosql/biosequence_detail.html', {
+        return render(request, 'bioseq/biosequence_detail.html', {
             "object": be, "graph": graph,
             "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]

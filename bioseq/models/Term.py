@@ -4,8 +4,8 @@ from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
 
-from ..models.Ontology import Ontology
-from ..models.Dbxref import Dbxref
+from .Ontology import Ontology
+from .Dbxref import Dbxref
 
 class Term(models.Model):
     term_id = models.AutoField(primary_key=True)
@@ -81,3 +81,14 @@ class TermSynonym(models.Model):
         managed = True
         db_table = 'term_synonym'
         unique_together = (('term', 'synonym'),)
+
+class TermIdx(models.Model):
+    """
+    Created for indexing purposes
+    """
+    term = models.OneToOneField(Term, models.CASCADE, primary_key=True, db_column="term_id", related_name="keywords")
+    text = models.TextField()
+
+    class Meta:
+        managed = True
+        db_table = 'term_idx'

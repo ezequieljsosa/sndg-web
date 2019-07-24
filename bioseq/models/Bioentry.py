@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from collections import defaultdict
+
 from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
 
+
 from ..managers.BioentryManager import BioentryManager
 from ..models.Biodatabase import Biodatabase
+
 
 
 class Bioentry(models.Model):
@@ -32,7 +36,7 @@ class Bioentry(models.Model):
         unique_together = (('accession', 'biodatabase', 'version'), ('identifier', 'biodatabase'),)
 
     def get_absolute_url(self):
-        return reverse('biosql:seq_view', args=[str(self.bioentry_id)])
+        return reverse('bioseq:seq_view', args=[str(self.bioentry_id)])
 
     def groupedFeatures(self):
         group = defaultdict(lambda: [])
@@ -48,11 +52,12 @@ class Bioentry(models.Model):
         return dict(data)
 
     def genes(self):
-        beg = Biodatabase.objects.get(name=self.biodatabase.name.replace("_prots", ""))
-        feature = Seqfeature.objects.seqfeature_from_locus_tag(beg.biodatabase_id, self.accession)
-        feature = list(feature)[0]
+        # from ..models.Seqfeature import Seqfeature
+        # beg = Biodatabase.objects.get(name=self.biodatabase.name.replace("_prots", ""))
+        # feature = Seqfeature.objects.seqfeature_from_locus_tag(beg.biodatabase_id, self.accession)
+        # feature = list(feature)[0]
         return [x.value for x in
-                feature.qualifiers.filter(
+                self.qualifiers.filter(
                     term__name__in=["gene_symbol", "old_locus_tag", "protein_id", "Alias", "gene"])]
 
     def product_description(self):
@@ -71,6 +76,12 @@ class Bioentry(models.Model):
     def biological_process(self):
         return self.go_terms("biological_process")
 
+    def idx_biological_process(self):
+        return [x.term.identifier for x in self.biological_process()]
+
+    def txt_biological_process(self):
+        return [x.term.keywords.text for x in self.biological_process()]
+
     def molecular_function(self):
         return self.go_terms("molecular_function")
 
@@ -78,7 +89,13 @@ class Bioentry(models.Model):
         return self.go_terms("cellular_component")
 
     def ftype(self):
-        return "protein"
+        return 40#"protein"
+
+    def __str__(self):
+        return "BioEntry('%s')" % self.accession
+
+    def __repr__(self):
+        return str(self)
 
 
 class BioentryDbxref(models.Model):
