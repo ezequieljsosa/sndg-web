@@ -22,6 +22,7 @@ from .models.ResourceRelation import ResourceRelation
 from .models.RKeyword import RKeyword
 from .models.ExternalId import ExternalId
 from .models.ResourceProperty import ResourceProperty
+from .models.Job import Job
 
 
 admin.site.register(Person)
@@ -32,6 +33,7 @@ admin.site.register(ResourceProperty)
 admin.site.register(Sample)
 admin.site.register(ReadsArchive)
 admin.site.register(ExternalId)
+admin.site.register(Job)
 
 
 

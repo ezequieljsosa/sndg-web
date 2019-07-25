@@ -80,7 +80,3 @@ class Model2JBrowse():
             for sf in sfs:
                 self.process_subfeature(accession, sf, h_gff, fid)
 
-    """
-    docker run -v /data/xomeq/jbrowse/data/:/jbrowse/data/ -v /tmp/jbrowse.fasta:/tmp/jbrowse.fasta  jbrowse/jbrowse-1.12.0 bin/prepare-refseqs.pl --fasta /tmp/jbrowse.fasta --out data/TestBacteria --key "Sequence"
-
-    """

@@ -73,7 +73,7 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
 
     'haystack',
-
+    'django_neomodel',
     # 'captcha',
     # 'crispy_forms',
     # "resumable",
@@ -303,18 +303,16 @@ STATICFILES_FINDERS += ["compressor.finders.CompressorFinder"]
 # ------------------------------------------------------------------------------
 
 HAYSTACK_CONNECTIONS = {
-    # SNDG_SOLR=solr://127.0.0.1:8984/solr/Notes
+
     'default': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': env('SNDG_SOLR'),  # 'http://127.0.0.1:8984/solr/Notes'
+        'URL': env('SNDG_SOLR'),  # SNDG_SOLR=solr://127.0.0.1:8984/solr/Notes
         'INCLUDE_SPELLING': True,
-        # ...or for multicore...
-        # 'URL': 'http://127.0.0.1:8983/solr/mysite',
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.ResourceIndexOAI'],
     },
     'oai': {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': 'http://127.0.0.1:8984/solr/oai',
+        'URL':  env('SNDG_OAI',default='http://127.0.0.1:8984/solr/oai') ,
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',
@@ -337,13 +335,18 @@ HAYSTACK_DJANGO_ID_FIELD = env("HAYSTACK_DJANGO_ID_FIELD",default='django_id')
 HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD",default='text')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
-FILE_UPLOAD_TEMP_DIR = "/tmp/pepe"
+FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
 
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
 STATICFILES_DIRS = [
     os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
-                   # '/home/eze/projects/ST5/raw/SAureusGenomes'
-    ("jbrowse","/data/xomeq/JBrowse-1.14.2/"),
+    ("jbrowse",env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))),
 ]
+
+NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:test@localhost:7687')
+# NEOMODEL_SIGNALS = True
+# NEOMODEL_FORCE_TIMEZONE = False
+# NEOMODEL_ENCRYPTED_CONNECTION = True
+# NEOMODEL_MAX_POOL_SIZE = 50

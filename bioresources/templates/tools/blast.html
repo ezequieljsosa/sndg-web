@@ -159,7 +159,7 @@
 
 				};
 
-
+                $("blast_form").submit();
 			};
 
 			$("#blast_unip_button").click(
@@ -186,9 +186,10 @@
 		// ]]>
 	</script>
 
-
-
+	<form id="blast_form" method="POST">
+{% csrf_token %}
 	<div id="options_row" class="row">
+
 		<section class="col-lg-6 connectedSortable">
 
 
@@ -334,7 +335,8 @@
 				</div>
 			</div>
 		</section>
-	</div>
 
+	</div>
+	</form>
 
 {% endblock %}
