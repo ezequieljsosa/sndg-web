@@ -26,3 +26,7 @@ coreapi==2.3.3  # https://github.com/core-api/python-client
 #NoSql DBs
 django-haystack
 pysolr
+django_neomodel
+
+# Monitoring
+sentry_sdk
