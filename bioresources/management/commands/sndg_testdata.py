@@ -50,10 +50,16 @@ class Command(BaseCommand):
         parser.add_argument('--remove', action='store_true')
 
     def handle(self, *args, **options):
-        # with transaction.atomic():
-        #     self.load_tax()
-        # with transaction.atomic():
-        #     self.load_ontology()
+        with transaction.atomic():
+            self.load_tax()
+        with transaction.atomic():
+            self.load_ontology()
+
+        with transaction.atomic():
+            Ontology.load_ann_terms()
+        with transaction.atomic():
+            Ontology.load_go_base()
+
         with transaction.atomic():
             self.load_bacteria()
         with transaction.atomic():

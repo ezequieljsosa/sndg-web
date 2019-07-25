@@ -1,5 +1,5 @@
 from django.contrib import admin
-from easy_select2 import select2_modelform
+# from easy_select2 import select2_modelform
 
 
 from .models.Biodatabase import Biodatabase
@@ -25,12 +25,12 @@ admin.site.register(Ontology)
 #
 # admin.site.register(ToolRun)
 
-BioentryForm = select2_modelform(Bioentry, attrs={'width': '250px'})
+# BioentryForm = select2_modelform(Bioentry, attrs={'width': '250px'})
 
 @admin.register(Bioentry)
 class BiosequenceAdmin(admin.ModelAdmin):
     search_fields = ["name","accession","identifier"]
-    form = BioentryForm
+    # form = BioentryForm
     # fields = ('name','biodatabase','accession','identifier','division','version')
     raw_id_fields = (
         'taxon',

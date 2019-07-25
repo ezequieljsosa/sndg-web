@@ -51,11 +51,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            self.load_tax()
-        with transaction.atomic():
             Ontology.load_ann_terms()
         with transaction.atomic():
             Ontology.load_go_base()
+
+        with transaction.atomic():
+            self.load_tax()
+
 
 
     def load_tax(self):

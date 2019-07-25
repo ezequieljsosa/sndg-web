@@ -61,12 +61,12 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # ------------------------------------------------------------------------------
 LANGUAGE_CODE="en"
 
-if "sentry_url" in env:
+if "SENTRY_DSN" in env:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
 
 
     sentry_sdk.init(
-    dsn=env("SENTRY_URL"),
+    dsn=env("SENTRY_DSN"),
     integrations=[DjangoIntegration()]
     )
