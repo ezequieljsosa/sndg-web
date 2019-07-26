@@ -52,8 +52,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with transaction.atomic():
             self.load_tax()
-        with transaction.atomic():
-            self.load_ontology()
 
         with transaction.atomic():
             Ontology.load_ann_terms()
@@ -61,21 +59,26 @@ class Command(BaseCommand):
             Ontology.load_go_base()
 
         with transaction.atomic():
+            self.load_ontology()
+
+
+
+        with transaction.atomic():
             self.load_bacteria()
         with transaction.atomic():
             self.load_resources()
 
     def load_tax(self):
-        root = Taxon.objects.create(taxon_id=1, ncbi_taxon_id=1, parent_taxon_id=1, node_rank="no rank")
-        TaxonName.objects.create(taxon=root, name="root", name_class="scientific name")
-        bacteria = Taxon.objects.create(taxon_id=2, ncbi_taxon_id=2, parent_taxon_id=1, node_rank="superkingdom")
-        TaxonName.objects.create(taxon=bacteria, name="bacteria", name_class="scientific name")
-        saureus = Taxon.objects.create(taxon_id=3, ncbi_taxon_id=1280, parent_taxon_id=2, node_rank="species")
-        TaxonName.objects.create(taxon=saureus, name="Staphylococcus aureus", name_class="scientific name")
-        TaxonName.objects.create(taxon=saureus, name="Micrococcus pyogenes", name_class="heterotypic synonym")
+        root = Taxon.objects.get_or_create(taxon_id=1, ncbi_taxon_id=1, parent_taxon_id=1, node_rank="no rank")[0]
+        TaxonName.objects.get_or_create(taxon=root, name="root", name_class="scientific name")[0]
+        bacteria = Taxon.objects.get_or_create(taxon_id=2, ncbi_taxon_id=2, parent_taxon_id=1, node_rank="superkingdom")[0]
+        TaxonName.objects.get_or_create(taxon=bacteria, name="bacteria", name_class="scientific name")[0]
+        saureus = Taxon.objects.get_or_create(taxon_id=3, ncbi_taxon_id=1280, parent_taxon_id=2, node_rank="species")[0]
+        TaxonName.objects.get_or_create(taxon=saureus, name="Staphylococcus aureus", name_class="scientific name")[0]
+        TaxonName.objects.get_or_create(taxon=saureus, name="Micrococcus pyogenes", name_class="heterotypic synonym")[0]
 
-        TaxIdx.objects.create(tax=bacteria,text="bacteria")
-        TaxIdx.objects.create(tax=saureus,text="Staphylococcus aureus Micrococcus pyogenes")
+        TaxIdx.objects.get_or_create(tax=bacteria,text="bacteria")[0]
+        TaxIdx.objects.get_or_create(tax=saureus,text="Staphylococcus aureus Micrococcus pyogenes")[0]
 
     def load_ontology(self):
         go = Ontology.objects.get(name=Ontology.GO)
