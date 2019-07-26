@@ -30,3 +30,7 @@ django_neomodel
 
 # Monitoring
 sentry_sdk
+
+# Other
+tqdm
+sndg-bio

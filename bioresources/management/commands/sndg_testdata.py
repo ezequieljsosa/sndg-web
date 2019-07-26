@@ -75,9 +75,7 @@ class Command(BaseCommand):
         TaxonName.objects.create(taxon=saureus, name="Micrococcus pyogenes", name_class="heterotypic synonym")
 
         TaxIdx.objects.create(tax=bacteria,text="bacteria")
-
-
-    TaxIdx.objects.create(tax=saureus,text="Staphylococcus aureus Micrococcus pyogenes")
+        TaxIdx.objects.create(tax=saureus,text="Staphylococcus aureus Micrococcus pyogenes")
 
     def load_ontology(self):
         go = Ontology.objects.get(name=Ontology.GO)
