@@ -11,32 +11,6 @@ from haystack.forms import SearchForm
 from .models import Resource, Assembly
 
 
-class AssemblyForm(forms.ModelForm):
-    # name = forms.CharField(max_length=350,required=True)
-    # description = forms.CharField(widget=forms.Textarea,required=False)
-    # intraspecific_name = forms.CharField(max_length=250, required=False)
-    # species_name = forms.CharField(max_length=200, required=False)
-    # level = forms.CharField(max_length=50, required=True)
-    # # ncbi_org = forms.CharField(max_length=200, null=True)
-    release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990,datetime.datetime.now().year)))
-    # # update_date = forms.DateField(null=True)
-    # assembly_type = forms.ChoiceField( required=True, choices=(
-    #     ("haploid", "haploid"), ("diploid", "diploid"), ("other", "other")))
-    class Meta:
-        model = Assembly
-        fields = ["name","description","intraspecific_name","species_name","level","release_date","assembly_type",]
-
-    def __init__(self, *args, **kwargs):
-        super(AssemblyForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-    def clean(self):
-        cleaned_data = super(AssemblyForm, self).clean()
-        if Assembly.objects.filter(name=cleaned_data["name"]).exists():
-            self._errors['name'] = self._errors.get('name', [])
-            self._errors['name'].append("%s already exists" % cleaned_data["name"])
 
 
 

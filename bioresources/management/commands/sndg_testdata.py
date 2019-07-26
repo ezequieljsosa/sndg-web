@@ -8,9 +8,9 @@ from django.core.management.base import BaseCommand
 
 from SNDG.WebServices import download_file
 
-from bioseq.models.Taxon import Taxon, TaxonName,TaxIdx
+from bioseq.models.Taxon import Taxon, TaxonName, TaxIdx
 from bioseq.models.Ontology import Ontology
-from bioseq.models.Term import Term, TermRelationship,TermDbxref,TermIdx
+from bioseq.models.Term import Term, TermRelationship, TermDbxref, TermIdx
 from bioseq.models.Biodatabase import Biodatabase
 from bioseq.models.Bioentry import Bioentry, BioentryQualifierValue, BioentryDbxref
 from bioseq.models.Biosequence import Biosequence
@@ -27,7 +27,7 @@ from bioresources.models.ExternalId import ExternalId
 from bioresources.models.Publication import Publication
 from bioresources.models.Tool import Tool
 from bioresources.models.Assembly import Assembly
-from bioresources.models.ReadsAchive import ReadsArchive
+from bioresources.models.ReadsArchive import ReadsArchive
 from bioresources.models.BioProject import BioProject
 from bioresources.models.Sample import Sample
 from bioresources.models.ResourceRelation import ResourceRelation
@@ -61,8 +61,6 @@ class Command(BaseCommand):
         with transaction.atomic():
             self.load_ontology()
 
-
-
         with transaction.atomic():
             self.load_bacteria()
         with transaction.atomic():
@@ -71,14 +69,15 @@ class Command(BaseCommand):
     def load_tax(self):
         root = Taxon.objects.get_or_create(taxon_id=1, ncbi_taxon_id=1, parent_taxon_id=1, node_rank="no rank")[0]
         TaxonName.objects.get_or_create(taxon=root, name="root", name_class="scientific name")[0]
-        bacteria = Taxon.objects.get_or_create(taxon_id=2, ncbi_taxon_id=2, parent_taxon_id=1, node_rank="superkingdom")[0]
+        bacteria = \
+        Taxon.objects.get_or_create(taxon_id=2, ncbi_taxon_id=2, parent_taxon_id=1, node_rank="superkingdom")[0]
         TaxonName.objects.get_or_create(taxon=bacteria, name="bacteria", name_class="scientific name")[0]
         saureus = Taxon.objects.get_or_create(taxon_id=3, ncbi_taxon_id=1280, parent_taxon_id=2, node_rank="species")[0]
         TaxonName.objects.get_or_create(taxon=saureus, name="Staphylococcus aureus", name_class="scientific name")[0]
         TaxonName.objects.get_or_create(taxon=saureus, name="Micrococcus pyogenes", name_class="heterotypic synonym")[0]
 
-        TaxIdx.objects.get_or_create(tax=bacteria,text="bacteria")[0]
-        TaxIdx.objects.get_or_create(tax=saureus,text="Staphylococcus aureus Micrococcus pyogenes")[0]
+        TaxIdx.objects.get_or_create(tax=bacteria, text="bacteria")[0]
+        TaxIdx.objects.get_or_create(tax=saureus, text="Staphylococcus aureus Micrococcus pyogenes")[0]
 
     def load_ontology(self):
         go = Ontology.objects.get(name=Ontology.GO)
@@ -94,11 +93,10 @@ class Command(BaseCommand):
             0]
         r2ss = Term.objects.get_or_create(identifier="GO:0006950", name="response to stress", version=1, ontology=go)[0]
 
-        slim = Dbxref.objects.get(dbname="go",accession="goslim_generic")
-        biological_process = Dbxref.objects.get(dbname="go",accession="biological_process")
-        TermDbxref.objects.create(term=r2ss,dbxref=slim)
-        TermDbxref.objects.create(term=r2ss,dbxref=biological_process)
-
+        slim = Dbxref.objects.get(dbname="go", accession="goslim_generic")
+        biological_process = Dbxref.objects.get(dbname="go", accession="biological_process")
+        TermDbxref.objects.create(term=r2ss, dbxref=slim)
+        TermDbxref.objects.create(term=r2ss, dbxref=biological_process)
 
         TermRelationship(
             subject_term=bp,  # parent
@@ -112,8 +110,8 @@ class Command(BaseCommand):
             object_term=r2ss,  # child
             ontology=go).save()
 
-        TermIdx.objects.create(term=r2s,text="response to stimulus GO:0050896")
-        TermIdx.objects.create(term=r2ss,text="response to stimulus GO:0050896 response to stress GO:0006950")
+        TermIdx.objects.create(term=r2s, text="response to stimulus GO:0050896")
+        TermIdx.objects.create(term=r2ss, text="response to stimulus GO:0050896 response to stress GO:0006950")
 
     def load_bacteria(self):
         sfk_ontology = Ontology.objects.get(name=Ontology.SFK)
@@ -128,11 +126,12 @@ class Command(BaseCommand):
         product = Term.objects.get(identifier="product", ontology=ann_ontology)
 
         genome = Biodatabase.objects.create(name="TestBacteria", description="Bacteria for testing purposes")
-        contig = Bioentry.objects.create(biodatabase=genome, description="bcontig1", name="bcontig1",accession="bcontig1")
+        contig = Bioentry.objects.create(biodatabase=genome, description="bcontig1", name="bcontig1",
+                                         accession="bcontig1")
         seq = """TTGACCGATGACCCCGGTTCAGGCTTCACCACAGTGTGGAACGCGGTCGTCTCCGAACTTAACGGCGACC
                  CTAAGGTTGACGACGGACCCAGCAGTGATGCTAATCTCAGCGCTCCGCTGACCCCTCAGCAAAGGGCTTG
                  GCTCAATCTCGTCCAGCCATTGACCATCGTCGAGGGGTTTGCTCTGTTATCCGTGCCGAGCAGCTTTGTC"""
-        Biosequence.objects.create(bioentry=contig, seq=seq.replace("\n", "").replace(" ", ""),length=len(seq))
+        Biosequence.objects.create(bioentry=contig, seq=seq.replace("\n", "").replace(" ", ""), length=len(seq))
         tRNA = Seqfeature.objects.create(bioentry=contig, type_term=trna, source_term=calculated)
         SeqfeatureQualifierValue.objects.create(seqfeature=tRNA, term=gene, value="alaT")
         SeqfeatureQualifierValue.objects.create(seqfeature=tRNA, term=locus_tag, value="Rvnt02")
@@ -143,21 +142,20 @@ class Command(BaseCommand):
         Location.objects.create(seqfeature=prot, start_pos=35, end_pos=55, strand=1)
 
         proteome = Biodatabase.objects.create(name="TestBacteria_prots", description="Bacteria for testing purposes")
-        prot = Bioentry.objects.create(biodatabase=proteome, description="ppiA", name="Rv0009",accession="Rv0009")
+        prot = Bioentry.objects.create(biodatabase=proteome, description="ppiA", name="Rv0009", accession="Rv0009")
         seq = "MADCDSVTNSPLATATA"
-        Biosequence.objects.create(bioentry=prot, seq=seq,length=len(seq))
+        Biosequence.objects.create(bioentry=prot, seq=seq, length=len(seq))
         unip = Dbxref.objects.create(dbname="Uniprot", accession="P9WHW3")
         BioentryDbxref.objects.create(bioentry=prot, dbxref=unip)
         BioentryQualifierValue.objects.create(bioentry=prot, term=product,
                                               value="iron-regulated peptidyl-prolyl cis-transisomerase PpiA")
         BioentryQualifierValue.objects.create(bioentry=prot, term=gene, value="ppiA")
-        BioentryQualifierValue.objects.create(bioentry=prot,term=Term.objects.get(identifier="GO:0006950"))
+        BioentryQualifierValue.objects.create(bioentry=prot, term=Term.objects.get(identifier="GO:0006950"))
 
         pfam = Ontology.objects.create(name="PFAM")
         dn = Term.objects.get_or_create(identifier="PF1234556", name="A protein domain", version=1, ontology=pfam)[0]
         dnf = Seqfeature.objects.create(bioentry=prot, type_term=dn, source_term=calculated)
         Location.objects.create(seqfeature=dnf, start_pos=5, end_pos=10, strand=1)
-
 
     def load_eukaryote(self):
         pass
@@ -240,7 +238,8 @@ class Command(BaseCommand):
                                                  Resource.RESOURCE_TYPES.SAMPLE] +
                                              "_" + str(Resource.RESOURCE_TYPES[Resource.RESOURCE_TYPES.READS]))
 
-        tp = Tool.objects.create(name="TargetPathogen", tool_type=Tool.TYPES.webserver)
+        tp = Tool.objects.create(name="TargetPathogen", tool_type=Tool.TYPES.webserver,
+                                 url="http://target.sbg.qb.fcen.uba.ar/")
         ResourceRelation.objects.create(source=publication_tp, target=tp,
                                         role=Resource.RESOURCE_TYPES[
                                                  Resource.RESOURCE_TYPES.PUBLICATION] +
@@ -252,7 +251,6 @@ class Command(BaseCommand):
                                            intraspecific_name="CITVM-11.1",
                                            species_name="Bacillus cereus",
                                            ncbi_tax=Taxon.objects.get(ncbi_taxon_id=1280))
-
 
         ResourceRelation.objects.create(source=publication_fp, target=assembly,
                                         role=Resource.RESOURCE_TYPES[

@@ -10,7 +10,7 @@ from .views.models.SampleView import sample_view
 from .views.models.StructureView import structure
 from .views.models.ToolView import tool
 from .views.models.BarcodeView import barcode
-from .views.models.ReadsAchiveView import reads
+from .views.models.ReadsArchiveView import reads
 from .views.models.ExpressionView import expression
 from .views.models.ProteinView import ProteinView
 from .views.models.NucleotideView import NucleotideView
@@ -20,6 +20,9 @@ from .views.search.BioSearch import BioSearchView
 from .views.search import search_redirect
 from .views.jobs.BlastView import blast,blast_result
 
+
+from .views.submission.AssemblySubmissionView import AssemblySubmissionView
+from .views.submission import submission_start
 
 
 # from .views import ResumableUploadView
@@ -66,8 +69,8 @@ urlpatterns = [
     #
     # # Upload
     # path('upload/', view=ResumableUploadView.as_view(), name='upload'),
-    # path('submission/', view=views.submission, name='submission'),
-    # path('submission/assembly', views.assembly_new, name='assembly_new'),
+    path('submission/', view=submission_start, name='submission'),
+    path('submission/assembly',AssemblySubmissionView, name='assembly_new'),
     # path('submission/import', views.import_resource, name='import_resource'),
     #
     #

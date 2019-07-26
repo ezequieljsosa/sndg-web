@@ -27,7 +27,7 @@ from bioresources.models.ExternalId import ExternalId
 from bioresources.models.Publication import Publication
 from bioresources.models.Tool import Tool
 from bioresources.models.Assembly import Assembly
-from bioresources.models.ReadsAchive import ReadsArchive
+from bioresources.models.ReadsArchive import ReadsArchive
 from bioresources.models.BioProject import BioProject
 from bioresources.models.Sample import Sample
 from bioresources.models.ResourceRelation import ResourceRelation

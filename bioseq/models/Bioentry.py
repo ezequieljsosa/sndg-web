@@ -6,10 +6,8 @@ from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
 
-
 from ..managers.BioentryManager import BioentryManager
 from ..models.Biodatabase import Biodatabase
-
 
 
 class Bioentry(models.Model):
@@ -36,7 +34,8 @@ class Bioentry(models.Model):
         unique_together = (('accession', 'biodatabase', 'version'), ('identifier', 'biodatabase'),)
 
     def get_absolute_url(self):
-        return reverse('bioseq:seq_view', args=[str(self.bioentry_id)])
+        return reverse('bioresources:' + ('protein_view' if self.biodatabase.name.endswith("_prots") else "nucleotide_view"),
+                       args=[str(self.bioentry_id)]) # TODO: parametrizar la app del link
 
     def groupedFeatures(self):
         group = defaultdict(lambda: [])
@@ -89,7 +88,7 @@ class Bioentry(models.Model):
         return self.go_terms("cellular_component")
 
     def ftype(self):
-        return 40#"protein"
+        return 40  # "protein"
 
     def __str__(self):
         return "BioEntry('%s')" % self.accession

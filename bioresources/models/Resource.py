@@ -5,13 +5,13 @@ from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from django.urls import reverse
 
-
-from .Person import  Person
+from .Person import Person
 from .Organization import Organization
 from .RKeyword import RKeyword
 from ..managers.BioResourceManager import BioResourceManager
 
 from bioseq.models.Taxon import Taxon
+
 
 def get_class(kls):
     parts = kls.split('.')
@@ -21,12 +21,13 @@ def get_class(kls):
         m = getattr(m, comp)
     return m
 
+
 class Resource(models.Model):
     RESOURCE_TYPES = Choices(
-        *[(i, x, _(x)) for i, x in enumerate([
+        *([(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
-            "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL", "PROTEIN",
-        ])]
+            "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL",
+        ])] + [(40, "PROTEIN", _("PROTEIN"))])
     )
 
     facet_dict = {
@@ -75,8 +76,6 @@ class Resource(models.Model):
     def compile(self):
         templ = get_template("resources/xoai_resource.xml")
         return templ.render({"r": self})
-
-
 
     def ncbi_tax_keywords(self):
         return self.ncbi_tax.keywords.text if self.ncbi_tax else None

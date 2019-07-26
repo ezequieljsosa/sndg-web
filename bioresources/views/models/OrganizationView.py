@@ -4,5 +4,10 @@ from django.utils.translation import gettext_lazy as __
 from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
+from bioresources.models.Organization import Organization
+
 def organization(request, pk):
-    raise Exception("implement!")
+    org = Organization.objects.get(id=pk)
+
+    return render(request, 'resources/organization.html', {
+    "organization": org, "sidebarleft": 1, })

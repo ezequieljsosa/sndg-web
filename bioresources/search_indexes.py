@@ -14,17 +14,9 @@ from .models.Structure import Structure
 from .models.Tool import Tool
 from .models.Expression import Expression
 from .models.Barcode import Barcode
+from .models.ReadsArchive import ReadsArchive
 
 only_not_indexed = sys.argv[1] in ["rebuild_index", "update_index"]  # for solr index updating
-
-"""
-python manage.py build_solr_schema > data/sndg_solr/schema.xml 
-docker stop sndg_solr7
-docker start sndg_solr7
-python manage.py rebuild_index
-python manage.py update_index -v 3 
-"""
-
 
 # class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
 #     """
@@ -167,6 +159,21 @@ class ExpressionIndex(indexes.SearchIndex, indexes.Indexable):
 
     def get_model(self):
         return Expression
+
+    def index_queryset(self, using=None):
+        return self.get_model().objects.publication_related("Argentina", only_not_indexed)
+
+
+class ReadsArchiveIndex(indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr='name')
+    description = indexes.CharField(model_attr='description')
+    type = indexes.CharField(model_attr='type', faceted=True)
+
+    taxon = indexes.MultiValueField(model_attr='taxon_name', faceted=True)
+
+    def get_model(self):
+        return ReadsArchive
 
     def index_queryset(self, using=None):
         return self.get_model().objects.publication_related("Argentina", only_not_indexed)

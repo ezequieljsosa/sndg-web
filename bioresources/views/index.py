@@ -7,6 +7,7 @@ from django.shortcuts import render
 from collections import defaultdict
 
 from haystack.query import SearchQuerySet
+from haystack.inputs import  Exact
 
 from ..models.Resource import Resource
 from ..models.Tool import Tool
@@ -16,6 +17,7 @@ from ..models.Assembly import Assembly
 from ..models.BioProject import BioProject
 from ..models.Publication import Publication
 from ..models.Expression import Expression
+from ..models.ReadsArchive import ReadsArchive
 
 
 resources = [
@@ -40,11 +42,14 @@ resources = [
     {"name": Publication._meta.verbose_name_plural, "count": 99,
      "icon": "book",
      "type": Resource.RESOURCE_TYPES.PUBLICATION},
-    {"name": _("Organizations"), "count": 99, "icon": "building", "type": "org"},
-    {"name": _("Persons"), "count": 99, "icon": "user", "type": "person"},
+    {"name": _("Organizations"), "count": 99, "icon": "building", "type": "30"},
+    {"name": _("Persons"), "count": 99, "icon": "user", "type": "20"},
     {"name": Expression._meta.verbose_name_plural, "count": 99,
      "icon": "sliders-h",
      "type": Resource.RESOURCE_TYPES.EXPRESSION},
+    {"name": ReadsArchive._meta.verbose_name_plural, "count": 99,
+     "icon": "sliders-h",
+     "type": Resource.RESOURCE_TYPES.READS},
 
 ]
 

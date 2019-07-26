@@ -15,7 +15,7 @@ from .models.Expression import Expression
 from .models.BioProject import BioProject
 from .models.Structure import Structure
 from .models.Sample import Sample
-from .models.ReadsAchive import ReadsArchive
+from .models.ReadsArchive import ReadsArchive
 from .models.Assembly import Assembly
 from .models.Barcode import Barcode
 from .models.ResourceRelation import ResourceRelation
