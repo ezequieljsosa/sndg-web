@@ -1,7 +1,13 @@
 {% extends "base.html" %}
-{% load i18n %}
 {% load static %}
+{% load i18n %}
 {% load bioresources_extras %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -48,15 +54,14 @@
     </div>
 
 
-    <div class="row">
-    <div class="col-md-12">
-    <h3>{% trans 'Referenced resources' %}</h3>
-    <table class="table table-bordered">
-    {% for r in publication.targets.all %}
-    <tr><td>{{r.role|split:'_|1|2'|index:0 }}</td><td> <a href="{{r.target.get_absolute_url}}"> {{r.target.name}}</a></td></tr>
-    {% endfor %}
-    </table>
-    </div></div>
+      {% related_resources_summary pk rtype_src related_resources level %}
+      {% resource_graph pk graph %}
+
+      <script type="text/javascript">
+        $(document).ready(()=>{
+            create_graph()
+        });
+      </script>
 
 
 

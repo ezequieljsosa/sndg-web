@@ -5,10 +5,15 @@ from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
 from bioresources.models.Person import Person
+from bioresources.io.GraphRepo import GraphRepo
+
+
+
 
 
 def person(request, pk):
     person = Person.objects.get(id=pk)
-
-    return render(request, 'resources/person.html', {
-        "person": person, "sidebarleft": 1, })
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Person")
+    return render(request, 'resources/person.html', {"pk": person.id, "related_resources": related_resources,
+                                                     "person": person, "graph": graph,
+                                                     "sidebarleft": 1, })

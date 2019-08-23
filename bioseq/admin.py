@@ -11,7 +11,7 @@ from .models.Bioentry import BioentryQualifierValue
 from .models.Seqfeature import Seqfeature
 from .models.Dbxref import Dbxref
 from .models.Seqfeature import SeqfeatureDbxref
-from .models.Taxon import Taxon
+from .models.Taxon import Taxon,TaxonName
 from .models.Location import Location
 
 admin.site.register(Biosequence)
@@ -79,4 +79,25 @@ class SeqfeatureDbxrefAdmin(admin.ModelAdmin):
 
 @admin.register(Taxon)
 class TaxonAdmin(admin.ModelAdmin):
-    search_fields = ["accession"]
+    search_fields = ["ncbi_taxon_id","node_rank"]
+    list_display = ('ncbi_taxon_id','scientific_name','node_rank','genetic_code','parent_taxon')
+    raw_id_fields = (
+        'parent_taxon',
+    )
+
+    def get_queryset(self, request):
+        return super(TaxonAdmin, self).get_queryset(request).prefetch_related("names","parent_taxon__names")
+
+@admin.register(TaxonName)
+class TaxonNameAdmin(admin.ModelAdmin):
+
+    list_display = ('name','name_class','parent_id')
+    search_fields = ["taxon__ncbi_taxon_id","name"]
+    raw_id_fields = (
+        'taxon',
+    )
+    def parent_id(self, obj):
+        return obj.taxon.ncbi_taxon_id
+
+    def get_queryset(self, request):
+        return super(TaxonNameAdmin, self).get_queryset(request).select_related("taxon")

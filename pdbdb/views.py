@@ -7,7 +7,7 @@ from .models import PDB, ResidueSet, PDBResidueSet, Property, Residue
 
 class StructureView(TemplateView):
     # http://nglviewer.org/ngl/api/class/src/stage/stage.js~Stage.html#instance-method-loadFile
-    template_name = "pdbdb/structure_detail.html"
+    template_name = "structure_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -53,12 +53,12 @@ class StructureView(TemplateView):
             for rsr in p.residue_set_residue.all():
                 for a in rsr.residue.atoms.all():
                     p.atoms.append(a.serial)
-        # context["residuesets"] = [{"name": "csa", "residues": range(700, 750)}]
+        context["residuesets"] = [{"name": "csa", "residues": range(700, 750)}]
         return context
 
 
 def structure_raw(request, pdbid):
-    pdbobj = PDB.objects.prefetch_related("residues__atoms").get(code=pdbid)
+    pdbobj = PDB.objects.prefetch_related("residues__atoms").get(code=pdbid.lower())
     # pdb2 = "\n".join(pdbobj.lines()) + "\n"
 
     # with open("/tmp/pepe/pepe.ent","w") as h:

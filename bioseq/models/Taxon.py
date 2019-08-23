@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
 
+
 class Taxon(models.Model):
     SCIENTIFIC_NAME = "scientific name"
 
@@ -17,7 +18,10 @@ class Taxon(models.Model):
     right_value = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     def scientific_name(self):
-        return self.names.filter(name_class=Taxon.SCIENTIFIC_NAME).first().name
+        for x in self.names.all():
+            if x.name_class == Taxon.SCIENTIFIC_NAME:
+                return x.name
+        return str(self.ncbi_taxon_id)
 
     def other_names(self):
         return {x.name_class: x.name for x in self.names.filter(name_class__in=["synonym", "common name"])}

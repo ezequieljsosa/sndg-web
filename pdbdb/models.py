@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from biosql.models import Taxon
+from bioseq.models.Taxon import Taxon
 from django.db import models
 
 
-class CustomBinaryCharField(models.CharField):
-    def db_type(self, connection):
-        return super(CustomBinaryCharField, self).db_type(connection) + ' binary'
+# class CustomBinaryCharField(models.CharField):
+#     def db_type(self, connection):
+#         return super(CustomBinaryCharField, self).db_type(connection) + ' binary'
 
 
 class PDB(models.Model):
@@ -41,7 +41,8 @@ class Residue(models.Model):
     id = models.AutoField(primary_key=True)
     pdb = models.ForeignKey(PDB, related_name='residues',
                             db_column="pdb_id", on_delete=models.CASCADE)
-    chain = CustomBinaryCharField(max_length=20)
+    # chain = CustomBinaryCharField(max_length=20)
+    chain = models.CharField(max_length=20)
     resname = models.CharField(max_length=4)
     resid = models.IntegerField()
     icode = models.CharField(max_length=2, default="")
@@ -228,7 +229,7 @@ class ChainProperty(models.Model):
     id = models.AutoField(primary_key=True)
     pdb = models.ForeignKey(PDB, related_name='chain_props',
                             db_column="pdb_id", on_delete=models.CASCADE)
-    chain = CustomBinaryCharField(max_length=10)
+    chain = models.CharField(max_length=10)
     property = models.ForeignKey(Property, related_name="chains", db_column="property_id", on_delete=models.DO_NOTHING)
     value = models.FloatField(null=True)
     tag = models.ForeignKey(PropertyTag, related_name='chains',

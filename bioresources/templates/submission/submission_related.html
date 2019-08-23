@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% load crispy_forms_tags %}
+
+
+{% load static %}
+{% load bioresources_extras %}
+
+{% block content %}
+<div class="row">
+<div class="col-lg-9">
+
+<select>
+{% for resource in resources %}
+
+{% endfor%}
+</select>
+
+
+</div>
+</div>
+{% endblock %}

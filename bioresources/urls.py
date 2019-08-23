@@ -17,13 +17,15 @@ from .views.models.NucleotideView import NucleotideView
 from .views.models.TaxView import TaxView
 
 from .views.search.BioSearch import BioSearchView
+from .views.search.BioSearchRelated import BioSearchRelatedView
 from .views.search import search_redirect
-from .views.jobs.BlastView import blast,blast_result
+from .views.jobs.BlastView import blast, blast_result
 
-
-from .views.submission.AssemblySubmissionView import AssemblySubmissionView
+from .views.submission.SubmissionNewView import SubmissionNewView
+from .views.submission.SubmissionImportView import SubmissionImportView
+from .views.submission.SubmissionRelatedView import SubmissionRelatedView
+#
 from .views.submission import submission_start
-
 
 # from .views import ResumableUploadView
 
@@ -37,6 +39,7 @@ urlpatterns = [
     path('', index.index, name='stats'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),
+    path('search/<str:rtype_src>/<int:rid>/<str:rtype_dst>', BioSearchRelatedView.as_view(), name='search_view'),
     path('search_redirect/<str:acctype>/<str:acc>',  search_redirect , name='search_redirect'),
 
     # Models
@@ -56,9 +59,6 @@ urlpatterns = [
     path('protein/<int:pk>', ProteinView, name='protein_view'),
     path('tax/<int:pk>',  TaxView.as_view(), name='tax_view'),
 
-
-
-
     # path('sample/<str:pk>', sample_view, name='sample_view2'),
     # path('assembly/<str:pk>', assembly, name='assembly_view2'),
 
@@ -69,9 +69,12 @@ urlpatterns = [
     #
     # # Upload
     # path('upload/', view=ResumableUploadView.as_view(), name='upload'),
+
     path('submission/', view=submission_start, name='submission'),
-    path('submission/assembly',AssemblySubmissionView, name='assembly_new'),
-    # path('submission/import', views.import_resource, name='import_resource'),
+    path('submission/new',view=SubmissionNewView, name='submission_new'),
+    path('submission/import', view=SubmissionImportView, name='submission_import'),
+    path('submission/related',view=SubmissionRelatedView, name='submission_related'),
+
     #
     #
     # # Submission
@@ -82,7 +85,5 @@ urlpatterns = [
     # # Other
     # path('stats/', view=ResumableUploadView.as_view(), name='stats'),
 
-
 ]
-urlpatterns += [path('search/', BioSearchView.as_view(), name='search_view'),
-                ]
+# urlpatterns += [path('search/', BioSearchView.as_view(), name='search_view'),   ]

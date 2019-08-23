@@ -4,11 +4,14 @@ from django.utils.translation import gettext_lazy as __
 from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
+from bioresources.io.GraphRepo import GraphRepo
+from bioresources.models.Sample import Sample
+
+
 def sample_view(request, pk):
     sample = Sample.objects.get(id=pk)
-    graph = {"nodes": [{"id": expression.name, "label": labelize(expression.name), "color": "orange"}], "edges": []}
-    external_orgs = []
-    publications_from_resource_graph(sample, graph, external_orgs)
-    return render(request, 'resources/expression.html', {
-        "expression": expression, "graph": graph, "external_orgs": external_orgs,
-        "sidebarleft": 1, })
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Sample", level=2)
+
+    return render(request, 'resources/sample.html', {
+        "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Sample",
+        "sample": sample, "sidebarleft": 1,"level":1})

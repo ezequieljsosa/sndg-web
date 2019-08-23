@@ -28,6 +28,7 @@ class PDB2SQL():
         self.entries_df = None
 
     def load_entries(self):
+        assert os.path.exists(self.entries_path), "%s does not exists" % self.entries_path
         entries_columns = ["IDCODE", "HEADER", "ACCESSIONDATE", "COMPOUND", "SOURCE", "AUTHORS", "RESOLUTION",
                            "EXPERIMENT"]
         self.entries_df = pd.read_table(self.entries_path, skiprows=[0, 1, 2], sep='\t', names=entries_columns)
@@ -49,6 +50,7 @@ class PDB2SQL():
         return pdb_path
 
     def create_pdb_entry(self, code, pdb_path):
+        assert os.path.exists(self.base_dir), "%s does not exists" % self.base_dir
         if PDB.objects.filter(code=code).exists():
             print("%s already exists" % code)
             return PDB.objects.get(code=code)
@@ -64,7 +66,7 @@ class PDB2SQL():
         resolution = None
         try:
             resolution = float(entry.RESOLUTION)
-        except:
+        finally:
             if resolution and not math.isnan(resolution):
                 pdb_model.resolution = resolution
         pdb_model.save()
@@ -95,7 +97,7 @@ class PDB2SQL():
                 resid = "_".join([str(residue.id[1]), residue.id[2], residue.resname])
                 if resid in residues:
                     residue_model = residues[resid]
-                    for atom in residue.get_atoms():
+                    for atom in list(residue):
                         if atom.is_disordered():
                             for altLoc, a in atom.child_dict.items():
                                 atm = Atom(residue=residue_model, serial=a.serial_number, name=a.id,

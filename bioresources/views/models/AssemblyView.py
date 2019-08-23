@@ -32,11 +32,7 @@ def assembly_view(request, pk):
     if "_prots" in be.name:
         be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
         be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
-    # else:
-    #     be = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-    #     be = be.get(biodatabase_id=pk)
 
-    # assembly = Assembly.objects.get(external_ids__identifier=be.name)
     lengths = {}
     for x in be.entries.all():
         seq = Biosequence.objects.raw("""

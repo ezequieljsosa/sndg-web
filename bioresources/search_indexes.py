@@ -234,7 +234,7 @@ class PersonIndex(indexes.SearchIndex, indexes.Indexable):
         # if only_not_indexed:
         #     q["index_updated"] = False
 
-        return (self.get_model().objects.filter(affiliations__publication__targets__isnull=False).distinct())
+        return (self.get_model().objects.filter(affiliations__resource__targets__isnull=False).distinct())
 
 
 class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
@@ -252,7 +252,7 @@ class OrganizationIndex(indexes.SearchIndex, indexes.Indexable):
              "deprecated": False}
         if only_not_indexed:
             q["index_updated"] = False
-        return self.get_model().objects.filter(affiliations__publication__targets__isnull=False, **q).distinct()
+        return self.get_model().objects.filter(affiliations__resource__targets__isnull=False, **q).distinct()
 
 
 class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):

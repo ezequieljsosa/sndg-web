@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% load crispy_forms_tags %}
+
+
+
+{% load static %}
+{% load bioresources_extras %}
+
+{% block content %}
+<div class="row">
+<div class="col-lg-9">
+<p>
+{% trans 'Ingrese el recurso a importar. Puede copiar un link, el numero de acceso al proyecto, publicacione, genoma, lecturas, muestra, estructura o datos de expresion. Por ejemplo:' %}.
+<table class="table table-bordered">
+<tr><td>Proyecto</td><td>PXD004161 o PRJNA224</td></tr>
+<tr><td>Genoma</td><td>GCF_000195955.2 o  GCA_000195955.2 o NC_002945.4 o LT708304.1  </td></tr>
+<tr><td>Lecturas</td><td>ERX3325914 o ERR3299636</td></tr>
+<tr><td>Estructura</td><td>2jrc</td></tr>
+<tr><td>Expresion</td><td>GSE134574</td></tr>
+<tr><td>Muestra</td><td>SAMEA3138326</td></tr>
+
+</table>
+
+</p>
+<form method="post" action="{% url 'bioresources:submission_import' %}">
+{% csrf_token %}
+<input type="search" name="search" value="{{search}}" style="width: 100%" rows="10" /><br /><button class="btn">Search</button>
+</form>
+{% if results %}
+
+<table id="results_table" class="table">
+    {% for line_result in results %}
+    <tr>
+        <td>{{line_result.line}}</td>
+         <td>{{line_result.message}}</td>
+
+    </tr>
+    {% for r in line_result.resources %}
+    <tr>
+         <td><input type="checkbox" name /> </td>
+        <td>{{r.msg}} </td>
+        <td>{{r.resource.name}} </td>
+        <td>{{r.resource.description}} </td>
+        <td>{{r.resource.type_name}} </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% paginator query page_obj request.GET %}
+
+{% endif %}
+
+
+</div>
+</div>
+{% endblock %}

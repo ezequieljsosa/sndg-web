@@ -6,8 +6,13 @@ from django.shortcuts import render
 
 from bioresources.models.Tool import Tool
 
+from bioresources.io.GraphRepo import GraphRepo
+
+
 def tool(request, pk):
     tool = Tool.objects.get(id=pk)
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Tool", level=1)
+
     return render(request, 'resources/tool.html', {
-        "tool": tool,
-        "sidebarleft": 1, })
+        "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Tool",
+        "tool": tool, "sidebarleft": 1, })

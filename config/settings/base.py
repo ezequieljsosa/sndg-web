@@ -42,7 +42,15 @@ LOCALE_PATHS = [str(ROOT_DIR.path("locale"))]
 # DATABASES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
-DATABASES = {"default": env.db("DATABASE_URL")}
+DATABASES = {"default": env.db("DATABASE_URL"),
+
+             'mysql': { #postgresql
+             'ENGINE': 'django.db.backends.mysql',
+             'NAME': 'sndg5',
+             'USER': 'root',
+             'PASSWORD': 'mito',
+             }
+             }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 # URLS
@@ -70,7 +78,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "rest_framework",
-    "django_celery_beat",
+    # "django_celery_beat",
 
     'haystack',
     'django_neomodel',
@@ -84,7 +92,7 @@ LOCAL_APPS = [
     "sndg.users.apps.UsersConfig",
 
     'bioseq',
-    # 'pdbdb',
+    'pdbdb',
     # 'vardb',
     # 'chembl_model',
     'bioresources',
@@ -310,7 +318,11 @@ HAYSTACK_CONNECTIONS = {
         'INCLUDE_SPELLING': True,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.ResourceIndexOAI'],
     },
-    'oai': {
+
+
+}
+if "SNDG_OAI" in env:
+    HAYSTACK_CONNECTIONS['oai'] = {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
         'URL':  env('SNDG_OAI',default='http://127.0.0.1:8984/solr/oai') ,
         'INCLUDE_SPELLING': False,
@@ -322,11 +334,13 @@ HAYSTACK_CONNECTIONS = {
                              'bioresources.search_indexes.BioProjectIndex',
                              'bioresources.search_indexes.PersonIndex',
                              'bioresources.search_indexes.OrganizationIndex',
+                             'bioresources.search_indexes.ReadsArchiveIndex',
                              'bioresources.search_indexes.BarcodeIndex',
+
+
                              ],
 
-    },
-}
+    }
 
 
 HAYSTACK_ID_FIELD = env("HAYSTACK_ID_FIELD",default='id')
@@ -345,7 +359,7 @@ STATICFILES_DIRS = [
     ("jbrowse",env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))),
 ]
 
-NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:test@localhost:7687')
+NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:123@localhost:7687')
 # NEOMODEL_SIGNALS = True
 # NEOMODEL_FORCE_TIMEZONE = False
 # NEOMODEL_ENCRYPTED_CONNECTION = True

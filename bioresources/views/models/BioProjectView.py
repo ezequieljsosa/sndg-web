@@ -9,6 +9,7 @@ from bioresources.views import labelize
 
 def bioproject(request, pk):
     bioproject = BioProject.objects.get(id=pk)
+    gr = GraphRepo()
     graph = {"nodes": [{"id": bioproject.name, "label": labelize(bioproject.name), "color": "orange"}], "edges": []}
     external_orgs = []
     # publications_from_resource_graph(bioproject, graph, external_orgs)

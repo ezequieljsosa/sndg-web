@@ -27,8 +27,12 @@ class Resource(models.Model):
         *([(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
             "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL",
-        ])] + [(40, "PROTEIN", _("PROTEIN"))])
+        ])] + [(40, "PROTEIN", _("PROTEIN")), (30, "ORGANIZATION", _("ORGANIZATION")), (20, "PERSON", _("PERSON"))])
     )
+
+    name2code = {
+        n: idx for idx, n in RESOURCE_TYPES
+    }
 
     facet_dict = {
         "assembly": ["species_name", "level", "assembly_type"],
@@ -72,6 +76,9 @@ class Resource(models.Model):
 
     def get_absolute_url(self):
         return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower(), args=[str(self.id)])
+
+    def type_name(self):
+        return Resource.RESOURCE_TYPES[self.__class__.TYPE].lower()
 
     def compile(self):
         templ = get_template("resources/xoai_resource.xml")

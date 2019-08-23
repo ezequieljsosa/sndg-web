@@ -4,11 +4,18 @@ from django.utils.translation import gettext_lazy as __
 from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
+from bioseq.views import labelize
+
+from bioresources.models.Expression import Expression
+from bioresources.io.GraphRepo import GraphRepo
+
+
 def expression(request, pk):
     expression = Expression.objects.get(id=pk)
-    graph = {"nodes": [{"id": expression.name, "label": labelize(expression.name), "color": "orange"}], "edges": []}
-    external_orgs = []
-    publications_from_resource_graph(expression, graph, external_orgs)
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Expression",level=2)
+
+
     return render(request, 'resources/expression.html', {
-        "expression": expression, "graph": graph, "external_orgs": external_orgs,
-        "sidebarleft": 1, })
+        "expression": expression, "sidebarleft": 1,
+        "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Expression"
+    })

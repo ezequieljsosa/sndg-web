@@ -1,173 +1,92 @@
 {% extends "base.html" %}
-
 {% load static %}
+{% load i18n %}
 {% load bioresources_extras %}
 
-
 {% block head %}
-
-
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-
-<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
-
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 {% endblock %}
 
 {% block content %}
 
-   <h1>{{ object.accession }}</h1>
-<table class="table  table-responsive">
+     <h1>{{ object.accession }}</h1>
+    <table class="table  table-responsive">
 
-<tr><td><b>Name</b></td><td>{{ object.name }}</td></tr>
-{% if object.description %}
-<tr><td><b>Descripción</b></td><td>{{ object.description }}</td></tr>
-{% endif %}
+        <tr><td><b>Name</b></td><td>{{ object.name }}</td></tr>
+        {% if object.description %}
+        <tr><td><b>Descripción</b></td><td>{{ object.description }}</td></tr>
+        {% endif %}
 
-<tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
-<tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
+        <tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
+        <tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
 
-<tr><td><b>Nivel</b></td><td>{{object.level}}</td></tr>
-
-
-<tr><td><b>Tipo</b></td><td>{{ object.assembly_type }}</td></tr>
-<tr><td><b>Taxon</b></td><td>
-{% if object.ncbi_tax %}
-<a href="{% url 'bioresources:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
-{% else %}
-...
-{% endif %}
-</td></tr>
-
-</table>
-
-<iframe  id="jbrowse"
- src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false"
- height="400px" width="100%"></iframe>
-
-<div class="row">
-<div class="col-md-8">
-
-<h3>Secuencias</h3>
-<table id="contig_table" class="table table-responsive">
-<thead>
-<tr><td>ID</td><td>Length</td>
-
-{% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
-{% for x in feature_types.split %}
-<td>{{x}}</td>
-{% endfor %}
-{% endwith %}
-
-</tr>
-</thead>
-<tbody>
-{% for c in contigs %}
-<tr>
-<td><a href="{% url 'bioresources:nucleotide_view' c.bioentry_id %}"> {{c.accession}}</a></td>
-<td>{{lengths|getattribute:c.accession}}</td>
-
-{% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
-{% for x in feature_types.split %}
-<td>{{c.feature_counts|getattribute:x|default:"0" }}</td>
-{% endfor %}
-{% endwith %}
-</tr>
-{% endfor %}
+        <tr><td><b>Nivel</b></td><td>{{object.level}}</td></tr>
 
 
-</tbody>
-</table>
-</div>
-</div>
+        <tr><td><b>Tipo</b></td><td>{{ object.assembly_type }}</td></tr>
+        <tr><td><b>Taxon</b></td><td>
+        {% if object.ncbi_tax %}
+        <a href="{% url 'bioresources:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
+        {% else %}
+        ...
+        {% endif %}
+        </td></tr>
+
+    </table>
+
+    <iframe  id="jbrowse"
+     src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false"
+     height="400px" width="100%"></iframe>
+
+    <div class="row">
+    <div class="col-md-8">
+
+        <h3>Secuencias</h3>
+        <table id="contig_table" class="table table-responsive">
+            <thead>
+                <tr><td>ID</td><td>Length</td>
+
+                {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
+                {% for x in feature_types.split %}
+                <td>{{x}}</td>
+                {% endfor %}
+                {% endwith %}
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contigs %}
+                <tr>
+                <td><a href="{% url 'bioresources:nucleotide_view' c.bioentry_id %}"> {{c.accession}}</a></td>
+                <td>{{lengths|getattribute:c.accession}}</td>
+
+                {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
+                {% for x in feature_types.split %}
+                <td>{{c.feature_counts|getattribute:x|default:"0" }}</td>
+                {% endfor %}
+                {% endwith %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
 
 <div class="row">
 
-<style type="text/css">
-        #mynetwork {
-            /*width: 100%;*/
-            height: 800px;
-            border: 1px solid lightgray;
-        }
-    </style>
+      {% related_resources_summary pk rtype_src related_resources %}
+      {% resource_graph pk graph %}
 
-<div class="col-md-8" id="mynetwork"></div>
-<div class="col-md-4">
-<table class="table table-responsive">
-    <tr><td style="background-color: red">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Cromosoma/Contig</td></tr>
-    <tr><td style="background-color: orange">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Ensamblado</td></tr>
-    <tr><td style="background-color: SlateBlue">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Publicación</td></tr>
-    <tr><td style="background-color: Grey">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Muestra</td></tr>
-    <tr><td style="background-color: green">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Organización</td></tr>
-    <tr><td style="background-color: cyan">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Autor</td></tr>
-</table>
-<h6>Otras organizaciones (de la/s publicaciones) </h6>
-<ul>
-{% for org in graph.external_orgs %}
-<li> {{org.name}} ( {{org.country}} ) </li>
-{% endfor %}
-
-</ul>
-</div>
-
-</div>
-
-
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script type="text/javascript" src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript">
-    // create an array with nodes
-
-    $(document).ready(function() {
-        $('#contig_table').DataTable();
-    } );
-
-    var nodes = new vis.DataSet([
-        {% for x in graph.nodes %}
-        {id: '{{x.id}}', label: '{{x.label}}',type: '{{x.type}}',color:'{{x.color}}'},
-        {% endfor%}
-    ]);
-
-    var edges = new vis.DataSet([
-        {% for x in graph.edges %}
-        {from: '{{x.from}}', to: '{{x.to}}',arrows:'to'},
-        {% endfor %}
-    ]);
-    var container = document.getElementById('mynetwork');
-    var data = {
-        nodes: nodes,
-        edges: edges
-    };
-    var options = {
-        nodes: {
-              shape: 'box'
-            },
-        layout: {  hierarchical: {   direction: "UD"  }    }
-    };
-
-    var network = new vis.Network(container, data, options);
-    network.on("click", function (params) {
-            params.event = "[original event]";
-            const node = data.nodes.get( this.getNodeAt(params.pointer.DOM)) ;
-            // switch (node.type){
-            //     case "assembly":
-            //         window.location.href = '{%  url 'bioresources:assembly_view' 0  %}'.replace("/0", "/" + node.id)
-            //         break
-            //     case "seq":
-            //          window.location.href = '{%  url 'bioresources:nucleotide_view' 0  %}'.replace("/0","/" +node.id)
-            //          break
-            //     case "organization":
-            //          window.location.href = '{%  url 'bioresources:organization_view' 0  %}'.replace("/0","/" +node.id)
-            //          break
-            //     case "person":
-            //          window.location.href = '{%  url 'bioresources:person_view' 0  %}'.replace("/0","/" +node.id)
-            //          break
-            //     case "sample":
-            //          window.location.href = '{%  url 'bioresources:sample_view' 0  %}'.replace("/0","/" +node.id)
-            //          break
-            // }
+      <script type="text/javascript">
+        $(document).ready(()=>{
+            create_graph()
         });
-</script>
+      </script>
+
+</div>
+
+
 
 {% endblock %}

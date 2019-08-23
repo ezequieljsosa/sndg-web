@@ -80,9 +80,6 @@ def index(List, i):
 numeric_test = re.compile("^\d+$")
 
 
-
-
-
 @register.filter(name='getattribute')
 def getattribute(value, arg):
     """Gets an attribute of an object dynamically from a string name"""
@@ -96,9 +93,11 @@ def getattribute(value, arg):
     else:
         return ""
 
+
 @register.filter(name='map')
 def map(value, arg):
-    return [getattribute(x,arg) for x in value]
+    return [getattribute(x, arg) for x in value]
+
 
 @register.filter(name='execute')
 def execute(value, method):
@@ -107,5 +106,20 @@ def execute(value, method):
 
 
 @register.inclusion_tag('tags/paginator.html')
-def paginator(query, page_obj,params):
-    return {"query": query, "page_obj": page_obj,'params':params}
+def paginator(query, page_obj, params):
+    return {"query": query, "page_obj": page_obj, 'params': params}
+
+
+@register.inclusion_tag('tags/resource_graph.html')
+def resource_graph(pk: int, graph: dict):
+    return {"pk": pk, "graph": graph}
+
+
+@register.inclusion_tag('tags/related_resources_table.html')
+def related_resources_table(related_resources: dict):
+    return {"related_resources": related_resources}
+
+
+@register.inclusion_tag('tags/related_resources_summary.html')
+def related_resources_summary(rid: str, rtype_src: str, related_resources: dict, level: int=2):
+    return {"rid": rid, "related_resources": related_resources, "rtype_src": rtype_src, "level": level}

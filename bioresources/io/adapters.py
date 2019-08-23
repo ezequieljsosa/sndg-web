@@ -1,12 +1,26 @@
 import datetime
 from urllib.error import URLError
-
 import xmltodict
-from Bio import Entrez
-from biosql.models import Taxon, TaxonName, Term, Ontology
 
-from bioresources.models import Sample, Publication, ExternalId, Resource, Organization, Person, \
-    ReadsArchive, Assembly, Structure, Expression, Affiliation, ResourceProperty, ResourcePropertyValue
+from Bio import Entrez
+from bioseq.models.Taxon import Taxon, TaxonName
+from bioseq.models.Term import Term
+from bioseq.models.Ontology import Ontology
+from bioseq.models.Bioentry import Bioentry
+
+from bioresources.models.Assembly import Assembly
+from bioresources.models.Sample import Sample
+from bioresources.models.Publication import Publication
+from bioresources.models.ExternalId import ExternalId
+from bioresources.models.Resource import Resource
+from bioresources.models.Organization import Organization
+from bioresources.models.ReadsArchive import ReadsArchive
+from bioresources.models.Structure import Structure
+from bioresources.models.Expression import Expression
+from bioresources.models.Affiliation import Affiliation
+from bioresources.models.BioProject import BioProject
+
+from bioresources.models.ResourceProperty import ResourceProperty, ResourcePropertyValue
 
 
 def retry(q, n=4):
@@ -126,6 +140,12 @@ class NCBIBioSampleAdapter:
             "DocumentSummary"][0]
         return xmltodict.parse(biosampledata["SampleData"])["BioSample"]
 
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="biosample", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
+
+
     def save(self, summaryData, ncbi_id):
 
         acc = summaryData["@accession"]
@@ -138,7 +158,7 @@ class NCBIBioSampleAdapter:
 
         ontology = Ontology.objects.get_or_create(name="NCBI sample", definition="Attributes of an NCBI Sample")[0]
 
-        s = Sample( name=acc, description=desc)
+        s = Sample(name=acc, description=desc)
 
         if ("Organism" in summaryData["Description"]) and ("@taxonomy_id" in summaryData["Description"]["Organism"]):
             tax = summaryData["Description"]["Organism"]['@taxonomy_id']
@@ -179,10 +199,13 @@ class NCBISRAAdapter:
     def fetch(self, ncbi_id):
         return Entrez.read(retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))[0]
 
-    def save(self, summaryData, ncbi_id):
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="sra", id=ncbi_ids)))
+
+    def adapt(self, summaryData, ncbi_id):
         ncbi_org = Organization.objects.get(name="NCBI")
-        sra_record = Entrez.read(  retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))
-        expData = xmltodict.parse("<xml>" + sra_record[0]["ExpXml"] + "</xml>")["xml"]
+        # sra_record = Entrez.read(retry(lambda: Entrez.esummary(db="sra", id=ncbi_id)))
+        expData = xmltodict.parse("<xml>" + summaryData["ExpXml"] + "</xml>")["xml"]
         acc = expData["Experiment"]["@acc"]
 
         qs = ReadsArchive.objects.filter(external_ids__identifier=acc, external_ids__type="accession")
@@ -190,6 +213,7 @@ class NCBISRAAdapter:
             return qs.first()
 
         s = ReadsArchive(type=Resource.RESOURCE_TYPES.READS, name=acc, description=expData["Summary"]["Title"])
+        s.id = Resource.objects.latest('id').id + 1
         try:
             s.release_date = datetime.datetime.strptime(summaryData["CreateDate"].split(" ")[0], "%Y/%m/%d")
         except ValueError:
@@ -201,7 +225,7 @@ class NCBISRAAdapter:
 
         if ("Organism" in expData) and ("@taxid" in expData["Organism"]):
             s.ncbi_tax = Taxon.objects.filter(ncbi_taxon_id=int(expData["Organism"]["@taxid"])).first()
-
+        s.type = s.__class__.TYPE
         s.save()
         s.publishers.add(ncbi_org)
 
@@ -212,19 +236,88 @@ class NCBISRAAdapter:
         return s
 
 
+class NCBIPmcAdapter:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="pmc", id=ncbi_ids)))
+
+    def adapt(self, summaryData,ncbi_id):
+        s = Publication(name=summaryData["Title"], description="")
+        s.type = s.__class__.TYPE
+        return s
+
+class NCBIPubmedAdapter:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="pubmed", id=ncbi_ids)))
+
+    def adapt(self, summaryData,ncbi_id):
+        s = Publication(name=summaryData["Title"], description="")
+        s.type = s.__class__.TYPE
+        return s
+
+class NCBIGeneAdapter:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="gene", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
+    def adapt(self, summaryData,ncbi_id):
+        s = Bioentry(name=summaryData["Name"], description=summaryData["Summary"])
+        return s
+
+class NCBIProteinAdapter:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="protein", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
+    def adapt(self, summaryData,ncbi_id):
+        return Bioentry(name=summaryData["title"], description=summaryData["abstract"])
+
+class NCBINuccoreAdapter:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="nuccore", id=ncbi_ids)))
+
+    def adapt(self, summaryData,ncbi_id):
+        return Bioentry(name=str(summaryData["Gi"]), description=summaryData["Title"])
+
+class NCBIBioProject:
+    def fetch(self, ncbi_id):
+        return self.fetch_list(ncbi_id)[0]
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="bioproject", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
+    def adapt(self, summaryData,ncbi_id):
+        s = BioProject(name=str(summaryData["Project_Acc"]), description=summaryData["Project_Title"])
+        s.type = s.__class__.TYPE
+        return s
+
 class NCBIAssemblyAdapter:
 
     def fetch(self, ncbi_id):
         return self.fetch_list(ncbi_id)[0]
 
-    def fetch_list(self,ncbi_ids):
+    def fetch_list(self, ncbi_ids):
         return Entrez.read(retry(lambda: Entrez.esummary(db="assembly", id=ncbi_ids)))["DocumentSummarySet"][
             "DocumentSummary"]
 
-    def adapt(self,summaryData):
+    def adapt(self, summaryData,ncbi_id):
         name = summaryData["AssemblyName"]
         acc = summaryData["AssemblyAccession"]
-
 
         tax = Taxon.objects.filter(ncbi_taxon_id=int(summaryData["Taxid"])).first()
 
@@ -239,6 +332,7 @@ class NCBIAssemblyAdapter:
                      assembly_type=type_dict[summaryData["AssemblyType"].lower()],
                      species_name=summaryData["SpeciesName"])
         s.url = "https://www.ncbi.nlm.nih.gov/assembly/" + acc
+        s.type = s.__class__.TYPE
         try:
             s.intraspecific_name = str(
                 summaryData["Biosource"]["InfraspeciesList"][0]["Sub_type"]) + " " + \
@@ -266,7 +360,7 @@ class NCBIAssemblyAdapter:
         if qs.exists():
             return qs.first()
         ncbi_org = Organization.objects.get(name="NCBI")
-        s = self.adapt(summaryData)
+        s = self.adapt(summaryData,ncbi_id)
 
         s.save()
         s.publishers.add(ncbi_org)
@@ -283,6 +377,10 @@ class NCBIStructureAdapter:
     def fetch(self, ncbi_id):
         return Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_id)))[0]
 
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
     def save(self, summaryData, ncbi_id):
 
         acc = summaryData["PdbAcc"]
@@ -293,7 +391,7 @@ class NCBIStructureAdapter:
 
         s = Structure(type=Resource.RESOURCE_TYPES.STRUCTURE, name=acc, description=summaryData["PdbDescr"],
                       method=summaryData["ExpMethod"])
-
+        s.type = s.__class__.TYPE
         try:
             s.deposit_date = datetime.datetime.strptime(summaryData["PdbDepositDate"],
                                                         "%Y/%m/%d %H:%M")  # 2017/08/10 00:00
@@ -320,6 +418,11 @@ class NCBIGDSAdapter:
     def fetch(self, ncbi_id):
         return Entrez.read(retry(lambda: Entrez.esummary(db="gds", id=ncbi_id)))[0]
 
+
+    def fetch_list(self, ncbi_ids):
+        return Entrez.read(retry(lambda: Entrez.esummary(db="gds", id=ncbi_ids)))["DocumentSummarySet"][
+            "DocumentSummary"]
+
     def save(self, summaryData, ncbi_id):
 
         acc = summaryData["Accession"]
@@ -331,7 +434,7 @@ class NCBIGDSAdapter:
         s = Expression(type=Resource.RESOURCE_TYPES.EXPRESSION, name=acc,
                        description=summaryData["title"] + "." + summaryData["summary"],
                        gdstype=summaryData["gdsType"])
-
+        s.type = s.__class__.TYPE
         if "OrganismList" in summaryData:
             s.ncbi_org = "||".join(summaryData["OrganismList"])
         if "ExpMethod" in summaryData:

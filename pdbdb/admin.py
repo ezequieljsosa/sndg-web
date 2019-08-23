@@ -30,7 +30,9 @@ class PDBResidueSetInline(admin.TabularInline):
 class PDBAdmin(admin.ModelAdmin):
     list_display = ["code","resolution","taxon","residues","ligands","solvent"]
     search_fields = ["code","experiment"]
-
+    raw_id_fields = (
+        'taxon',
+    )
     def residues(self, obj):
         #https://en.proft.me/2014/10/12/reversing-admin-urls-django/
         return format_html('<a href="{url}?pdb_id={{pdb_id}}">Residues</a>',

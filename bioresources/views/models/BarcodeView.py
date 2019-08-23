@@ -5,9 +5,11 @@ from django.shortcuts import redirect, reverse
 from django.shortcuts import render
 
 from bioresources.models.Barcode import Barcode
+from bioresources.io.GraphRepo import GraphRepo
 
 def barcode(request, pk):
     barcode = Barcode.objects.get(id=pk)
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Barcode",level=1)
     return render(request, 'resources/barcode.html', {
-        "barcode": barcode,
-        "sidebarleft": 1, })
+        "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Barcode",
+        "barcode": barcode,     "sidebarleft": 1, })

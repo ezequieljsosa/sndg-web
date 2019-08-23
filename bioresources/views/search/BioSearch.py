@@ -64,7 +64,9 @@ class BioSearchView(SearchView):
 
     def get_queryset(self):
         queryset = super(BioSearchView, self).get_queryset()
-        for x in ["authors", "affiliations", "taxon"] + Resource.facet_dict.get(self.request.GET["type"], []):
+        rtype = self.request.GET["type"]
+
+        for x in ["authors", "affiliations", "taxon"] + Resource.facet_dict.get(rtype, []):
             if x not in self.request.GET:
                 queryset = queryset.facet(x, limit=5)
 

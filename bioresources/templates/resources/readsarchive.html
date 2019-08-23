@@ -1,93 +1,37 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
+{% load bioresources_extras %}
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 {% endblock %}
+
 
 {% block content %}
 <div class="container">
-<div class="row">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>{{readsarchive.name}}</h1>
+            <p>
+            {{readsarchive.description}}
+            </p>
+        </div>
+    </div>
 
+  {% related_resources_summary pk rtype_src related_resources level %}
+  {% resource_graph pk graph %}
 
-
-<div class="col-md-12">
-
-
-
-    <h1>{{readsarchive.name}}</h1>
-    <p>
-    {{readsarchive.description}}
-    </p>
+  <script type="text/javascript">
+    $(document).ready(()=>{
+        create_graph()
+    });
+  </script>
 
 
 
 </div>
-
-
-  </div>
-  </div>
-
-    <div class="row">
-
-    <style type="text/css">
-            #mynetwork {
-                /*width: 100%;*/
-                height: 800px;
-                border: 1px solid lightgray;
-            }
-        </style>
-
-    <div class="col-md-8" id="mynetwork"></div>
-    <div class="col-md-4">
-    <table class="table table-responsive">
-        <tr><td style="background-color: orange">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Experimento Expresión</td></tr>
-        <tr><td style="background-color: SlateBlue">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Publicación</td></tr>
-        <tr><td style="background-color: green">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Organización</td></tr>
-        <tr><td style="background-color: cyan">&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Autor</td></tr>
-    </table>
-    <h6>Otras organizaciones (de la/s publicaciones) </h6>
-    <ul>
-    {% for org in graph.external_orgs %}
-    <li> {{org.name}} ( {{org.country}} ) </li>
-    {% endfor %}
-
-    </ul>
-    </div>
-
-    </div>
-
-    <script type="text/javascript">
-        // create an array with nodes
-        var nodes = new vis.DataSet([
-            {% for x in graph.nodes %}
-            {id: '{{x.id}}', label: '{{x.label}}',color:'{{x.color}}'},
-            {% endfor%}
-        ]);
-
-        var edges = new vis.DataSet([
-            {% for x in graph.edges %}
-            {from: '{{x.from}}', to: '{{x.to}}',arrows:'to'},
-            {% endfor %}
-        ]);
-        var container = document.getElementById('mynetwork');
-        var data = {
-            nodes: nodes,
-            edges: edges
-        };
-        var options = {
-            nodes: {
-                  shape: 'box'
-                },
-            layout: {  hierarchical: {   direction: "UD"  }    }
-        };
-
-        var network = new vis.Network(container, data, options);
-    </script>
-
-
-
-    </div>
 
 {% endblock %}
