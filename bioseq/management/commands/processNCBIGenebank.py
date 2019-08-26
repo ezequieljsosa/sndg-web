@@ -10,11 +10,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-env = environ.Env()
-if env.str('ENV_PATH', '.env'):
-    environ.Env.read_env(env.str('ENV_PATH', '.env'))
-else:
-    environ.Env.read_env()
 
 # import logging
 # log = logging.getLogger('django.db.backends')

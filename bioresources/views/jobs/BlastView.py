@@ -1,28 +1,80 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from django.utils.translation import gettext_lazy as __
+from django.conf import settings
 from django.shortcuts import render, redirect, reverse
-from bioresources.models.Job import Job
+from django.db import transaction
+from datetime import datetime, timezone
 
+from bioresources.models.Job import Job
+from bioresources.models.BlastDB import BlastDB
+from bioresources.tasks import execute_job
+
+import Bio.SeqIO as bpio
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 def blast(request):
-    ndatabases = [1, 2, 3]
-    pdatabases = [4, 56]
-    if "biodatabase" in request.GET:
-        db = Biodatabase.objects.get(biodatabase_id=request.GET["biodatabase"])
-        dbp = Biodatabase.objects.get(name=(db.name + "_prots"))
-        ndatabases.append({"value": db.biodatabase_id, "label": "Genome - " + db.name})
-        pdatabases.append({"value": dbp.biodatabase_id, "label": "Proteome - " + db.name})
 
     if request.method == 'POST':
-        job = Job(command="ls /data", user=request.user)
+        """
+        
+
+
+'evalue_select' (139718239766000) = {str} '10'
+'low_complexity_select' (139718239744696) = {str} 'Yes'
+'results_select' (139718239766064) = {str} '10'
+        """
+
+        cmd = request.POST["blastType"]
+        job = Job(command=cmd,result_type="blast")
+        if not request.user.is_anonymous:
+            job.user=request.user
         job.save()
-        job.execute()
-        return redirect(reverse("bioresources:job", kwargs={"jid": job.id}))
+        job.init()
+        job.save()
+        query = settings.JOBSDIR + "/" + str(job.id) + "/query.fasta"
+        with open(query,"w") as h:
+            seq = "".join(request.POST["sequence_text"].split())
+            r = SeqRecord(id="query",name="",description="",seq=Seq(seq))
+            bpio.write(r,h,"fasta")
+        db = settings.BLASTDBSDIR + "/" +  request.POST["database_select"] + ".fasta"
+        kwargs = {
+            "db":db,
+            "query":query,
+            "matrix":request.POST["matrix_select"],
+            "gapopen":request.POST["gap_open_input"],
+            "gapextend":request.POST["gap_extend_input"],
+            "evalue":request.POST["evalue_select"],
+            "soft_masking":request.POST["low_complexity_select"],
+            "max_hsps":request.POST["results_select"],
+            "outfmt":"5"
 
-    return render(request, 'tools/blast.html', {"ndatabases": ndatabases, "pdatabases": pdatabases})
+        }
+        for k,v in kwargs.items():
+            cmd += " -" + k + " " + v
+        job.command = cmd
+        with transaction.atomic():
+            job.queue()
+            job.save()
+
+        execute_job.delay(job.id)
+
+        return redirect(reverse("bioresources:job_view", kwargs={"jid": job.id}))
+
+    return render(request, 'tools/blast.html',
+                  {"ndatabases": BlastDB.objects.filter(dbtype="nucl"),
+                   "pdatabases": BlastDB.objects.filter(dbtype="prot")
+                   })
 
 
-def blast_result(request, jid):
+def job_view(request, jid):
     job = Job.objects.get(id=jid)
     if job.status == Job.STATUS.FINISHED:
-        return render(request, 'tools/blast_result.html', {})
+        with open(job.result) as h:
+            result = h.read() #.replace("\n"," ")
+        return render(request,   'tools/%s_result.html' % job.result_type, {"job":job,"result":result})
     else:
-        return render(request, 'tools/generic_result.html', {})
+        elapsed_time = int((datetime.now(timezone.utc) - job.start).total_seconds())
+        return render(request, 'tools/generic_result.html', {"job":job,"status":str(Job.STATUS[job.status]),
+                                                             "elapsed_time": elapsed_time})

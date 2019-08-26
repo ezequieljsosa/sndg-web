@@ -33,7 +33,7 @@ admin.site.register(ResourceProperty)
 admin.site.register(Sample)
 admin.site.register(ReadsArchive)
 admin.site.register(ExternalId)
-admin.site.register(Job)
+
 
 
 
@@ -98,3 +98,9 @@ class PublicationAdmin(admin.ModelAdmin):
         # https://en.proft.me/2014/10/12/reversing-admin-urls-django/
         return format_html('<a href="{url}?pdb_id={{pdb_id}}">Resources</a>',
                            pdb_id=obj.id, url=reverse('admin:bioresources_resource_changelist'))
+
+@admin.register(Job)
+class JobAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["user"]
+    list_display = ["id", "user", "status"]
+    search_fields = ["name", "description"]

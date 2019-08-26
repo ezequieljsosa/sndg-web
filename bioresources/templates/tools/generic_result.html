@@ -1,11 +1,8 @@
 {% extends "base.html" %}
-{% load highlight %}
-
 {% load bioresources_extras %}
+{% load i18n %}
 
 {% block head %}
-
-
 
 {% endblock %}
 
@@ -13,12 +10,23 @@
 {% block content %}
 
 
-
-	<div id="overview_row" class="row">
+	<div class="row">
 		<section class="col-lg-12 connectedSortable">
-			<h1>Job not finished...</h1>
+			{% if status == "ERROR" %}
+			<h1>{% trans 'There was an error runnning your job'  %}  </h1>
+			{% endif%}
+
+			{% if status in "QUEUED|RUNNING|NEW" %}
+			<h1>{% trans 'Your job is ' %} {{status}}</h1>
+			{% endif%}
+
+			<table class="table">
+				<tr><td>{% trans "Job Type" %}</td><td>{{job.result_type}}</td></tr>
+				<tr><td>{% trans "Started" %}</td><td>{{job.start|date:"h:i d M Y" }}</td></tr>
+				<tr><td>{% trans "Elapsed time" %}</td><td>{{elapsed_time}} seconds</td></tr>
+			</table>
+
 		</section>
 	</div>
-
 
 {% endblock %}

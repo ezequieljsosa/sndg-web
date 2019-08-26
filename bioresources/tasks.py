@@ -1,37 +1,33 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-import subprocess as sp
+from django.utils.translation import gettext as _
+
 import os
 from celery import shared_task
 
-
-import traceback
-from datetime import datetime
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 @shared_task
 def execute_job(jobId):
     from .models.Job import Job
-    if not os.path.exists("/tmp/sndg"): #TODO hacerlo configurable
-        os.makedirs("/tmp/sndg")
+    # if not os.path.exists("/tmp/sndg"): #TODO hacerlo configurable
+    #     os.makedirs("/tmp/sndg")
     job = Job.objects.get(id=jobId)
-    job.status = Job.STATUS.QUEUED
-    job.start = datetime.now()
+    job.running()
     job.save()
-    stderr = "/tmp/sndg/{jid}.err".format(jid=jobId)
-    stdout = "/tmp/sndg/{jid}.out".format(jid=jobId)
     try:
-        with open(stdout,"w") as hstdout,open(stderr,"w") as hstderr:
-           sp.call(job.command, shell=True, stdout=hstdout,
-                stderr=hstderr)
-    except:
-        job = Job.objects.get(id=jobId)
-        job.result = open(stderr).read()
-        job.status = Job.STATUS.ERROR
-        job.dev_error = traceback.format_exc()
-    else:
-        job = Job.objects.get(id=jobId)
-        job.result = stdout
-        job.status = Job.STATUS.FINISHED
-    job.end = datetime.now()
+        job.execute()
+    except Exception as ex:
+        job.error(ex)
     job.save()
+    if job.user:
+        send_mail(
+            _('Job results for ID %(jid)s') % {"jid":job.id},
+            _('Click <a href="%(link)s">here</a> to see results for job %(jid)s') % {
+                "jid":job.id,"link":job.get_absolute_url()} ,
+            settings.EMAIL_HOST_USER,
+            [job.user.email],
+            fail_silently=False,
+        )

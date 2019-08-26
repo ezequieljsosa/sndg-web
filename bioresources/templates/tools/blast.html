@@ -60,21 +60,22 @@
 			}
 			$("#" + blastT).addClass("btn-primary");
 			$.blastType = blastT;
+			$("#blastType").val(blastT)
 
 		}
 
 		function updateBlastType(){
 			if ($.inputType  ==  'aminoacids'){
-				if( ["{{ndatabases|map:'value'|join:'","'}}"].indexOf(  $("#database_select").val()) != -1 ){
+				if( ["{{pdatabases|map:'accession'|join:'","'}}"].indexOf(  $("#database_select").val()) != -1 ){
 					blastType("blastp")
 				} else {
 					blastType("tblastn")
 				}
 			} else {
-				if( ["{{pdatabases|map:'value'|join:'","'}}"].indexOf(  $("#database_select").val()) != -1 ){
-					blastType("blastx")
-				} else {
+				if( ["{{ndatabases|map:'accession'|join:'","'}}"].indexOf(  $("#database_select").val()) != -1 ){
 					blastType("blastn")
+				} else {
+					blastType("blastx")
 				}
 			}
 		}
@@ -187,7 +188,11 @@
 	</script>
 
 	<form id="blast_form" method="POST">
+
+
 {% csrf_token %}
+
+
 	<div id="options_row" class="row">
 
 		<section class="col-lg-6 connectedSortable">
@@ -211,8 +216,8 @@
 						{% trans "Blast Sequence" %}
 					</h3>
 
-					<textarea id="sequence_text" style="width: 100%" rows="10"></textarea>
-
+					<textarea name="sequence_text" id="sequence_text" style="width: 100%" rows="10"></textarea>
+			<input type="hidden" id="blastType" name="blastType" value="blastp" />
 
 
 		</section>
@@ -236,21 +241,23 @@
 					</div>
 
 					<div class="form-group">
-						<label><spring:message code="blast.databases" /></label> <select
-							id="database_select" class="form-control">
+						<label>{% trans 'Blast Databases' %}</label> <select
+							name="database_select" id="database_select" class="form-control">
 
-                            {% for x in ndatabases %}
-							<option value="{{x|getattribute:"value"}}">{{x|getattribute:"label"}}</option>
+
+							{% for db in pdatabases %}
+							<option title="{% trans db.description %}}" value="{{db.accession}}">{% trans db.name %}</option>
 							{% endfor %}
-							{% for x in pdatabases %}
-                            <option value="{{x|getattribute:"value"}}">{{x|getattribute:"label"}}</option>
-                            {% endfor %}
+							{% for db in ndatabases %}
+							<option title="{% trans db.description %}}" value="{{db.accession}}">{% trans db.name %}</option>
+							{% endfor %}
+
 
 						</select>
 
 					</div>
 					<div class="form-group">
-											<label><spring:message code="blast.type" /></label>
+											<label>{% trans 'Blast Type' %}</label>
 											<br />
 						<div class="btn-group" role="group" aria-label="...">
 							<button  id="blastp" type="button"
@@ -281,7 +288,7 @@
 				<div class="box-body">
 
 					<div id="matrix_input" class="form-group">
-						<label>Matrix</label> <select id="matrix_select"
+						<label>Matrix</label> <select id="matrix_select" name="matrix_select"
 							class="form-control">
 
 							<option value="BLOSUM45">Blowsum 45</option>
@@ -296,14 +303,14 @@
 					</div>
 					<div class="form-group">
 						<label>Gap open</label> <input id="gap_open_input" value="11"
+													   name="gap_open_input" class="form-control" type="number" />
+					</div>
+					<div class="form-group">
+						<label>Gap extend</label> <input id="gap_extend_input" value="1" name="gap_extend_input"
 							class="form-control" type="number" />
 					</div>
 					<div class="form-group">
-						<label>Gap extend</label> <input id="gap_extend_input" value="1"
-							class="form-control" type="number" />
-					</div>
-					<div class="form-group">
-						<label>Max evalue</label> <select id="evalue_select"
+						<label>Max evalue</label> <select id="evalue_select" name="evalue_select"
 							class="form-control">
 							<option>1.0E-100</option>
 							<option>1.0E-10</option>
@@ -312,11 +319,11 @@
 							<option>0.1</option>
 							<option>1</option>
 							<option selected="selected">10</option>
-							<option>100</option>
+
 						</select>
 					</div>
 					<div class="form-group">
-						<label>Low complexity filter</label> <select
+						<label>Low complexity filter</label> <select name="low_complexity_select"
 							id="low_complexity_select" class="form-control">
 							<option>Yes</option>
 							<option>No</option>
@@ -324,12 +331,11 @@
 						</select>
 					</div>
 					<div class="form-group">
-						<label>Results</label> <select id="results_select"
+						<label>Results</label> <select id="results_select" name="results_select"
 							class="form-control">
 							<option>10</option>
 							<option>50</option>
 							<option>100</option>
-							<option>All</option>
 						</select>
 					</div>
 				</div>

@@ -44,12 +44,12 @@ LOCALE_PATHS = [str(ROOT_DIR.path("locale"))]
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 DATABASES = {"default": env.db("DATABASE_URL"),
 
-             'mysql': { #postgresql
-             'ENGINE': 'django.db.backends.mysql',
-             'NAME': 'sndg5',
-             'USER': 'root',
-             'PASSWORD': 'mito',
-             }
+             # 'mysql': { #postgresql
+             # 'ENGINE': 'django.db.backends.mysql',
+             # 'NAME': 'sndg5',
+             # 'USER': 'root',
+             # 'PASSWORD': 'mito',
+             # }
              }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
@@ -359,8 +359,11 @@ STATICFILES_DIRS = [
     ("jbrowse",env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))),
 ]
 
+BLASTDBSDIR=os.environ.get('BLASTDBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/blastdbs/")))
+JOBSDIR=os.environ.get('JOBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/jobs/")))
 NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:123@localhost:7687')
 # NEOMODEL_SIGNALS = True
 # NEOMODEL_FORCE_TIMEZONE = False
 # NEOMODEL_ENCRYPTED_CONNECTION = True
 # NEOMODEL_MAX_POOL_SIZE = 50
+

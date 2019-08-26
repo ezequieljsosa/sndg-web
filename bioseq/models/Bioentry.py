@@ -2,6 +2,9 @@
 from __future__ import unicode_literals
 from collections import defaultdict
 
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
+
 from django.utils.translation import gettext_lazy as __
 from django.db import models
 from django.shortcuts import reverse
@@ -95,6 +98,13 @@ class Bioentry(models.Model):
 
     def __repr__(self):
         return str(self)
+
+    def to_seq_record(self,addDesc=True):
+        desc = self.description if addDesc else ""
+        r = SeqRecord(id=self.accession,name=desc,seq=Seq(self.seq.seq))
+        return r
+
+
 
 
 class BioentryDbxref(models.Model):

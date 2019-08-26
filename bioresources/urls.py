@@ -19,7 +19,7 @@ from .views.models.TaxView import TaxView
 from .views.search.BioSearch import BioSearchView
 from .views.search.BioSearchRelated import BioSearchRelatedView
 from .views.search import search_redirect
-from .views.jobs.BlastView import blast, blast_result
+from .views.jobs.BlastView import blast,job_view
 
 from .views.submission.SubmissionNewView import SubmissionNewView
 from .views.submission.SubmissionImportView import SubmissionImportView
@@ -35,7 +35,7 @@ urlpatterns = [
     # Main page and resources search
     path('', index.index, name='index'),
     path('blast/', blast, name='available_tools'),
-    path('job/<int:jid>', blast_result, name='job'),
+    path('job/<int:jid>', job_view, name='job_view'),
     path('', index.index, name='stats'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),
