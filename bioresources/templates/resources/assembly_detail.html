@@ -11,68 +11,70 @@
 
 {% block content %}
 
-     <h1>{{ object.accession }}</h1>
+<div class="row">
+<div class="col-md-6">
+      {% resource_table object external_url %}
     <table class="table  table-responsive">
 
-        <tr><td><b>Name</b></td><td>{{ object.name }}</td></tr>
-        {% if object.description %}
-        <tr><td><b>Descripción</b></td><td>{{ object.description }}</td></tr>
-        {% endif %}
+
 
         <tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
         <tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
 
-        <tr><td><b>Nivel</b></td><td>{{object.level}}</td></tr>
+        <tr><td><b>Nivel</b></td><td>{{level|getattribute:object.level}}</td></tr>
 
 
-        <tr><td><b>Tipo</b></td><td>{{ object.assembly_type }}</td></tr>
+        <tr><td><b>Tipo</b></td><td>{{ atypes|getattribute:object.assembly_type }}</td></tr>
+         {% if object.ncbi_tax %}
         <tr><td><b>Taxon</b></td><td>
-        {% if object.ncbi_tax %}
+
         <a href="{% url 'bioresources:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
-        {% else %}
-        ...
-        {% endif %}
+
         </td></tr>
-
+        {% endif %}
     </table>
+ </div>
+ </div>
 
-    <iframe  id="jbrowse"
-     src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false"
-     height="400px" width="100%"></iframe>
+    {% if contigs %}
+        <iframe  id="jbrowse"
+         src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false"
+         height="400px" width="100%"></iframe>
 
-    <div class="row">
-    <div class="col-md-8">
+        <div class="row">
+        <div class="col-md-8">
 
-        <h3>Secuencias</h3>
-        <table id="contig_table" class="table table-responsive">
-            <thead>
-                <tr><td>ID</td><td>Length</td>
+            <h3>Secuencias</h3>
+            <table id="contig_table" class="table table-responsive">
+                <thead>
+                    <tr><td>ID</td><td>Length</td>
 
-                {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
-                {% for x in feature_types.split %}
-                <td>{{x}}</td>
-                {% endfor %}
-                {% endwith %}
+                    {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
+                    {% for x in feature_types.split %}
+                    <td>{{x}}</td>
+                    {% endfor %}
+                    {% endwith %}
 
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in contigs %}
-                <tr>
-                <td><a href="{% url 'bioresources:nucleotide_view' c.bioentry_id %}"> {{c.accession}}</a></td>
-                <td>{{lengths|getattribute:c.accession}}</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in contigs %}
+                    <tr>
+                    <td><a href="{% url 'bioresources:nucleotide_view' c.bioentry_id %}"> {{c.accession}}</a></td>
+                    <td>{{lengths|getattribute:c.accession}}</td>
 
-                {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
-                {% for x in feature_types.split %}
-                <td>{{c.feature_counts|getattribute:x|default:"0" }}</td>
-                {% endfor %}
-                {% endwith %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    </div>
+                    {% with feature_types='CDS tRNA rRNA regulatory ncRNA' %}
+                    {% for x in feature_types.split %}
+                    <td>{{c.feature_counts|getattribute:x|default:"0" }}</td>
+                    {% endfor %}
+                    {% endwith %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+    {% endif %}
 
 <div class="row">
 

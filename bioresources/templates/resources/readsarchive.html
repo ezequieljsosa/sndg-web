@@ -13,12 +13,7 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1>{{readsarchive.name}}</h1>
-            <p>
-            {{readsarchive.description}}
-            </p>
-        </div>
+        {% resource_table readsarchive external_url %}
     </div>
 
   {% related_resources_summary pk rtype_src related_resources level %}

@@ -367,3 +367,8 @@ NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:123@loc
 # NEOMODEL_ENCRYPTED_CONNECTION = True
 # NEOMODEL_MAX_POOL_SIZE = 50
 
+CACHES = {
+    'default': env.cache('REDIS_URL'),
+}
+
+SCOPUS_API=os.environ.get('SCOPUS_API',os.path.join(str(ROOT_DIR), "data/scopus_api.json"))

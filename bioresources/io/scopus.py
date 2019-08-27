@@ -51,3 +51,10 @@ class ScopusDS:
 
         for article in aff_srch.results:
             yield article
+
+    def doi(self,doi):
+
+        aff_srch = ElsSearch("DOI ( %s )" % doi,'scopus',maxResults=1)
+        aff_srch.execute(self.client, get_all=True)
+
+        return aff_srch.results

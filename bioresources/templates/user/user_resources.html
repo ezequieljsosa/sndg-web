@@ -17,11 +17,21 @@
 
 <div class="col-md-12">
 
-    <h3>{{person.name}}, {{person.surname}} </h3>
-    {% related_resources_summary person.id 'Person' related_resources %}
-    {% resource_graph pk graph %}
 
-</div>
+    <h3>{{person.name}}, {{person.surname}} </h3>
+
+<table class="table">
+{% for collab in collaborations %}
+<tr><td>{{collab.type}}</td>
+    <td><a href="{{collab.resource.get_absolute_url}}">{{collab.resource.name}}</a></td>
+    <td>{% trans collab.resource.tname %}</td></tr>
+
+
+{% endfor %}
+</table>
+
+{% resource_graph pk graph %}
+  </div>
 
 
 

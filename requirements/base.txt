@@ -34,3 +34,4 @@ sentry_sdk
 # Other
 tqdm
 sndg-bio
+django-cache-memoize

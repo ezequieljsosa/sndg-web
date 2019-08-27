@@ -22,8 +22,11 @@ from .views.search import search_redirect
 from .views.jobs.BlastView import blast,job_view
 
 from .views.submission.SubmissionNewView import SubmissionNewView
-from .views.submission.SubmissionImportView import SubmissionImportView
+from .views.submission.SubmissionImportView import SubmissionImportView,SubmitImportView
 from .views.submission.SubmissionRelatedView import SubmissionRelatedView
+
+from .views.user.UserResourcesView import UserResourcesView
+
 #
 from .views.submission import submission_start
 
@@ -73,7 +76,12 @@ urlpatterns = [
     path('submission/', view=submission_start, name='submission'),
     path('submission/new',view=SubmissionNewView, name='submission_new'),
     path('submission/import', view=SubmissionImportView, name='submission_import'),
+
+    path('submission/import/submit', view=SubmitImportView, name='submission_import_submit'),
+
     path('submission/related',view=SubmissionRelatedView, name='submission_related'),
+
+    path('user/resources',view=UserResourcesView, name='user_resources'),
 
     #
     #

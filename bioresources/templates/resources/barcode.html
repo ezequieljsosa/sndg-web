@@ -15,13 +15,11 @@
 
 
 
-<div class="col-md-12">
 
-    <h1>{{barcode.name}}</h1>
-    <p>
-        {{barcode.description}}
-        </p>
-    <table class="table table-responsive table-stripped">
+
+     {% resource_table barcode external_url %}
+ <div class="col-md-12">
+    <table class="table table-responsive table-stripped" width="100%">
     <tr><td>Lugar</td><td>{{barcode.subdivision}}</td></tr>
     <tr><td>Tomo la muestra</td><td>{{barcode.collectors}}</td></tr>
     <tr><td>Marcador</td><td>{{barcode.marker}}</td></tr>

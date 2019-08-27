@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from .models.Person import Person
 from .models.Affiliation import Affiliation
 from .models.Organization import Organization
-from .models.Resource import Resource
+from .models.Resource import Resource,Collaboration
 from .models.Publication import Publication
 from .models.Identity import Identity
 from .models.Expression import Expression
@@ -23,20 +23,32 @@ from .models.RKeyword import RKeyword
 from .models.ExternalId import ExternalId
 from .models.ResourceProperty import ResourceProperty
 from .models.Job import Job
+from .models.Tool import Tool
 
 
-admin.site.register(Person)
+
 admin.site.register(Identity)
 admin.site.register(RKeyword)
 admin.site.register(Affiliation)
 admin.site.register(ResourceProperty)
 admin.site.register(Sample)
-admin.site.register(ReadsArchive)
+
 admin.site.register(ExternalId)
 
 
 
 
+@admin.register(Tool)
+class ToolArchiveAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
+
+@admin.register(ReadsArchive)
+class ReadsArchiveAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
@@ -58,17 +70,22 @@ class ResourceRelationAdmin(admin.ModelAdmin):
 @admin.register(Expression)
 class ExpressionAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 @admin.register(BioProject)
 class BioProjectAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 @admin.register(Assembly)
 class AssemblyAdmin(ResourceAdmin):
     autocomplete_fields = ["ncbi_tax"]
-    # search_fields = ["name","description"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 @admin.register(Organization)
@@ -79,11 +96,15 @@ class OrganizationAdmin(admin.ModelAdmin):
 @admin.register(Structure)
 class StructureAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 @admin.register(Barcode)
 class BarcodeAdmin(admin.ModelAdmin):
     autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 
@@ -104,3 +125,15 @@ class JobAdmin(admin.ModelAdmin):
     autocomplete_fields = ["user"]
     list_display = ["id", "user", "status"]
     search_fields = ["name", "description"]
+
+
+@admin.register(Person)
+class PersonAdmin(admin.ModelAdmin):
+    search_fields = [ "surname", "name"]
+    list_display = [ "surname", "name"]
+
+@admin.register(Collaboration)
+class CollaborationAdmin(admin.ModelAdmin):
+    autocomplete_fields = [ "person", "resource"]
+    search_fields = [ "person", "resource"]
+    list_display = [ "person", "resource"]

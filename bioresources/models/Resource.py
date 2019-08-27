@@ -47,7 +47,7 @@ class Resource(models.Model):
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
 
-    collaborators = models.ManyToManyField(Person, related_name="resources", blank=True)
+
 
     creators = models.ManyToManyField(Organization, related_name="created_resources", blank=True)
     publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
@@ -78,7 +78,7 @@ class Resource(models.Model):
         return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower(), args=[str(self.id)])
 
     def type_name(self):
-        return Resource.RESOURCE_TYPES[self.__class__.TYPE].lower()
+        return Resource.RESOURCE_TYPES[self.type].lower()
 
     def compile(self):
         templ = get_template("resources/xoai_resource.xml")
@@ -122,3 +122,18 @@ class Resource(models.Model):
 
     def metadata_dc_publisher(self):
         return [x.name for x in self.publishers.all()]
+
+class Collaboration(models.Model):
+
+    COLLABORATION_TYPES = Choices(
+        (1, "owner", _("owner")),
+        (2, "only_producer", _("only_producer")),
+        (3, "only_use", _("only_use")),
+        (4, "other", _("other")),
+    )
+    rev_types = {x[1]:x[0] for x in COLLABORATION_TYPES}
+
+    resource = models.ForeignKey(Resource,related_name="collaborations",on_delete=models.PROTECT)
+    person = models.ForeignKey(Person,related_name="collaborations",on_delete=models.PROTECT)
+    type = models.PositiveIntegerField(choices=COLLABORATION_TYPES)
+    info = models.TextField(null=True,blank=True)

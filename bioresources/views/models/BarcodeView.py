@@ -10,6 +10,7 @@ from bioresources.io.GraphRepo import GraphRepo
 def barcode(request, pk):
     barcode = Barcode.objects.get(id=pk)
     graph, related_resources = GraphRepo.get_neighborhood(pk, "Barcode",level=1)
-    return render(request, 'resources/barcode.html', {
+    external_url ="http://www.boldsystems.org/index.php/Public_RecordView?processid=" + barcode.name
+    return render(request, 'resources/barcode.html', { "external_url":external_url,
         "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Barcode",
         "barcode": barcode,     "sidebarleft": 1, })

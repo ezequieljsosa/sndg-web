@@ -1,0 +1,22 @@
+{% load static %}
+{% load i18n %}
+{% load bioresources_extras %}
+
+<div class="col-md-4">
+            <h1>{{obj.name}}</h1>
+            <p>
+            {{obj.description}}
+            </p>
+            {% if external_url %}
+                        <a href="{{external_url}}">External link</a>
+                        {% endif %}
+           <table class="table">
+                  {% if obj.publishers.count %}
+                  <tr><td>{% trans 'Publisher' %}</td><td>{{ obj.publishers.all|map:'name'|join:' ' }}</td></tr>
+                  {% endif %}
+                  {% if obj.ncbi_tax %}
+                  <tr><td>{% trans 'Taxon' %}</td><td>{{ obj.ncbi_tax.scientific_name }}</td></tr>
+                  {% endif %}
+                  <tr><td>{% trans 'Last Updated' %}</td><td>{{ obj.updated_at|date:"d/m/y" }}</td></tr>
+           </table>
+        </div>

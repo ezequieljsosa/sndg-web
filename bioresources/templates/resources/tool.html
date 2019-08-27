@@ -19,15 +19,11 @@
 
     <div class="col-md-12">
 
-        <h1>{{tool.name}}</h1>
-        <p>
-        <a href="{{tool.url}}">link</a>
-        </p>
+        {% resource_table tool external_url %}
 
 
-        <p>
-        {{tool.description}}
-        </p>
+
+
     </div>
 
     {% related_resources_summary pk rtype_src related_resources %}

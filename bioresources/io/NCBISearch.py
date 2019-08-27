@@ -5,6 +5,8 @@ from .adapters import NCBIAssemblyAdapter, NCBIPubmedAdapter, NCBIPmcAdapter, NC
 
 from bioresources.models.Resource import Resource
 
+from django.core.cache import cache
+
 
 class NCBISearch():
     allowed_dbs = ["gds", "pmc", "pubmed", "bioproject", "biosample", "sra", "taxonomy", "structure", "genome",
@@ -23,6 +25,8 @@ class NCBISearch():
         "nuccore": 40, "sra": Resource.RESOURCE_TYPES.READS, "biosample": Resource.RESOURCE_TYPES.SAMPLE
     }
 
+    rtype2ncbb = {v: k for k, v in db_type.items()}
+
     def search_all(self, search):
         result = {}
         data = Entrez.read(Entrez.egquery(term=search))["eGQueryResult"]
@@ -37,12 +41,21 @@ class NCBISearch():
                 'IdList'])
         return result
 
+
     def search_database(self, database, search, retmax=20, retstart=0):
-        records = []
+        records = {}
         adapter = NCBISearch.database_map[database]
         esearch = Entrez.read(Entrez.esearch(db=database, term=search, retmax=retmax, retstart=retstart))
-        id_list = esearch["IdList"]
-        for ncbi_id, data in zip(id_list, adapter.fetch_list(",".join(id_list))):
-            record = adapter.adapt(data, ncbi_id)
-            records.append(record)
-        return records, int(esearch["Count"])
+        id_list = list(esearch["IdList"])
+        if id_list:
+            for ncbi_id, data in zip(id_list, adapter.fetch_list(",".join(id_list))):
+                records[str(ncbi_id)] = adapter.adapt(data)
+            return records, int(esearch["Count"])
+        else:
+            return {}, 0
+
+    def save_resource(self, database: str, ncbi_id: str) -> Resource:
+
+        adapter = NCBISearch.database_map[database]
+        data = adapter.fetch(ncbi_id)
+        return adapter.save(data, ncbi_id)

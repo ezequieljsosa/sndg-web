@@ -7,12 +7,20 @@ from django.shortcuts import render
 from bioresources.models.BioProject import BioProject
 from bioresources.views import labelize
 
+from bioresources.io.GraphRepo import GraphRepo
+from bioresources.io.NCBISearch import NCBISearch
+
+
 def bioproject(request, pk):
     bioproject = BioProject.objects.get(id=pk)
-    gr = GraphRepo()
-    graph = {"nodes": [{"id": bioproject.name, "label": labelize(bioproject.name), "color": "orange"}], "edges": []}
-    external_orgs = []
-    # publications_from_resource_graph(bioproject, graph, external_orgs)
-    return render(request, 'resources/bioproject.html', {
-        "bioproject": bioproject, "graph": {}, "external_orgs": external_orgs,
+
+    graph, related_resources = GraphRepo.get_neighborhood(bioproject.id, "BioProject", 1)
+
+    external_ids = [x.identifier for x in bioproject.external_ids.all() if x.type == "accession"]
+    external_url = ""
+    if external_ids:
+        external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[BioProject.TYPE] + "/" + external_ids[
+            0])
+    return render(request, 'resources/bioproject.html', {"external_url":external_url,
+        "bioproject": bioproject, "graph": graph, "related_resources": related_resources,
         "sidebarleft": 1, })

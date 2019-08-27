@@ -16,12 +16,7 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1>{{pdb.name}}</h1>
-            <p>
-            {{pdb.description}}
-            </p>
-        </div>
+        {% resource_table pdb external_url %}
     </div>
 
 {% pdb_structure pdb.name %}

@@ -8,6 +8,9 @@ from bioseq.models.Biodatabase import Biodatabase
 from bioseq.models.Biosequence import Biosequence
 
 from bioresources.models.Assembly import Assembly
+from bioresources.io.GraphRepo import GraphRepo
+from bioresources.io.NCBISearch import NCBISearch
+
 
 # def assembly(request, pk):
 #     try:
@@ -27,26 +30,39 @@ from bioresources.models.Assembly import Assembly
 
 def assembly_view(request, pk):
     assembly = Assembly.objects.get(id=pk)
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Barcode", level=1)
 
-    be = Biodatabase.objects.get(name=assembly.name)
-    if "_prots" in be.name:
-        be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-        be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
+    contigs = None
+    lengths = None
+    be = Biodatabase.objects.filter(name=assembly.name)
 
-    lengths = {}
-    for x in be.entries.all():
-        seq = Biosequence.objects.raw("""
-        SELECT bioentry_id, version , length , alphabet 
-        FROM biosequence WHERE bioentry_id = %i ;
-        """ % (x.bioentry_id))[0]
-        lengths[x.accession] = seq.length
-    assembly.assembly_type = Assembly.ASSEMBLY_TYPES[assembly.assembly_type]
-    assembly.level = Assembly.ASSEMBLY_LEVEL[assembly.level]
+    external_ids = [x.identifier for x in assembly.external_ids.all() if x.type == "accession"]
+    external_url = ""
+    if external_ids:
+        external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[Assembly.TYPE] + "/" + external_ids[
+            0])
 
+    if be.count():
+        be = be.get()
+        if "_prots" in be.name:
+            be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
+            be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
 
+        lengths = {}
+        for x in be.entries.all():
+            seq = Biosequence.objects.raw("""
+            SELECT bioentry_id, version , length , alphabet 
+            FROM biosequence WHERE bioentry_id = %i ;
+            """ % (x.bioentry_id))[0]
+            lengths[x.accession] = seq.length
+        assembly.assembly_type = Assembly.ASSEMBLY_TYPES[assembly.assembly_type]
+        assembly.level = Assembly.ASSEMBLY_LEVEL[assembly.level]
+        contigs = be.entries.all()
 
-    # graph = assembly_graph(assembly)
-    return render(request, 'resources/assembly_detail.html', {"lengths": lengths,
-                                                           "object": assembly, "graph": {},
-                                                           "contigs": be.entries.all(),
-                                                           "sidebarleft": {}})
+    params = {"lengths": lengths, "external_url": external_url,
+              "level": {k: str(v) for k, v in Assembly.ASSEMBLY_LEVEL},
+              "object": assembly, "graph": graph, "atypes": {k: str(v) for k, v in Assembly.ASSEMBLY_TYPES},
+              "related_resources": related_resources,
+              "contigs": contigs, "sidebarleft": {}}
+
+    return render(request, 'resources/assembly_detail.html', params)
