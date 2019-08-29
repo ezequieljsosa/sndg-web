@@ -35,10 +35,12 @@
     </table>
  </div>
  </div>
-
+     {% if not loaded %}
+     {% trans 'Processing Assembly, annotation will be availiable shortly' %}
+     {% endif %}
     {% if contigs %}
         <iframe  id="jbrowse"
-         src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false"
+         src="{% static 'jbrowse' %}/index.html?data=data/{{object.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false&tracks=DNA,Genes"
          height="400px" width="100%"></iframe>
 
         <div class="row">

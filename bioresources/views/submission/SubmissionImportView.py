@@ -17,7 +17,10 @@ from bioresources.io.scopus import ScopusDS
 
 from bioresources.io.adapters import scopus_extended_publication
 from pdbdb.io.PDB2SQL import PDB2SQL
-import requests
+from bioresources.models.Job import Job
+from bioresources.tasks import execute_job
+from bioresources.models.jobs.LoadPDBJob import LoadPDBJob
+from bioresources.models.jobs.LoadGenomeJob import LoadGenomeJob
 
 from cache_memoize import cache_memoize
 
@@ -39,7 +42,8 @@ class ResourceResult():
 
 rtypes = ["assembly", "sra", "gds", "biosample", "structure", "pubmed"]
 
-
+from django.contrib.auth.decorators import login_required
+@login_required
 def SubmissionImportView(request):
     current_user = request.user
     if request.method == 'POST':
@@ -146,7 +150,8 @@ def process_id(rid):
 
     return line_result
 
-
+from django.contrib.auth.decorators import login_required
+@login_required
 def SubmitImportView(request):
     ncbi_search = NCBISearch()
     accessions = ["_".join(x.split("_")[1:]) for x in request.POST if x.startswith("accession_")]
@@ -165,6 +170,22 @@ def SubmitImportView(request):
 
         else:
             record = ncbi_search.save_resource(rtype, ncbi_id)
+            if rtype=="structure":
+                with transaction.atomic():
+                    job = LoadPDBJob(pdb=record.name)
+                    job.save()
+                    job.init()
+                    job.queue()
+                    job.save()
+                execute_job.apply_async(args=(job.id,),countdown=10)
+            if rtype =="assembly":
+                with transaction.atomic():
+                    job = LoadGenomeJob(assembly=record)
+                    job.save()
+                    job.init()
+                    job.queue()
+                    job.save()
+                execute_job.apply_async(args=(job.id,),countdown=10)
         Collaboration(resource=record, person=request.user.person, type=relation).save(force_insert=True)
 
     return redirect(reverse("bioresources:user_resources"))

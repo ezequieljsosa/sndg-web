@@ -10,6 +10,8 @@ from bioseq.models.Biosequence import Biosequence
 from bioresources.models.Assembly import Assembly
 from bioresources.io.GraphRepo import GraphRepo
 from bioresources.io.NCBISearch import NCBISearch
+from bioresources.models.jobs.LoadGenomeJob import LoadGenomeJob
+from bioresources.models.Job import Job
 
 
 # def assembly(request, pk):
@@ -31,6 +33,13 @@ from bioresources.io.NCBISearch import NCBISearch
 def assembly_view(request, pk):
     assembly = Assembly.objects.get(id=pk)
     graph, related_resources = GraphRepo.get_neighborhood(pk, "Barcode", level=1)
+
+    loaded = True
+    job = LoadGenomeJob.objects.filter(assembly=assembly)
+    if job.exists():
+        job = job.order_by("-id")[0]
+        if job.status != Job.STATUS.FINISHED:
+            loaded = False
 
     contigs = None
     lengths = None
@@ -55,11 +64,11 @@ def assembly_view(request, pk):
             FROM biosequence WHERE bioentry_id = %i ;
             """ % (x.bioentry_id))[0]
             lengths[x.accession] = seq.length
-        assembly.assembly_type = Assembly.ASSEMBLY_TYPES[assembly.assembly_type]
-        assembly.level = Assembly.ASSEMBLY_LEVEL[assembly.level]
+        # assembly.assembly_type = str(Assembly.ASSEMBLY_TYPES[assembly.assembly_type])
+        # assembly.level = str(Assembly.ASSEMBLY_LEVEL[assembly.level])
         contigs = be.entries.all()
 
-    params = {"lengths": lengths, "external_url": external_url,
+    params = {"lengths": lengths, "external_url": external_url,"loaded":loaded,
               "level": {k: str(v) for k, v in Assembly.ASSEMBLY_LEVEL},
               "object": assembly, "graph": graph, "atypes": {k: str(v) for k, v in Assembly.ASSEMBLY_TYPES},
               "related_resources": related_resources,

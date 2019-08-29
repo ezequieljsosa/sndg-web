@@ -16,6 +16,9 @@ def UserResourcesView(request):
     collaborations = list(Collaboration.objects.prefetch_related("resource").filter(person=person))
     for c in collaborations:
         c.resource.tname = Resource.RESOURCE_TYPES[c.resource.type]
-    graph, _ = GraphRepo.get_neighborhood(person.id, "Person",1)
+    if person:
+        graph, _ = GraphRepo.get_neighborhood(person.id, "Person", 1)
+    else:
+        graph = {}
     return render(request, 'user/user_resources.html',
-                  {"person": person, "collaborations": collaborations, "graph": graph})
+                  {"pk": person.id, "person": person, "collaborations": collaborations, "graph": graph})

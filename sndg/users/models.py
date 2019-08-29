@@ -9,6 +9,7 @@ class User(AbstractUser):
 
     person = models.OneToOneField(Person,on_delete=models.SET_NULL,related_name="person",null=True)
 
+
     def get_absolute_url(self):
         return reverse("users:detail", kwargs={"username": self.username})
 

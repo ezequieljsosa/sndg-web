@@ -6,35 +6,39 @@
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
 {% endblock %}
 
 {% block content %}
 <div class="container">
-<div class="row">
+    <div class="row">
 
+    {% if request.user.is_authenticated and request.user.person and request.user.person.id == pk %}
+        {% trans 'Yourself' %}
+    {% else %}
+        {% if person.users.count  %}
+            <span class="badge badge-success">{% trans 'Validated Identity' %}</span>
+        {% else %}
+            <a href="{% url 'bioresources:claim_identity' pk %}"  role="button"
+                class="btn btn-primary"  > {% trans 'Claim Identity' %} </a>
+        {% endif%}
+    {% endif %}
 
+    <div class="col-md-12">
 
-<div class="col-md-12">
+        <h3>{{person.name}}, {{person.surname}} </h3>
+        {% related_resources_summary person.id 'Person' related_resources %}
+        {% resource_graph pk graph %}
 
-    <h3>{{person.name}}, {{person.surname}} </h3>
-    {% related_resources_summary person.id 'Person' related_resources %}
-    {% resource_graph pk graph %}
+    </div>
 
-</div>
+    <script type="text/javascript">
+      $(document).ready(()=>{
 
+          create_graph()
 
-
-
-
-<script type="text/javascript">
-  $(document).ready(()=>{
-
-      create_graph()
-
-  })
+      })
 </script>
 
-
-  </div>
+</div>
 {% endblock %}

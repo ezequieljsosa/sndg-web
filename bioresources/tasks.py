@@ -9,7 +9,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
-@shared_task
+@shared_task(soft_time_limit=60*60, time_limit=60*60+20)
 def execute_job(jobId):
     from .models.Job import Job
     # if not os.path.exists("/tmp/sndg"): #TODO hacerlo configurable
@@ -20,8 +20,9 @@ def execute_job(jobId):
     try:
         job.execute()
     except Exception as ex:
-        job.error(ex)
-    job.save()
+        job.error()
+
+    job.save(force_update=True)
     if job.user:
         send_mail(
             _('Job results for ID %(jid)s') % {"jid":job.id},

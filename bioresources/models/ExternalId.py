@@ -9,7 +9,7 @@ from .Resource import Resource
 
 class ExternalId(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    identifier = models.CharField(max_length=20)
+    identifier = models.CharField(max_length=100)
     type = models.CharField(max_length=20)
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="external_ids")
 

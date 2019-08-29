@@ -20,7 +20,7 @@ import json
 
 class DB2JBrowse():
 
-    def __init__(self, jbrowse_path):
+    def __init__(self, jbrowse_path,jbrowse_data_path="data/jbrowse/data/"):
         self.name = ""
 
         self.fasta_path = "/tmp/jbrowse.fasta"
@@ -28,7 +28,7 @@ class DB2JBrowse():
         self.ovewrite = True
         self.source = "."
         self.jbrowse_path = jbrowse_path
-        self.jbrowse_data_path = "data/jbrowse/data/"
+        self.jbrowse_data_path = jbrowse_data_path
         self.accession = None
         self.excluded = ["source"]
 

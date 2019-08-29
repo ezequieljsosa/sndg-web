@@ -11,6 +11,7 @@ from .RKeyword import RKeyword
 from ..managers.BioResourceManager import BioResourceManager
 
 from bioseq.models.Taxon import Taxon
+from polymorphic.models import PolymorphicModel
 
 
 def get_class(kls):
@@ -22,12 +23,13 @@ def get_class(kls):
     return m
 
 
-class Resource(models.Model):
+class Resource(PolymorphicModel):
     RESOURCE_TYPES = Choices(
         *([(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
             "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL",
-        ])] + [(40, "PROTEIN", _("PROTEIN")), (30, "ORGANIZATION", _("ORGANIZATION")), (20, "PERSON", _("PERSON"))])
+        ])] + [(50, "UNPROCESSED", _("UNPROCESSED")), (40, "PROTEIN", _("PROTEIN")),
+               (30, "ORGANIZATION", _("ORGANIZATION")), (20, "PERSON", _("PERSON"))])
     )
 
     name2code = {
@@ -47,13 +49,11 @@ class Resource(models.Model):
     name = models.CharField(max_length=350, blank=False)
     description = models.TextField(blank=True)
 
-
-
     creators = models.ManyToManyField(Organization, related_name="created_resources", blank=True)
     publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
     keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
 
-    ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",
+    ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",blank=True,
                                  on_delete=models.SET_NULL, null=True, related_name="bioresources")
 
     deprecated = models.BooleanField(default=False)
@@ -123,17 +123,22 @@ class Resource(models.Model):
     def metadata_dc_publisher(self):
         return [x.name for x in self.publishers.all()]
 
-class Collaboration(models.Model):
 
+class Collaboration(models.Model):
     COLLABORATION_TYPES = Choices(
         (1, "owner", _("owner")),
         (2, "only_producer", _("only_producer")),
         (3, "only_use", _("only_use")),
         (4, "other", _("other")),
     )
-    rev_types = {x[1]:x[0] for x in COLLABORATION_TYPES}
+    rev_types = {x[1]: x[0] for x in COLLABORATION_TYPES}
 
-    resource = models.ForeignKey(Resource,related_name="collaborations",on_delete=models.PROTECT)
-    person = models.ForeignKey(Person,related_name="collaborations",on_delete=models.PROTECT)
+    resource = models.ForeignKey(Resource, related_name="collaborations", on_delete=models.PROTECT)
+    person = models.ForeignKey(Person, related_name="collaborations", on_delete=models.PROTECT)
     type = models.PositiveIntegerField(choices=COLLABORATION_TYPES)
-    info = models.TextField(null=True,blank=True)
+    info = models.TextField(null=True, blank=True)
+
+
+class UnprocessedResource(Resource):
+    TYPE = Resource.RESOURCE_TYPES.UNPROCESSED
+    future_type = models.PositiveIntegerField(choices=Resource.RESOURCE_TYPES)

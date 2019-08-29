@@ -19,7 +19,11 @@
         {% resource_table pdb external_url %}
     </div>
 
+{% if loaded %}
 {% pdb_structure pdb.name %}
+{% else %}
+<h2+>{% trans 'PDB is currenly in process...' %}</h2>
+{% endif %}
 
   {% related_resources_summary pk rtype_src related_resources level %}
   {% resource_graph pk graph %}

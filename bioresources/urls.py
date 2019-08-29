@@ -22,13 +22,16 @@ from .views.search import search_redirect
 from .views.jobs.BlastView import blast,job_view
 
 from .views.submission.SubmissionNewView import SubmissionNewView
+from .views.submission.ToolSubmissionView import ToolSubmissionView
 from .views.submission.SubmissionImportView import SubmissionImportView,SubmitImportView
-from .views.submission.SubmissionRelatedView import SubmissionRelatedView
+from .views.submission.SubmissionRelatedView import SubmissionRelatedView,claim_resource,mark_to_relate,claim_identity
+from .views.submission import submission_start
+
 
 from .views.user.UserResourcesView import UserResourcesView
 
 #
-from .views.submission import submission_start
+
 
 # from .views import ResumableUploadView
 
@@ -75,15 +78,17 @@ urlpatterns = [
 
     path('submission/', view=submission_start, name='submission'),
     path('submission/new',view=SubmissionNewView, name='submission_new'),
+    path('submission/tool',view=ToolSubmissionView, name='tool_submission'),
     path('submission/import', view=SubmissionImportView, name='submission_import'),
-
     path('submission/import/submit', view=SubmitImportView, name='submission_import_submit'),
-
     path('submission/related',view=SubmissionRelatedView, name='submission_related'),
 
     path('user/resources',view=UserResourcesView, name='user_resources'),
+    path('user/claim_identity/<int:person_id>',view=claim_identity, name='claim_identity'),
+    path('relate/<int:src_id>/<int:dst_id>',view=SubmissionRelatedView, name='relate_resources'),
+    path('relate/<int:resource_id>',view=claim_resource, name='claim_resource'),
+    path('relate/<int:resource_id>/mark',view=mark_to_relate, name='mark_to_relate'),
 
-    #
     #
     # # Submission
     # path('ra/new', views.tool, name='ra_new'),

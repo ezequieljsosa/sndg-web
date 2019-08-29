@@ -12,16 +12,15 @@ from django.shortcuts import reverse
 from sndg.users.models import User
 
 from django.conf import settings
+from polymorphic.models import PolymorphicModel
 
-
-class Job(models.Model):
+class Job(PolymorphicModel):
     STATUS = Choices(
         *[(i, x, _(x)) for i, x in enumerate([
-            "NEW", "QUEUED", "ERROR", "RETRYING", "FINISHED","RUNNING"
+            "NEW", "QUEUED", "ERROR", "RETRYING", "FINISHED", "RUNNING"
         ])]
     )
 
-    command = models.TextField()
     start = models.DateTimeField(null=True)
     end = models.DateTimeField(null=True)
     result = models.TextField(null=True)
@@ -36,11 +35,14 @@ class Job(models.Model):
 
     def init(self):
         assert self.id
-        job_dir = settings.JOBSDIR + "/" + str(self.id) + "/"
-        self.dev_error = job_dir + "/err"
-        self.result = job_dir + "/out"
-        if not os.path.exists(job_dir):  # TODO hacerlo configurable
-            os.makedirs(job_dir)
+
+        self.dev_error = self.job_dir() + "/err"
+        self.result = self.job_dir() + "/out"
+        if not os.path.exists(self.job_dir()):
+            os.makedirs(self.job_dir())
+
+    def job_dir(self):
+        return settings.JOBSDIR + "/" + str(self.id) + "/"
 
     def queue(self):
         self.status = Job.STATUS.QUEUED
@@ -49,15 +51,7 @@ class Job(models.Model):
     def running(self):
         self.status = Job.STATUS.RUNNING
 
-
-    def execute(self):
-        with open(self.result, "w") as stdout, open(self.dev_error, "w") as stderr:
-            sp.call(self.command, shell=True, stdout=stdout,
-                    stderr=stderr)
-        self.end = datetime.now()
-        self.status = Job.STATUS.FINISHED
-
-    def error(self, exception):
+    def error(self):
         with open(self.dev_error, "a") as stderr:
             self.status = Job.STATUS.ERROR
             stderr.write("\n " + traceback.format_exc())
@@ -66,3 +60,14 @@ class Job(models.Model):
 
     def get_absolute_url(self):
         return reverse('bioresources:job_view', args=[str(self.id)])
+
+
+class CmdJob(Job):
+    command = models.TextField()
+
+    def execute(self):
+        with open(self.result, "w") as stdout, open(self.dev_error, "w") as stderr:
+            sp.call(self.command, shell=True, stdout=stdout,
+                    stderr=stderr)
+        self.end = datetime.now()
+        self.status = Job.STATUS.FINISHED

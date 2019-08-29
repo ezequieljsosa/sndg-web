@@ -64,6 +64,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
     "django.contrib.auth",
+    'polymorphic',
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
@@ -86,6 +87,7 @@ THIRD_PARTY_APPS = [
     # 'crispy_forms',
     # "resumable",
     # 'django_select2',
+
 ]
 
 LOCAL_APPS = [
@@ -291,7 +293,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-# ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
@@ -354,9 +356,10 @@ FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
+SNDG_JBROWSE = env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))
 STATICFILES_DIRS = [
     os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
-    ("jbrowse",env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))),
+    ("jbrowse",SNDG_JBROWSE),
 ]
 
 BLASTDBSDIR=os.environ.get('BLASTDBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/blastdbs/")))
@@ -372,3 +375,14 @@ CACHES = {
 }
 
 SCOPUS_API=os.environ.get('SCOPUS_API',os.path.join(str(ROOT_DIR), "data/scopus_api.json"))
+PDBSDIR="/data/databases/pdb/divided/"
+PDBSENTRIES="/data/databases/pdb/entries.idx"
+
+# ACCOUNT_SIGNUP_FORM_CLASS = "sndg.users.forms.UserCreationForm"
+
+# ACCOUNT_USERNAME_VALIDATORS = ['sndg.users.forms.Validator']
+
+ACCOUNT_FORMS = {
+    'signup': 'sndg.users.forms.UserCreationForm'
+}
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

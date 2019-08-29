@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from collections import defaultdict
+from django.db.models import Count
 
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -37,8 +38,9 @@ class Bioentry(models.Model):
         unique_together = (('accession', 'biodatabase', 'version'), ('identifier', 'biodatabase'),)
 
     def get_absolute_url(self):
-        return reverse('bioresources:' + ('protein_view' if self.biodatabase.name.endswith("_prots") else "nucleotide_view"),
-                       args=[str(self.bioentry_id)]) # TODO: parametrizar la app del link
+        return reverse(
+            'bioresources:' + ('protein_view' if self.biodatabase.name.endswith("_prots") else "nucleotide_view"),
+            args=[str(self.bioentry_id)])  # TODO: parametrizar la app del link
 
     def groupedFeatures(self):
         group = defaultdict(lambda: [])
@@ -48,10 +50,15 @@ class Bioentry(models.Model):
         return dict(group)
 
     def feature_counts(self):
-        data = defaultdict(lambda: 0)
-        for f in self.features.all():
-            data[f.type_term.name] += 1
-        return dict(data)
+
+        return {x["type_term__identifier"]: x["total"] for x in
+                self.features.values('type_term__identifier').annotate(total=Count("type_term")) if
+                x["type_term__identifier"] != "source"}
+
+        # data = defaultdict(lambda: 0)
+        # for f in self.features.all():
+        #     data[f.type_term.name] += 1
+        # return dict(data)
 
     def genes(self):
         # from ..models.Seqfeature import Seqfeature
@@ -99,12 +106,10 @@ class Bioentry(models.Model):
     def __repr__(self):
         return str(self)
 
-    def to_seq_record(self,addDesc=True):
+    def to_seq_record(self, addDesc=True):
         desc = self.description if addDesc else ""
-        r = SeqRecord(id=self.accession,name=desc,seq=Seq(self.seq.seq))
+        r = SeqRecord(id=self.accession, name=desc, seq=Seq(self.seq.seq))
         return r
-
-
 
 
 class BioentryDbxref(models.Model):

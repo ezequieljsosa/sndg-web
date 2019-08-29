@@ -5,13 +5,14 @@ from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from django.urls import reverse
 
+
 class Person(models.Model):
     # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
     name = models.CharField(max_length=200, default="")
     scopus_id = models.CharField(max_length=200, null=True)
-    scopus_names = models.TextField(null=True)
-    email = models.EmailField()
+    scopus_names = models.TextField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
 
     deprecated = models.BooleanField(default=False)
     index_updated = models.BooleanField(default=False)
@@ -25,7 +26,7 @@ class Person(models.Model):
         return self.name + " " + self.surname
 
     def rtype(self):
-        return 20 #"person"
+        return 20  # "person"
 
     def get_absolute_url(self):
         return reverse('bioresources:person_view', args=[str(self.id)])

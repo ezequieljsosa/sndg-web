@@ -45,7 +45,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for gene_prod in object.features.all %}
+        {% for gene_prod in feature_list %}
             <tr>
                 <td>
                     {% if gene_prod.type_term.name == "CDS" %}
@@ -90,7 +90,7 @@
 
 
  <iframe  id="jbrowse"
- src="{% static 'jbrowse' %}/index.html?data=data/{{assembly.name}}&fullviewlink=false&menu=false&nav=true&tracklist=false&loc={{object.accession}}:0..999&"
+ src="{% static 'jbrowse' %}/index.html?data=data/{{assembly.name}}&fullviewlink=false&tracks=DNA,Genes&menu=false&nav=true&tracklist=false&loc={{object.accession}}:0..999&"
  height="400px" width="100%"></iframe>
 
 

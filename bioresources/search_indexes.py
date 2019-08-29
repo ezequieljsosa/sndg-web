@@ -277,35 +277,35 @@ class BarcodeIndex(indexes.SearchIndex, indexes.Indexable):
 
 
 
-class ProteinIndex(indexes.SearchIndex, indexes.Indexable):
-    text = indexes.CharField(document=True, use_template=True)
-    locus_tag = indexes.CharField(model_attr='accession')
-    taxon = indexes.MultiValueField(model_attr='taxon__scientific_name', faceted=True)
-    description = indexes.CharField(model_attr='description')
-
-    genes = indexes.CharField(model_attr='genes', faceted=True, null=True)
-    subcellular_location = indexes.CharField(model_attr='cellular_component', faceted=True)
-    function = indexes.CharField(model_attr='molecular_function', faceted=True)
-    biological_process = indexes.CharField(model_attr='idx_biological_process', faceted=True)
-
-    # expression_condition = indexes.CharField(model_attr='ftype', faceted=True)
-    # expression_tissue = indexes.CharField(model_attr='ftype', faceted=True)
-    # interaction = indexes.CharField(model_attr='ftype', faceted=True)
-    # structure_type = indexes.CharField(model_attr='ftype', faceted=True)
-    # pathways = indexes.CharField(model_attr='ftype', faceted=True)
-
-    molecular_weight = indexes.FloatField(model_attr='molecular_weight',null=True)
-    length = indexes.IntegerField(model_attr='seq__length')
-
-    type = indexes.CharField(model_attr='ftype', faceted=True)
-
-
-    def get_model(self):
-        return Bioentry
-
-    def index_queryset(self, using=None):
-
-        return self.get_model().objects.proteins(index_updated=False)
+# class ProteinIndex(indexes.SearchIndex, indexes.Indexable):
+#     text = indexes.CharField(document=True, use_template=True)
+#     locus_tag = indexes.CharField(model_attr='accession')
+#     taxon = indexes.MultiValueField(model_attr='taxon__scientific_name', faceted=True)
+#     description = indexes.CharField(model_attr='description')
+#
+#     genes = indexes.CharField(model_attr='genes', faceted=True, null=True)
+#     subcellular_location = indexes.CharField(model_attr='cellular_component', faceted=True)
+#     function = indexes.CharField(model_attr='molecular_function', faceted=True)
+#     biological_process = indexes.CharField(model_attr='idx_biological_process', faceted=True)
+#
+#     # expression_condition = indexes.CharField(model_attr='ftype', faceted=True)
+#     # expression_tissue = indexes.CharField(model_attr='ftype', faceted=True)
+#     # interaction = indexes.CharField(model_attr='ftype', faceted=True)
+#     # structure_type = indexes.CharField(model_attr='ftype', faceted=True)
+#     # pathways = indexes.CharField(model_attr='ftype', faceted=True)
+#
+#     molecular_weight = indexes.FloatField(model_attr='molecular_weight',null=True)
+#     length = indexes.IntegerField(model_attr='seq__length')
+#
+#     type = indexes.CharField(model_attr='ftype', faceted=True)
+#
+#
+#     def get_model(self):
+#         return Bioentry
+#
+#     def index_queryset(self, using=None):
+#
+#         return self.get_model().objects.proteins(index_updated=False)
 
 # class SeqFeatureIndex(indexes.SearchIndex, indexes.Indexable):
 #     text = indexes.CharField(document=True, use_template=True)
