@@ -43,7 +43,7 @@
               {% if request.session.relate_with and request.session.relate_with != pk %}
                 <a class="btn btn-primary" role="button"
                     href="{% url 'bioresources:relate_resources' request.session.relate_with pk %}"  >
-                    {% trans 'Relate_with: ' %} {{relate_with.name|truncatechars:50}}</a>
+                    {% trans 'Relate_with:' %} {{relate_with.name|truncatechars:50}}</a>
               {% endif %}
 
 

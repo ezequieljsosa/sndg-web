@@ -21,51 +21,51 @@ msgstr ""
 #: templates/account/account_inactive.html:5
 #: templates/account/account_inactive.html:8
 msgid "Account Inactive"
-msgstr ""
+msgstr "Cuenta inactiva"
 
 #: templates/account/account_inactive.html:10
 msgid "This account is inactive."
-msgstr ""
+msgstr "Esta cuenta esta inactiva"
 
 #: templates/account/email.html:5
 msgid "Account"
-msgstr ""
+msgstr "Cuenta"
 
 #: templates/account/email.html:8
 msgid "E-mail Addresses"
-msgstr ""
+msgstr "Dirección de correo"
 
 #: templates/account/email.html:10
 msgid "The following e-mail addresses are associated with your account:"
-msgstr ""
+msgstr "Los siguientes correos estan asociados con su cuenta:"
 
 #: templates/account/email.html:24
 msgid "Verified"
-msgstr ""
+msgstr "Verificado"
 
 #: templates/account/email.html:26
 msgid "Unverified"
-msgstr ""
+msgstr "No verificado"
 
 #: templates/account/email.html:28
 msgid "Primary"
-msgstr ""
+msgstr "Principal"
 
 #: templates/account/email.html:34
 msgid "Make Primary"
-msgstr ""
+msgstr "Hacer principal"
 
 #: templates/account/email.html:35
 msgid "Re-send Verification"
-msgstr ""
+msgstr "Re-enviar Verificacion"
 
 #: templates/account/email.html:36
 msgid "Remove"
-msgstr ""
+msgstr "Quitar"
 
 #: templates/account/email.html:43
 msgid "Warning:"
-msgstr ""
+msgstr "Advertencia:"
 
 #: templates/account/email.html:43
 msgid ""
@@ -75,11 +75,11 @@ msgstr ""
 
 #: templates/account/email.html:48
 msgid "Add E-mail Address"
-msgstr ""
+msgstr "Agregar dirección de correo"
 
 #: templates/account/email.html:53
 msgid "Add E-mail"
-msgstr ""
+msgstr "Agregar dirección de correo"
 
 #: templates/account/email.html:62
 msgid "Do you really want to remove the selected e-mail address?"
@@ -101,11 +101,12 @@ msgstr ""
 msgid ""
 "Thank you from %(site_name)s!\n"
 "%(site_domain)s"
-msgstr ""
+msgstr "Gracias por registrarse en %(site_name)s!\n"
+"%(site_domain)s"
 
 #: templates/account/email/email_confirmation_subject.txt:3
 msgid "Please Confirm Your E-mail Address"
-msgstr ""
+msgstr "Por favor confirme su dirección de correo"
 
 #: templates/account/email/password_reset_key_message.txt:1
 #, python-format
@@ -372,51 +373,58 @@ msgstr ""
 
 #: templates/base.html:49
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #: templates/base.html:52
 msgid "Tools"
-msgstr ""
+msgstr "Herramientas"
 
 #: templates/base.html:55
 msgid "Stats"
-msgstr ""
+msgstr "Estadísticas"
 
-#: templates/base.html:58
-msgid "Information"
-msgstr ""
+#: templates/base.html:67
+msgid "Data Submissions"
+msgstr "Cargar datos"
 
 #: templates/base.html:72
 msgid "Jobs"
-msgstr ""
+msgstr "Trabajos"
 
 #: templates/base.html:73
 msgid "Profile"
-msgstr ""
+msgstr "Perfil"
 
 #: templates/base.html:75
 msgid "Exit"
-msgstr ""
+msgstr "Salir"
 
 #: templates/base.html:87
 msgid "Login"
-msgstr ""
+msgstr "Ingresar"
 
 #: templates/base.html:87
 msgid "Register"
-msgstr ""
+msgstr "Registrarse"
 
 #: templates/base.html:145
 msgid "News"
-msgstr ""
+msgstr "Noticioas"
 
 #: templates/index.html:75
 msgid "Did you mean?:"
-msgstr ""
+msgstr "¿Quisiste decir?"
+
+#: templates/index.html:75
+msgid "affiliations"
+msgstr "Afiliaciones"
+
+
+
 
 #: templates/resources/publication.html:56
 msgid "Referenced resources"
-msgstr ""
+msgstr "Recursos referenciados"
 
 #: views.py:35 views.py:38 views.py:40 views.py:43 views.py:46 views.py:49
 #: views.py:52 views.py:57
@@ -425,8 +433,65 @@ msgstr ""
 
 #: views.py:55
 msgid "Organizations"
-msgstr ""
+msgstr "Organizaciones"
 
 #: views.py:56
 msgid "Persons"
-msgstr ""
+msgstr "Personas"
+
+msgid "authors"
+msgstr "Autores"
+
+msgid "results for"
+msgstr "resultados para"
+
+msgid "First"
+msgstr "Primero"
+
+msgid "Last"
+msgstr "Último"
+
+msgid "External link"
+msgstr "Link externo"
+
+msgid "Last Updated"
+msgstr "Última actualización"
+
+msgid "Related resources:"
+msgstr "Recursos relacionados:"
+
+msgid "Resources"
+msgstr "Recursos"
+
+msgid "Logout"
+msgstr "Salir"
+
+msgid "Import a resource from NCBI/EBI/BOLD"
+msgstr "Importar un recurdo desde NCBI"
+
+msgid "Add a new tool"
+msgstr "Agregar una nueva herramienta"
+
+msgid "Import"
+msgstr "Importar"
+
+msgid "New"
+msgstr "Nuevo"
+
+msgid "You claimed this resource"
+msgstr "Usted generó de este recurso"
+
+msgid "Select to relate"
+msgstr "Seleccionar para relacionar con otro"
+
+msgid "Claim Resource"
+msgstr "Indicar que usted generó este recurso"
+
+msgid "Claim Identity"
+msgstr "Indicar que usted es esta persona"
+
+msgid "Relate_with:"
+msgstr "Relacionar este recurso con:"
+
+
+

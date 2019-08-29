@@ -7,7 +7,7 @@
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
 <link rel="stylesheet" href="//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" />
 <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 {% endblock %}
@@ -16,7 +16,9 @@
 {% block content %}
 <div class="container">
     <div class="row">
+    <div class="col-md-12">
         {% resource_table pdb external_url %}
+        </div>
     </div>
 
 {% if loaded %}

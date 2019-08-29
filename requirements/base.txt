@@ -35,3 +35,5 @@ sentry_sdk
 tqdm
 sndg-bio
 django-cache-memoize
+django-polymorphic
+xmltodict

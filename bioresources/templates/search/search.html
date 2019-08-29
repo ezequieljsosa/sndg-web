@@ -89,13 +89,13 @@ color : red;
      {% if query and page_obj.paginator.num_pages > 1 %}
 
                 <div class="col-md-6">
-                <h3>{% trans 'Search' %} <strong>{{page_obj.paginator.count}}</strong> results for "<strong>{{query}}</strong>"</h3>
+                <h3>{% trans 'Search' %} <strong>{{page_obj.paginator.count}}</strong> {% trans 'results for' %}  "<strong>{{query}}</strong>"</h3>
                </div>
                 <div class="col-md-6">
                 <nav aria-label="Page navigation">
-                {{page_obj}}
+
                     <ul class="pagination justify-content-left">
-                      <li class="page-item"><a class="page-link" href="?page=1&q={{query}}&{{params|qs_without_parameter:'page'}}">First</a></li>
+                      <li class="page-item"><a class="page-link" href="?page=1&q={{query}}&{{params|qs_without_parameter:'page'}}">{% trans 'First' %}</a></li>
                       {% if page_obj.has_previous %}
                       <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{params|qs_without_parameter:'page'}}">&laquo;</a></li>
                       {% else %}
@@ -110,7 +110,7 @@ color : red;
                       {% endfor %}
                       {% if page_obj.has_next %}
                       <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{params|qs_without_parameter:'page'}}">&raquo;</a></li>
-                      <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages}}&{{params|qs_without_parameter:'page'}}">Last</a></li>
+                      <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages}}&{{params|qs_without_parameter:'page'}}">{% trans 'Last' %}</a></li>
                       {% else %}
                       <li class="page-item disabled"><a class="page-link" href="#"><span>&raquo;</span></a></li>
                       {% endif %}

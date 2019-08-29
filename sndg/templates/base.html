@@ -60,14 +60,14 @@ margin-right: 10px;
           <li class="nav-item">
             <a class="nav-link" href="{% url 'bioresources:available_tools' %}">{% trans 'Blast' %}</a>
           </li>
-          <li class="nav-item">
+          <li style="display: none" class="nav-item">
                       <a class="nav-link" href="{% url 'bioresources:stats' %}">{% trans 'Stats' %}</a>
                     </li>
            <li class="nav-item">
                     <a  class="nav-link" href="{% url 'bioresources:submission' %}">{% trans 'Data Submissions' %}</a>
                     </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'about' %}">{% trans 'Information' %}</a>
+            <a style="display: none"  class="nav-link" href="{% url 'about' %}">{% trans 'Information' %}</a>
           </li>
 
 
@@ -81,7 +81,7 @@ margin-right: 10px;
                                  <i class="fa fa-user">  </i>&nbsp;{{request.user.username}}
                                </a>
                                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                 <a class="dropdown-item" href="{% url 'bioresources:available_tools' %}">{% trans 'Jobs' %}</a>
+                                 <a style="display: none" id class="dropdown-item" href="{% url 'bioresources:available_tools' %}">{% trans 'Jobs' %}</a>
                                  <a class="dropdown-item" href="{% url 'bioresources:user_resources' %}">{% trans 'Resources' %}</a>
 
                                  <div class="dropdown-divider"></div>
@@ -98,8 +98,6 @@ margin-right: 10px;
           <li class="nav-item">
 
            <a class="nav-link" href="{% url 'account_login' %}?next={{ request.path }}"><i class="fa fa-user">  </i>&nbsp;{% trans 'Login' %} / {% trans 'Register' %}</a>
-
-
 
 
           </li>
@@ -183,27 +181,9 @@ margin-right: 10px;
 </style>
 <footer class="main-footer">
 		<div class="container">
-			<div class="row">
-				<div class="col-md-3 col-sm-3">
 
-
-
-				</div>
-				<div class="col-md-4 col-sm-4">
-
-                						<img width="100%" src="{% static 'footer_logo.png' %}" class="img-responsive" />
-
-                				</div>
-				<div class="col-md-3 col-sm-6">
-					<section>
-						<ul class="menu nav">
-							<li><a href="/">INICIO</a></li>
-						</ul>
-					</section>
-				</div>
-			</div>
 		</div>
-	</footer>
+</footer>
 {% endblock %}
     <!-- Bootstrap core JavaScript
     ================================================== -->

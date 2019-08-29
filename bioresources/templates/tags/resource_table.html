@@ -8,7 +8,7 @@
             {{obj.description}}
             </p>
             {% if external_url %}
-                        <a href="{{external_url}}">External link</a>
+                        <a href="{{external_url}}">{% trans 'External link' %} </a>
                         {% endif %}
            <table class="table">
                   {% if obj.publishers.count %}

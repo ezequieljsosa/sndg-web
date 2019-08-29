@@ -6,7 +6,7 @@
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
 {% endblock %}
 
 {% block content %}
@@ -16,8 +16,10 @@
 
 
 
-
+<div class="col-md-12">
      {% resource_table barcode external_url %}
+     </div>
+
  <div class="col-md-12">
     <table class="table table-responsive table-stripped" width="100%">
     <tr><td>Lugar</td><td>{{barcode.subdivision}}</td></tr>

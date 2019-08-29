@@ -11,7 +11,7 @@ from sndg.users.models import User
 from bioresources.io.GraphRepo import GraphRepo
 
 
-def UserResourcesView(request):
+def UserResourcesView(request,username=""):
     person = request.user.person
     collaborations = list(Collaboration.objects.prefetch_related("resource").filter(person=person))
     for c in collaborations:

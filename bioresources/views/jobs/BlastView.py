@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect, reverse
 from django.db import transaction
 from datetime import datetime, timezone
 
-from bioresources.models.Job import Job
+from bioresources.models.Job import Job,CmdJob
 from bioresources.models.BlastDB import BlastDB
 from bioresources.tasks import execute_job
 
@@ -27,7 +27,7 @@ def blast(request):
         """
 
         cmd = request.POST["blastType"]
-        job = Job(command=cmd,result_type="blast")
+        job = CmdJob(command=cmd,result_type="blast")
         if not request.user.is_anonymous:
             job.user=request.user
         job.save()

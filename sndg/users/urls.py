@@ -8,6 +8,8 @@ from sndg.users.views import (
     task_res
 )
 
+from bioresources.views.user.UserResourcesView import UserResourcesView
+
 app_name = "users"
 
 urlpatterns = [
@@ -15,6 +17,6 @@ urlpatterns = [
     path("~update/", view=user_update_view, name="update"),
     path("job/", view=task_example, name="jobtest"),
     path("job/<str:jid>/", view=task_res, name="jobres"),
-    path("<str:username>/", view=user_detail_view, name="detail"),
+    path("<str:username>/", view=UserResourcesView, name="detail"),
 
 ]
