@@ -67,7 +67,7 @@ def SubmissionImportView(request):
             else:
                 sds = ScopusDS(settings.SCOPUS_API)
                 results = sds.doi(search)
-                if results:
+                if results and "error" not in results[0]:
                     doi = results[0]['prism:doi']
                     rr = ResourceResult("", Publication(name=doi, description=results[0]["dc:title"],
                                                         type=Publication.TYPE), doi, db)

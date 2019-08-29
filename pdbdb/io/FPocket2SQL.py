@@ -18,7 +18,7 @@ warnings.simplefilter('ignore', BiopythonExperimentalWarning)
 
 from tqdm import tqdm
 
-sys.path.append("/home/eze/workspace/sndg-bio")
+
 from SNDG.Structure.FPocket import FPocket, fpocket_properties_map
 
 pocket_prop_map = {v: k for k, v in fpocket_properties_map.items()}

@@ -6,6 +6,10 @@ from django.views import defaults as default_views
 from django.views.generic import TemplateView
 from django.conf.urls import url
 
+from django.views.generic.base import RedirectView
+class HomeRedirectView(RedirectView):
+    url = '/'
+
 urlpatterns = [
     # path("jajaja", TemplateView.as_view(template_name="pages/home.html"), name="home"),
     path(
@@ -18,6 +22,7 @@ urlpatterns = [
     # User management
     path("users/", include("sndg.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
+    path("sndg/", HomeRedirectView.as_view()),
     # Your stuff: custom urls includes go here
 
     # url(r'^captcha/', include('captcha.urls')),
