@@ -10,8 +10,7 @@ from bioseq.models.Biosequence import Biosequence
 from bioresources.models.Assembly import Assembly
 
 def NucleotideView(request,pk):
-    be = (Bioentry.objects.select_related("biodatabase").select_related("taxon")
-        .prefetch_related("dbxrefs__dbxref", "qualifiers__term", "seq")).get(bioentry_id=pk)
+    be = Bioentry.objects.prefetch_related("dbxrefs__dbxref", "qualifiers__term", "seq").get(bioentry_id=pk)
 
     offset = request.GET.get("offset",0)
 

@@ -25,7 +25,7 @@
 </td></tr>
 {% endif %}
 {% endfor %}
-<tr><td><b>Organismo</b></td><td><a href="{% url 'bioresources:assembly_view' object.biodatabase_id %}">{{ object.biodatabase.name }}</a></td></tr>
+<tr><td><b>Organismo</b></td><td><a href="{% url 'bioresources:assembly_view' assembly.id %}">{{ object.biodatabase.name }}</a></td></tr>
 {% if object.taxon %}
 <tr><td><b>Taxon</b></td><td><a href="{% url 'bioresources:tax_view' object.taxon.ncbi_taxon_id %}">{{ object.taxon.scientific_name }}</a></td></tr>
 {% endif %}
