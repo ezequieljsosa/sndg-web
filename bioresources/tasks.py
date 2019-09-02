@@ -7,7 +7,7 @@ from celery import shared_task
 
 from django.core.mail import send_mail
 from django.conf import settings
-
+from sentry_sdk import capture_message
 
 @shared_task(soft_time_limit=60*60, time_limit=60*60+20)
 def execute_job(jobId):
@@ -21,6 +21,10 @@ def execute_job(jobId):
         job.execute()
     except Exception as ex:
         job.error()
+    with open(job.dev_error) as h:
+        error = h.read()
+        if error:
+            capture_message(error)
 
     job.save(force_update=True)
     if job.user:

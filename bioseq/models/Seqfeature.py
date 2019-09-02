@@ -22,7 +22,7 @@ class Seqfeature(models.Model):
     index_updated = models.BooleanField(default=False)
 
     def qualifiers_dict(self):
-        return {x.term.name: x.value for x in self.qualifiers.all()}
+        return {x.term.identifier: x.value for x in self.qualifiers.all()}
 
     objects = SeqfeatureManager()
 
@@ -35,6 +35,10 @@ class Seqfeature(models.Model):
         managed = True
         db_table = 'seqfeature'
         # unique_together = (('bioentry', 'type_term', 'source_term', 'rank'),)
+
+
+    def strand(self):
+        return "+" if self.locations.all()[0].strand > 0 else "-"
 
     def locus_tag(self):
         return self.qualifiers.get(term__name='locus_tag').value
@@ -54,6 +58,18 @@ class Seqfeature(models.Model):
 
     def subfeatures(self):
         return [x.object_seqfeature for x in self.object_relationships.all()]
+
+    def is_pseudo(self):
+        # count = Seqfeature.objects.filter(qualifiers__term__identifier="pseudo",
+        #                                                 bioentry=self.bioentry,
+        #                                                 type_term__identifier="gene").count()
+        # [x for x in self.bioentry.features.filter(qualifiers__term__identifier="pseudo").all()][0]
+
+        f = [f for f in self.bioentry.features.filter(type_term__identifier = "gene",qualifiers__value=self.locus_tag()) ]
+        if f:
+            f = f[0]
+            return "pseudo" in f.qualifiers_dict()
+        return False
 
 
 class SeqfeatureDbxref(models.Model):

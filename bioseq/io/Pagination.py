@@ -5,7 +5,7 @@ import math
 class Page:
 
     @staticmethod
-    def from_request(request):
+    def from_request(request,count=None):
         size = int(request.GET.get("page_size", 10))
         page = int(request.GET.get("page", 1))
 
@@ -14,15 +14,20 @@ class Page:
 
 
 
-        return Page(size=size, offset=size * (page - 1))
+        return Page(size=size, offset=size * (page - 1),count=count)
 
     def __init__(self, size=10, offset=0, count=None):
         self.count = count
         self.size = size
-        self.offset = offset
         self.page = int(1 + offset / size)
         self.number = self.page
         self.set_count(count)
+
+    def offset(self):
+        return (self.page - 1) * self.size
+
+    def end(self):
+        return (self.page ) * self.size
 
     def set_count(self, count):
 

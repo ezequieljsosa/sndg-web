@@ -95,6 +95,6 @@ def index(request):
         facets["fields"] = {}
 
     return render(request, 'index.html', {
-        "stats": resources, "search": search, "selected": selected,
+        "stats": resources, "search": search if search != "*" else "", "selected": selected,
         "db": db, "suggestions": suggestions, "querystring": params,
         "sidebarleft": facets["fields"], "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]}})

@@ -72,7 +72,16 @@ class BioSearchView(SearchView):
 
         return queryset  # .filter(pub_date__gte=date(2015, 1, 1))
 
+    def form_valid(self,form):
+        if not form.cleaned_data["q"].strip():
+            form.cleaned_data["q"] = "*"
+
+        return super(BioSearchView, self).form_valid(form)
+
+
     def get_context_data(self, *args, **kwargs):
+        if kwargs["query"].strip() == "*":
+            kwargs["query"] = ""
         context = super(BioSearchView, self).get_context_data(*args, **kwargs)
 
         context["sidebarleft"] = {k: [(y1, y2) for y1, y2 in v if y2] for k, v in

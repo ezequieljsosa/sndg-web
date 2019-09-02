@@ -145,5 +145,7 @@ class BioIO:
         bulk_save(seqrecord.features, action=lambda f: self.process_feature(be, f))
 
     def process_record_list(self, seq_record_iterator: Iterable[SeqRecord], contig_count: int):
-        for seqrecord in tqdm(seq_record_iterator, total=contig_count, file=sys.stderr):
-            self.process_seqrecord(seqrecord)
+        with tqdm(seq_record_iterator, total=contig_count, file=sys.stderr) as pbar:
+            for seqrecord in pbar:
+                pbar.set_description(seqrecord.id)
+                self.process_seqrecord(seqrecord)

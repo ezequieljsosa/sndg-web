@@ -25,13 +25,7 @@
 
 
         <tr><td><b>Tipo</b></td><td>{{ atypes|getattribute:object.assembly_type }}</td></tr>
-         {% if object.ncbi_tax %}
-        <tr><td><b>Taxon</b></td><td>
 
-        <a href="{% url 'bioresources:tax_view' object.ncbi_tax.ncbi_taxon_id %}">{{ object.ncbi_tax.scientific_name }}</a>
-
-        </td></tr>
-        {% endif %}
     </table>
  </div>
  </div>
@@ -46,7 +40,12 @@
         <div class="row">
         <div class="col-md-8">
 
-            <h3>Secuencias</h3>
+            <h3>{% trans 'Sequences' %}</h3>
+
+            {% if page_obj %}
+            {% paginator query page_obj request.GET %}
+            {% endif %}
+
             <table id="contig_table" class="table table-responsive">
                 <thead>
                     <tr><td>ID</td><td>Length</td>

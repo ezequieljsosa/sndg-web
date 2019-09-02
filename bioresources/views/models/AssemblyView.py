@@ -13,6 +13,8 @@ from bioresources.io.NCBISearch import NCBISearch
 from bioresources.models.jobs.LoadGenomeJob import LoadGenomeJob
 from bioresources.models.Job import Job
 
+from bioseq.io.Pagination import Page
+
 
 # def assembly(request, pk):
 #     try:
@@ -43,7 +45,7 @@ def assembly_view(request, pk):
 
     contigs = None
     lengths = None
-    be = Biodatabase.objects.filter(name=assembly.name)
+    bdb = Biodatabase.objects.filter(name=assembly.name)
 
     external_ids = [x.identifier for x in assembly.external_ids.all() if x.type == "accession"]
     external_url = ""
@@ -51,24 +53,28 @@ def assembly_view(request, pk):
         external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[Assembly.TYPE] + "/" + external_ids[
             0])
 
-    if be.count():
-        be = be.get()
-        if "_prots" in be.name:
-            be2 = (Biodatabase.objects.prefetch_related("entries__features__type_term"))
-            be = be2.get(name=be.name.replace("_prots", ""))  # TODO meter en otro lado esta regla
+    if bdb.count():
+        bdb = bdb.get()
+        beqs = bdb.entries.all()
 
         lengths = {}
-        for x in be.entries.all():
-            seq = Biosequence.objects.raw("""
-            SELECT bioentry_id, version , length , alphabet 
-            FROM biosequence WHERE bioentry_id = %i ;
-            """ % (x.bioentry_id))[0]
-            lengths[x.accession] = seq.length
+        # for x in be.entries.all():
+        # SELECT s.bioentry_id, s.version , s.length , s.alphabet
+        seqs = Biosequence.objects.prefetch_related("bioentry").raw("""
+            SELECT s.bioentry_id, s.length
+            FROM biosequence s,bioentry b WHERE b.biodatabase_id = %i AND  b.bioentry_id = s.bioentry_id ;
+            """ % (bdb.biodatabase_id))
+        for seq in seqs:
+            lengths[seq.bioentry.accession] = seq.length
         # assembly.assembly_type = str(Assembly.ASSEMBLY_TYPES[assembly.assembly_type])
         # assembly.level = str(Assembly.ASSEMBLY_LEVEL[assembly.level])
-        contigs = be.entries.all()
 
-    params = {"lengths": lengths, "external_url": external_url,"loaded":loaded,
+        page = Page.from_request(request, count=beqs.count())
+
+        contigs = beqs[page.offset(): page.end()]
+
+    params = {"query": "", "page_obj": page,
+              "lengths": lengths, "external_url": external_url, "loaded": loaded,
               "level": {k: str(v) for k, v in Assembly.ASSEMBLY_LEVEL},
               "object": assembly, "graph": graph, "atypes": {k: str(v) for k, v in Assembly.ASSEMBLY_TYPES},
               "related_resources": related_resources,

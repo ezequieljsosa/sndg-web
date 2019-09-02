@@ -100,6 +100,8 @@ class Bioentry(models.Model):
     def ftype(self):
         return 40  # "protein"
 
+
+
     def __str__(self):
         return "BioEntry('%s')" % self.accession
 

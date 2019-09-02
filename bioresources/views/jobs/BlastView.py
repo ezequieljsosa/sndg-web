@@ -14,6 +14,8 @@ import Bio.SeqIO as bpio
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
+
+
 def blast(request):
 
     if request.method == 'POST':
@@ -58,7 +60,8 @@ def blast(request):
             job.queue()
             job.save()
 
-        execute_job.delay(job.id)
+        execute_job.apply_async(args=(job.id,),countdown=10)
+
 
         return redirect(reverse("bioresources:job_view", kwargs={"jid": job.id}))
 
@@ -73,6 +76,8 @@ def job_view(request, jid):
     if job.status == Job.STATUS.FINISHED:
         with open(job.result) as h:
             result = h.read() #.replace("\n"," ")
+
+
         return render(request,   'tools/%s_result.html' % job.result_type, {"job":job,"result":result})
     else:
         elapsed_time = int((datetime.now(timezone.utc) - job.start).total_seconds())

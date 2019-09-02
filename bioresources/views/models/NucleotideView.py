@@ -9,24 +9,27 @@ from bioseq.models.Seqfeature import Seqfeature
 from bioseq.models.Biosequence import Biosequence
 from bioresources.models.Assembly import Assembly
 
-def NucleotideView(request,pk):
-    be = Bioentry.objects.prefetch_related("dbxrefs__dbxref", "qualifiers__term", "seq").get(bioentry_id=pk)
+from bioseq.io.Pagination import Page
 
-    offset = request.GET.get("offset",0)
 
-    # if be.get(bioentry_id=pk).features.count() < 100:
-    #     be = be.prefetch_related("dbxrefs__dbxref", "qualifiers__term", "seq",
-    #                               "features__locations", "features__source_term",
-    #                               "features__type_term", "features__qualifiers")
+def NucleotideView(request, pk):
+    be = Bioentry.objects.prefetch_related("dbxrefs__dbxref", "qualifiers__term")
+
+    be = be.get(bioentry_id=pk)
     #     be = be.get(bioentry_id=pk)
     #     feature_list = be.features.all()
     # else:
     #     be = be.get(bioentry_id=pk)
-    feature_list = be.features.all()[offset:offset + request.GET.get("pageSize",50)]
+    qs = be.features.exclude(type_term__identifier__in=["source", "gene"])
+    page = Page.from_request(request, qs.count())
+    qs = qs.prefetch_related(
+        "dbxrefs__dbxref", "qualifiers__term", "locations", "source_term", "type_term").all()
+    feature_list = [f for f in qs[page.offset():page.end()]
+                    ]  # if f.type_term.identifier not in ["source", "gene"]
 
     assembly = Assembly.objects.get(name=be.biodatabase.name)
 
-
-    return render(request, 'resources/nucleotide_view.html', {
-        "object": be,"assembly":assembly,"feature_list":feature_list,
-        "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]
+    return render(request, 'resources/nucleotide_view.html', {"query": "", "page_obj": page,
+                                                              "object": be, "assembly": assembly,
+                                                              "feature_list": feature_list,
+                                                              "sidebarleft": 0})  # "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]

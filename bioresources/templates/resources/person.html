@@ -16,11 +16,14 @@
     {% if request.user.is_authenticated and request.user.person and request.user.person.id == pk %}
         {% trans 'Yourself' %}
     {% else %}
+
         {% if person.users.count  %}
             <span class="badge badge-success">{% trans 'Validated Identity' %}</span>
         {% else %}
-            <a href="{% url 'bioresources:claim_identity' pk %}"  role="button"
-                class="btn btn-primary"  > {% trans 'Claim Identity' %} </a>
+            {% if request.user.is_authenticated and request.user.person %}
+                <a href="{% url 'bioresources:claim_identity' pk %}"  role="button"
+                    class="btn btn-primary"  > {% trans 'Claim Identity' %} </a>
+            {% endif %}
         {% endif%}
     {% endif %}
 

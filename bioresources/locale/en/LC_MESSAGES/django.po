@@ -493,5 +493,13 @@ msgstr "Indicar que usted es esta persona"
 msgid "Relate_with:"
 msgstr "Relacionar este recurso con:"
 
+msgid "Sequences"
+msgstr "Secuencias"
+
+msgid "Annotations"
+msgstr "Anotaciones"
+
+
+
 
 

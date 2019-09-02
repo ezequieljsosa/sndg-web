@@ -31,9 +31,9 @@
 {% endif %}
 </table>
 
-<h3>Anotaciones</h3>
-{% if object.features.count < 20 %}
+<h3>{% trans 'Annotations' %} </h3>
 
+{% paginator query page_obj request.GET %}
 <table class="table  table-responsive">
         <thead>
             <tr>
@@ -49,7 +49,12 @@
             <tr>
                 <td>
                     {% if gene_prod.type_term.name == "CDS" %}
+                    {% if gene_prod.is_pseudo %}
+                        {{gene_prod.locus_tag}} (pseudo)
+                    {% else %}
                     <a href="{% url 'bioresources:search_redirect' 'locus_tag' gene_prod.locus_tag %}">{{gene_prod.locus_tag}}</a>
+
+                    {% endif %}
                     {% else %}
                     {{gene_prod.locus_tag}}
                     {% endif %}
@@ -57,36 +62,15 @@
                 <td>{{gene_prod.type_term.name}}</td>
                 <td>{{gene_prod.locations.all|index:0|getattribute:'start_pos'}}</td>
                 <td>{{gene_prod.locations.all|index:0|getattribute:'end_pos'}}</td>
-                <td>{{gene_prod.locations.all|index:0|getattribute:'strand'}}</td>
+
+                <td>{{ gene_prod.strand }}</td>
 
             </tr>
         {% endfor %}
         </tbody>
     </table>
 
-{% else %}
 
-    <table class="table  table-responsive">
-        <thead>
-            <tr><td>Total</td>
-            {% for name,count in object.feature_counts.items %}
-            {% if name != "source" %}
-            <td>{{name}}</td>
-            {% endif %}
-            {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td>{{object.features.count}}</td>
-            {% for name,count in object.feature_counts.items %}
-            {% if name != "source" %}
-            <td>{{count}}</td>
-            {% endif %}
-            {% endfor %}
-            </tr>
-        </tbody>
-    </table>
-{% endif %}
 
 
  <iframe  id="jbrowse"
