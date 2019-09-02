@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from .Resource import Resource
 
+
 class Assembly(Resource):
     ASSEMBLY_LEVEL = Choices(
         *[(i, x, _(x)) for i, x in enumerate([
