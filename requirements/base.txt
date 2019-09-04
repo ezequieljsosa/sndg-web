@@ -37,3 +37,4 @@ sndg-bio
 django-cache-memoize
 django-polymorphic
 xmltodict
+django-tellme

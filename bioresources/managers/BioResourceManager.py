@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import Prefetch, Q
 from django.db.models.query import QuerySet
 
+from polymorphic.managers import PolymorphicManager
+from polymorphic.managers import PolymorphicQuerySet
 
 class ResourceQuerySet(QuerySet):
 

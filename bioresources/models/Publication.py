@@ -15,6 +15,8 @@ class Publication(Resource):
     scopus_id = models.CharField(max_length=50, null=True)
     issn = models.CharField(max_length=50, null=True)
 
+    associated = models.BooleanField(default=False)
+
     class Meta:
         verbose_name_plural = _("Publications")
 

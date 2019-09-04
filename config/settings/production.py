@@ -180,6 +180,3 @@ sentry_sdk.init(
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-if "EMAIL_CONFIG" in env:
-    EMAIL_CONFIG = env.email_url( 'EMAIL_CONFIG')
-    vars().update(EMAIL_CONFIG)

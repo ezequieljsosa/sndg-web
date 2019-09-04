@@ -7,15 +7,15 @@ from django.db.models import Q
 
 from bioseq.io.Blast import Blast
 from bioresources.models.Job import Job
-
+from bioresources.models.Barcode import Barcode
 
 class BlastDB(models.Model):
     dbs = {"proteins": Q(biodatabase__name__endswith="_prots"),
            "rnas": Q(biodatabase__name__endswith="_rnas"),
-           "barcodes": Q(biodatabase__name="barcodes"),
+           "barcodes": Q(biodatabase__name=Barcode.BIODBNAME),
            "structures": Q(biodatabase__name__endswith="pdb"),
            "contigs": ((~Q(biodatabase__name__endswith="_prots")) & (~Q(biodatabase__name__endswith="_rnas"))
-                       & (~Q(biodatabase__name__endswith="barcodes")) & (~Q(biodatabase__name__endswith="pdb")))}
+                       & (~Q(biodatabase__name__endswith=Barcode.BIODBNAME)) & (~Q(biodatabase__name__endswith="pdb")))}
 
     name = models.CharField(max_length=50)
     description = models.CharField(max_length=250)
@@ -30,7 +30,7 @@ class BlastDB(models.Model):
     @staticmethod
     def init_dbs():
         BlastDB.objects.create(name="Proteins", description=_("AA sequences"), accession="proteins", dbtype="prot")
-        BlastDB.objects.create(name="Barcodes", description=_("Barcode Sequeces"), accession="barcodes",
+        BlastDB.objects.create(name=Barcode.BIODBNAME, description=_("Barcode Sequences"), accession="barcodes",
                                dbtype="nucl")
         BlastDB.objects.create(name="Structures", description="Protein Structure Sequences",
                                accession="structures", dbtype="prot")

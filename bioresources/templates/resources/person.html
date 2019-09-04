@@ -13,14 +13,14 @@
 <div class="container">
     <div class="row">
 
-    {% if request.user.is_authenticated and request.user.person and request.user.person.id == pk %}
+    {% if request.user.is_authenticated and request.user.validated and request.user.person.id == pk %}
         {% trans 'Yourself' %}
     {% else %}
 
-        {% if person.users.count  %}
+        {% if  person.user  %}
             <span class="badge badge-success">{% trans 'Validated Identity' %}</span>
         {% else %}
-            {% if request.user.is_authenticated and request.user.person %}
+            {% if request.user.is_authenticated and request.user.validated %}
                 <a href="{% url 'bioresources:claim_identity' pk %}"  role="button"
                     class="btn btn-primary"  > {% trans 'Claim Identity' %} </a>
             {% endif %}

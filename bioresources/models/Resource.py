@@ -10,7 +10,7 @@ from .Organization import Organization
 from .RKeyword import RKeyword
 from ..managers.BioResourceManager import BioResourceManager
 
-from bioseq.models.Taxon import Taxon
+from bioseq.models.Taxon import Taxon,TaxIdx
 from polymorphic.models import PolymorphicModel
 
 
@@ -23,7 +23,7 @@ def get_class(kls):
     return m
 
 
-class Resource(PolymorphicModel):
+class Resource(models.Model):
     RESOURCE_TYPES = Choices(
         *([(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
@@ -122,6 +122,11 @@ class Resource(PolymorphicModel):
 
     def metadata_dc_publisher(self):
         return [x.name for x in self.publishers.all()]
+
+    def tax_txt(self):
+        if self.ncbi_tax:
+            return TaxIdx.objects.get(tax=self.ncbi_tax).text
+        return ""
 
 
 class Collaboration(models.Model):

@@ -17,6 +17,8 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
+    path('tellme/', include("tellme.urls")),
+
     path('', include('bioresources.urls', namespace="bioresources")),
     path('', include('pdbdb.urls', namespace="pdbdb")),
     # User management

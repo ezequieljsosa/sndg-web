@@ -60,8 +60,8 @@ class Ontology(models.Model):
         from .Term import Term
         graph_ontology = Ontology.objects.get_or_create(name=Ontology.GRAPH, definition="")[0]
 
-        is_a = \
-            Term.objects.get_or_create(identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")[0]
+        is_a = Term.objects.get_or_create(
+                identifier="is_a", name="is_a", version=1, ontology=graph_ontology, definition="")[0]
 
         ontology = Ontology.objects.get_or_create(name=Ontology.GO)[0]
 

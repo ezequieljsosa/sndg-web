@@ -12,8 +12,18 @@
 
     <title>{% block title %} {% trans 'SNDG' %} {% endblock %}</title>
 
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={{GOOGLE_ANALYTICS_CODE}}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', '{{GOOGLE_ANALYTICS_CODE}}');
+</script>
 
 
+<link href="{% static 'tellme/feedback.min.css' %}" rel="stylesheet">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
@@ -39,6 +49,15 @@ margin-left: 10px;
 margin-right: 10px;
 }
 
+.vertical-right-aligned {
+    transform: rotate(-90deg);
+    transform-origin: 100% 100%;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    z-index: 100;
+}
+
 </style>
 
    {% block head %}{% endblock %}
@@ -46,6 +65,9 @@ margin-right: 10px;
   </head>
 
   <body>
+    <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
+        Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
+    </button>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
       <a class="navbar-brand" href="{% url 'bioresources:index' %}">SNDG</a>
@@ -193,6 +215,44 @@ margin-right: 10px;
 {% block javascripts %}
 
 {% endblock %}
+{% csrf_token %}
+<script src="{% static 'tellme/feedback.min.js' %}"></script>
+<script type="text/javascript">
+    const csrf =  $('[name="csrfmiddlewaretoken"]').val();
+    $(function () {
+        $.feedback({
+            ajaxURL: "{% url 'tellme:post_feedback' %}",
+            html2canvasURL: "{% static 'tellme/html2canvas.min.js' %}",
+            feedbackButton: "#feedback-btn",
+            initButtonText: "{% filter escapejs %}{%  include 'tellme/initButtonText.txt' %}{% endfilter %}",
+            postHTML: false,
+            tpl: {
+                description: "{% filter escapejs %}{%  include 'tellme/tpl-description.html' %}{% endfilter %}",
+                highlighter: "{% filter escapejs %}{%  include 'tellme/tpl-highlighter.html' %}{% endfilter %}",
+                            overview:        "{% filter escapejs %}{%  include 'tellme/tpl-overview.html' %}{% endfilter %}",
+                            submitSuccess:"{% filter escapejs %}{%  include 'tellme/tpl-submit-success.html' %}{% endfilter %}",
+                            submitError: "{% filter escapejs %}{%  include 'tellme/tpl-submit-error.html' %}{% endfilter %}"
+            },
+            initialBox: true
+        });
+    });
+
+
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrf);
+            }
+        }
+    });
+
+</script>
 
   </body>
 </html>

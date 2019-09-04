@@ -1,17 +1,23 @@
 import json
 import os
 import subprocess as sp
+import sys
 
-from bioseq.models import Taxon
+from bioseq.models.Taxon import Taxon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from bioresources.models import Barcode, Organization
+from bioresources.models.Barcode import Barcode
+from bioresources.models.Organization import Organization
+from bioseq.models.Biodatabase import Biodatabase
+from bioseq.models.Bioentry import Bioentry
+from bioseq.models.Biosequence import Biosequence
 
 
-def execute(cmd,**kwargs):
-    sp.call(cmd.format(**kwargs),shell=True)
+def execute(cmd, **kwargs):
+    sp.call(cmd.format(**kwargs), shell=True)
+
 
 def download_file(complete_url, target, ovewrite=False, retries=3):
     if not target.strip():
@@ -43,19 +49,44 @@ class Command(BaseCommand):
         parser.add_argument('--bold_url',
                             default="http://www.boldsystems.org/index.php/API_Public/combined?format=json&geo=")
         parser.add_argument('--json', default="/tmp/bold.json")
+        parser.add_argument('--override', action='store_false', help="override json tmp file. Default: true")
+        parser.add_argument('--resources', action='store_false', help="update Barcodes. Default: true")
+        parser.add_argument('--seqs', action='store_false', help="update sequences. Default: true")
 
     def handle(self, *args, **options):
 
-        if not os.path.exists(options["json"]):
-            download_file(options["bold_url"] + options["country"], options["json"])
+        if options ["override"] or (not os.path.exists(options["json"])):
+            download_file(options["bold_url"] + options["country"], options["json"],ovewrite=options ["override"])
+        if options["resources"]:
+            self.update_resources(options["json"])
+        if options["seqs"]:
+            self.update_biodb(options["json"])
 
-        data = json.load(open(options["json"]))["bold_records"]["records"].values()
+    def update_biodb(self, json_input):
+        bdb = Biodatabase.objects.get_or_create(name=Barcode.BIODBNAME)[0]
+        with open(json_input) as h:
+            data = json.load(h)["bold_records"]["records"].values()
+        for d in tqdm(data):
+            if "sequences" in d and Barcode.objects.filter(name=d["processid"]).count():
+                if not Bioentry.objects.filter(biodatabase=bdb,accession=d["processid"]).count():
+                    with transaction.atomic():
+                        be = Bioentry(biodatabase=bdb, accession=d["processid"], identifier=d["processid"],
+                                      name=d["processid"])
+                        be.save()
+                        seq = d["sequences"]["sequence"][0]["nucleotides"].replace("-", "")
+                        Biosequence(bioentry=be, seq=seq, length=len(seq)).save()
+
+    def update_resources(self, json_input):
+        with open(json_input) as h:
+            data = json.load(h)["bold_records"]["records"].values()
+
         bcodes = []
         org_bold = Organization.objects.get_or_create(name="BOLD")[0]
 
         for d in tqdm(data):
-            if "sequences" in d:
-                for x in ["species", "genus", "subfamily", "family", "order", "class", "phylum"]:
+            if ("sequences" in d) and (not Barcode.objects.filter(name=d["processid"]).count()):
+
+                for x in ["subspecies","species", "genus", "subfamily", "family", "order", "class", "phylum"]:
                     if x in d["taxonomy"]:
                         tax = d["taxonomy"][x]["taxon"]["taxID"]
                         break
@@ -76,10 +107,17 @@ class Command(BaseCommand):
 
                     bold_org=d["specimen_identifiers"]["institution_storing"]
                 )
-                try:
-                    bc.ncbi_tax = Taxon.objects.get(ncbi_taxon_id=d["tax"])
-                except Taxon.DoesNotExist:
-                    pass
+
+                for x in ["subspecies","species", "genus", "subfamily", "family", "order", "class", "phylum"]:
+                    if x in d["taxonomy"]:
+                        try:
+                            tax = d["taxonomy"][x]["taxon"]["taxID"]
+                            bc.ncbi_tax = Taxon.objects.get(ncbi_taxon_id=int(tax))
+                        except Taxon.DoesNotExist:
+                            continue
+                        break
+
+
                 try:
                     bc.image_url = d["specimen_imagery"]["media"][0]["image_file"]
                 except KeyError:
@@ -91,7 +129,7 @@ class Command(BaseCommand):
 
                 bcodes.append(bc)
         bcodes_col = []
-        for i,bc in enumerate(tqdm(bcodes)):
+        for i, bc in enumerate(tqdm(bcodes)):
             bcodes_col.append(bc)
             if i == 5000:
                 with transaction.atomic():
@@ -104,4 +142,3 @@ class Command(BaseCommand):
             for bc2 in bcodes_col:
                 bc2.save()
                 bc2.publishers.add(org_bold)
-

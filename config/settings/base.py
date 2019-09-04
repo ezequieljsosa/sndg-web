@@ -74,11 +74,15 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    'allauth.socialaccount.providers.google',
     "rest_framework",
     # "django_celery_beat",
 
     'haystack',
     'django_neomodel',
+
+    'tellme',
+
     # 'captcha',
     # 'crispy_forms',
     # "resumable",
@@ -198,6 +202,7 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
+                "sndg.context_processors.config_variables",
             ],
         },
     }
@@ -289,7 +294,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
@@ -390,3 +395,22 @@ LANGUAGES = (
     ('es', 'Español'),
     ('en', 'English'),
 )
+if "EMAIL_CONFIG" in env:
+    EMAIL_CONFIG = env.email_url( 'EMAIL_CONFIG')
+    vars().update(EMAIL_CONFIG)
+TELLME_FEEDBACK_EMAIL ="sndg@qb.fcen.uba.ar"
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+SOCIALACCOUNT_QUERY_EMAIL=True
+
+GOOGLE_ANALYTICS_CODE=os.environ.get('GOOGLE_ANALYTICS_CODE',"")

@@ -7,6 +7,7 @@ from .Resource import Resource
 
 class Barcode(Resource):
     TYPE = Resource.RESOURCE_TYPES.BARCODE
+    BIODBNAME = "Barcodes"
 
     country = models.CharField(max_length=100)
     subdivision = models.CharField(max_length=150)
