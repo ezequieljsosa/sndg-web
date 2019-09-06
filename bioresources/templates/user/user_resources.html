@@ -17,9 +17,13 @@
 
 <div class="col-md-12">
 
+<h1 id="username">{{user.username}} </h1>
 
+{% if person %}
     <h3>{{person.name}}, {{person.surname}} </h3>
-
+{% else %}
+    <p>{% trans 'No person was claimed, select one:' %} <a href="{% url 'bioresources:search_view' %}?type=20">{% trans 'Person list' %}</a>  </p>
+{% endif %}
 <table class="table">
 {% for collab in collaborations %}
 <tr><td>{{collab.type}}</td>
@@ -30,7 +34,9 @@
 {% endfor %}
 </table>
 
-{% resource_graph pk graph %}
+{% if graph %}
+{% resource_graph person.id graph %}
+{% endif %}
   </div>
 
 

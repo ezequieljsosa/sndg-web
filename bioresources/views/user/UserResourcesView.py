@@ -21,4 +21,4 @@ def UserResourcesView(request,username=""):
     else:
         graph = {}
     return render(request, 'user/user_resources.html',
-                  {"pk": person.id, "person": person, "collaborations": collaborations, "graph": graph})
+                  {"user": request.user, "person": person, "collaborations": collaborations, "graph": graph})
