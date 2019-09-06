@@ -33,7 +33,7 @@ class Resource(models.Model):
     )
 
     name2code = {
-        n: idx for idx, n in RESOURCE_TYPES
+        n: idx for idx, n,_ in RESOURCE_TYPES._triples
     }
 
     facet_dict = {
