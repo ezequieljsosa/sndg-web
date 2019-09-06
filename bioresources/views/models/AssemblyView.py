@@ -53,6 +53,7 @@ def assembly_view(request, pk):
         external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[Assembly.TYPE] + "/" + external_ids[
             0])
 
+    page = None
     if bdb.count():
         bdb = bdb.get()
         beqs = bdb.entries.all()
