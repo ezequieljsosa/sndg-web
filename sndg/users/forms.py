@@ -58,8 +58,8 @@ class UserCreationForm(SignupForm):
         data = self.cleaned_data['email']
         domain = data.split('@')[1]
         # if not (any([domain.endswith(x) for x in ["edu.ar", "gov.ar", "uba.ar"]])):
-        if not domain.endswith(".ar"):
-            raise ValidationError(error_message["invalid_domain"])
+        # if not domain.endswith(".ar"):
+        #     raise ValidationError(error_message["invalid_domain"])
 
         try:
             User.objects.get(username=username)
