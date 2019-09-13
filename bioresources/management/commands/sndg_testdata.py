@@ -50,6 +50,9 @@ class Command(BaseCommand):
         parser.add_argument('--remove', action='store_true')
 
     def handle(self, *args, **options):
+
+        Organization.init_orgs()
+
         with transaction.atomic():
             self.load_tax()
 
@@ -165,6 +168,7 @@ class Command(BaseCommand):
         download_file("https://files.rcsb.org/view/2PZI.pdb", target=tmp_dir, ovewrite=True)
 
     def load_resources(self):
+
         mixs_ontology = Ontology.objects.get_or_create(name="MIxS")[0]
 
         abs1 = """The World Health Organization (WHO) estimates that 40% of tuberculosis (TB) cases are not diagnosed and treated correctly. Even though there are several diagnostic tests available in the market, rapid, easy, inexpensive detection, and drug susceptibility testing (DST) of Mycobacterium tuberculosis is still of critical importance specially in low and middle-income countrie"""
@@ -180,7 +184,7 @@ class Command(BaseCommand):
         adri = Person.objects.create(surname="Turjanski", name="Gustavo Adrián", scopus_id="6602847199")
         spo = Person.objects.create(surname="Poggi", name="Susana")
 
-        ncbi = Organization.objects.create(name="NCBI")
+        ncbi = Organization.objects.get(name="NCBI")
         ic = Organization.objects.create(name="University of Buenos Aires Instituto de Cálculo",
                                          url="http://www.ic.fcen.uba.ar/",
                                          country="Argentina")
@@ -191,15 +195,15 @@ class Command(BaseCommand):
             name="Department of Biological Sciences, Pittsburgh Bacteriophage Institute, University of Pittsburgh",
             url="http://www.pitt.edu/~duda/PBImemberlist.html", country="United States")
 
-        aff = Affiliation.objects.create(publication=publication_fp, author=eze)
+        aff = Affiliation.objects.create(resource=publication_fp, author=eze)
         aff.organizations.add(ic)
         aff.organizations.add(uba)
-        aff = Affiliation.objects.create(publication=publication_fp, author=spo)
+        aff = Affiliation.objects.create(resource=publication_fp, author=spo)
         aff.organizations.add(pbi)
         aff.organizations.add(uba)
-        aff = Affiliation.objects.create(publication=publication_tp, author=eze)
+        aff = Affiliation.objects.create(resource=publication_tp, author=eze)
         aff.organizations.add(uba)
-        aff = Affiliation.objects.create(publication=publication_tp, author=adri)
+        aff = Affiliation.objects.create(resource=publication_tp, author=adri)
         aff.organizations.add(uba)
 
         bioproject = BioProject.objects.create(
