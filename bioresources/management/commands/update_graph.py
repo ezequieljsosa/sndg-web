@@ -70,7 +70,7 @@ class Command(BaseCommand):
         organizations = {}
         qs = rOrganization.objects.filter(country__isnull=False)
         for organization in tqdm(qs, file=self.stderr, total=qs.count()):
-            org = Organization(rid=organization.id,name=organization.name)
+            org = Organization.from_resource(organization)
             org.save()
             org.location.connect(countries[organization.country])
             organizations[organization.id] = org
@@ -97,25 +97,19 @@ class Command(BaseCommand):
 
         qs = rPublication.objects.prefetch_related("affiliations__organizations").filter(targets__isnull=False).distinct()
         for publication in tqdm(qs, file=self.stderr, total=qs.count()):
-            gPublication = Publication(rid=publication.id, title=publication.name,
-                                       publication=publication.date_of_publication)
-            gPublication.save()
-            for aff in publication.affiliations.all():
-                gPublication.authors.connect(persons[aff.author_id])
-                for org in aff.organizations.all():
-                    gPublication.organizations.connect(organizations[org.id])
+            Publication.from_resource(publication)
+
 
 
         qs = rExpression.objects.all()
         for expresion in tqdm(qs, file=self.stderr, total=qs.count()):
-            r = Expression(rid=expresion.id, title=expresion.name, pdat=expresion.pdat, gdstype=expresion.gdstype)
-            r.save()
+            Expression.from_resource(expresion)
+
 
         qs = rAssembly.objects.all()
         for assembly in tqdm(qs, file=self.stderr, total=qs.count()):
-            r = Assembly(rid=assembly.id, title=assembly.name, intraspecific_name=assembly.intraspecific_name)
-            r.save()
-            r.species.connect(species[assembly.species_name])
+            Assembly.from_resource(assembly)
+
 
         qs = rStructure.objects.all()
         for structure in tqdm(qs, file=self.stderr, total=qs.count()):
@@ -125,21 +119,19 @@ class Command(BaseCommand):
 
         qs = rSample.objects.all()
         for sample in tqdm(qs, file=self.stderr, total=qs.count()):
-            r = Sample(rid=sample.id, title=sample.name, subdivision=sample.subdivision,
-                       collection_date=sample.collection_date)
-            r.save()
-            if sample.country:
-                r.country.connect(countries[sample.country])
+            Sample.from_resource(sample)
+
+
 
         qs = rTool.objects.all()
         for tool in tqdm(qs, file=self.stderr, total=qs.count()):
-            r = Tool(rid=tool.id, title=tool.name, tool_type=tool.tool_type)
+            r = Tool.from_resource(tool)
             r.save()
 
         qs = rReadsArchive.objects.all()
         for r in tqdm(qs, file=self.stderr, total=qs.count()):
-            rg = Reads(rid=r.id, title=r.name)
-            rg.save()
+            Reads.from_resource(r)
+
 
 
         from neomodel import db

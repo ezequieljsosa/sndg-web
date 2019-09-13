@@ -10,7 +10,7 @@ from .Organization import Organization
 from .RKeyword import RKeyword
 from ..managers.BioResourceManager import BioResourceManager
 
-from bioseq.models.Taxon import Taxon,TaxIdx
+from bioseq.models.Taxon import Taxon, TaxIdx
 from polymorphic.models import PolymorphicModel
 
 
@@ -29,11 +29,11 @@ class Resource(models.Model):
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
             "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL",
         ])] + [(50, "UNPROCESSED", _("UNPROCESSED")), (40, "PROTEIN", _("PROTEIN")),
-               (30, "ORGANIZATION", _("ORGANIZATION")), (20, "PERSON", _("PERSON"))])
+               (30, "ORGANIZATION", _("ORGANIZATION")), (Person.TYPE, "PERSON", _("PERSON"))])
     )
 
     name2code = {
-        n: idx for idx, n,_ in RESOURCE_TYPES._triples
+        n: idx for idx, n, _ in RESOURCE_TYPES._triples
     }
 
     facet_dict = {
@@ -53,7 +53,7 @@ class Resource(models.Model):
     publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
     keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
 
-    ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id",blank=True,
+    ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id", blank=True,
                                  on_delete=models.SET_NULL, null=True, related_name="bioresources")
 
     deprecated = models.BooleanField(default=False)
@@ -136,12 +136,15 @@ class Collaboration(models.Model):
         (3, "only_use", _("only_use")),
         (4, "other", _("other")),
     )
-    rev_types = {x[1]: x[0] for x in COLLABORATION_TYPES}
+    rev_types = {k: str(v) for k, v, _ in COLLABORATION_TYPES._triples}
 
     resource = models.ForeignKey(Resource, related_name="collaborations", on_delete=models.PROTECT)
     person = models.ForeignKey(Person, related_name="collaborations", on_delete=models.PROTECT)
     type = models.PositiveIntegerField(choices=COLLABORATION_TYPES)
     info = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.resource.name + "-[" + str(Collaboration.COLLABORATION_TYPES[self.type]) + "]-" + self.person.name
 
 
 class UnprocessedResource(Resource):

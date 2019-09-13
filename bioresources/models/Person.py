@@ -7,6 +7,18 @@ from django.urls import reverse
 
 
 class Person(models.Model):
+
+    TYPE = 20
+
+    COLLABORATION_TYPES = Choices(
+        (1, "owner", _("owner")),
+        (2, "only_producer", _("only_producer")),
+        (3, "only_use", _("only_use")),
+        (4, "other", _("other")),
+    )
+
+    # source =
+
     # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
     name = models.CharField(max_length=200, default="")

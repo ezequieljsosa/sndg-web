@@ -958,3 +958,15 @@ msgstr ""
 #, python-format
 msgid "[%(host)s] Received feedback"
 msgstr "[%(host)s] Feedback recibido"
+
+# user_resources.html
+msgid "No person was claimed, select one:"
+msgstr "No ha validado su identidad:"
+
+msgid "Person list"
+msgstr "Lista de personas
+
+msgid "Name"
+msgstr "Nombre"
+
+

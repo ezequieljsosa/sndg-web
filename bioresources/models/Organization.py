@@ -5,7 +5,12 @@ from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from django.urls import reverse
 
+
 class Organization(models.Model):
+    NCBI = "NCBI"
+    BOLD = "BOLD"
+    SCOPUS = "SCOPUS"
+
     name = models.CharField(max_length=200)
     url = models.URLField(null=True)
     country = models.CharField(max_length=200, null=True)
@@ -18,14 +23,49 @@ class Organization(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    source = models.ForeignKey("Organization", on_delete=models.SET_NULL, null=True)
+    description = models.TextField(null=True)
+    main_identifier = models.CharField(max_length=200, null=True)
+
     class Meta:
         verbose_name_plural = _("Organizations")
 
+    @staticmethod
+    def init_orgs():
+        if Organization.objects.filter(name=Organization.NCBI).count() == 0:
+            Organization.objects.create(name=Organization.NCBI, description="National Center for Biotechnology Information",
+                                        url="https://www.ncbi.nlm.nih.gov/",country="USA")
+        if Organization.objects.filter(name=Organization.BOLD).count() == 0:
+            Organization.objects.create(name=Organization.BOLD, description="Barcode of Life Data system",
+                                        url="http://www.boldsystems.org/",country="International")
+        if Organization.objects.filter(name=Organization.SCOPUS).count() == 0:
+            Organization.objects.create(name=Organization.SCOPUS, description="Scopus",
+                                        url="https://www.scopus.com",country="International")
+
     def rtype(self):
-        return 30#"org"
+        return 30  # "org"
 
     def get_absolute_url(self):
         return reverse('bioresources:organization_view', args=[str(self.id)])
 
+    def targets(self):
+        return [rel.external for rel in self.target_rels.all()]
+
     def __str__(self):
         return " ".join([x for x in [self.name, "|", self.country, self.city] if x])
+
+
+class OrgRelationship(models.Model):
+    TYPES = Choices(
+        *[(i, x, _(x)) for i, x in enumerate([
+            "dependency", "external",
+        ])]
+    )
+    source = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="target_rels")
+    target = models.OneToOneField(Organization, on_delete=models.CASCADE, related_name="source_rels")
+    rel_type = models.PositiveIntegerField(choices=TYPES)
+
+
+class OrgNames(models.Model):
+    main = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="names")
+    name = models.CharField(max_length=255)

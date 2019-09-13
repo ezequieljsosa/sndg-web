@@ -31,7 +31,7 @@ class ToolForm(forms.ModelForm):
         cleaned_data = super(ToolForm, self).clean()
         if Tool.objects.filter(name=cleaned_data["name"]).exists():
             self._errors['name'] = self._errors.get('name', [])
-            self._errors['name'].append("%s already exists" % cleaned_data["name"])
+            self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
 
 
 @login_required
@@ -41,10 +41,7 @@ def ToolSubmissionView(request):
 
         if form.is_valid():
             tool = form.save()
-            from bioresources.graph import Tool as gTool
-            node = gTool(rid=tool.id, title=tool.name, tool_type=tool.tool_type)
-            node.save()
-            return HttpResponseRedirect('/tool/' + str(tool.id))
+            return HttpResponseRedirect(reverse("tool_view",args=[tool.id]) )
     else:
         form = ToolForm()
 

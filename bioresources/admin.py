@@ -7,7 +7,7 @@ from django.utils.html import format_html
 
 from .models.Person import Person
 from .models.Affiliation import Affiliation
-from .models.Organization import Organization
+from .models.Organization import Organization,OrgRelationship
 from .models.Resource import Resource,Collaboration
 from .models.Publication import Publication
 from .models.Identity import Identity
@@ -90,7 +90,30 @@ class AssemblyAdmin(ResourceAdmin):
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    search_fields = ["name"]
+    search_fields = ["name","description","source__name"]
+    autocomplete_fields = ["source"]
+    list_display = ["name", "description","country","source", "deprecated", "updated_at"]
+
+    def get_queryset(self, request):
+
+        qs = super(OrganizationAdmin, self).get_queryset(request)
+
+        return qs.select_related("source")
+
+
+# @admin.register(OrgRelationship)
+# class OrgRelationshipAdmin(admin.ModelAdmin):
+#     search_fields = ["source__name","target__name","source__description","target__description"]
+#     autocomplete_fields = ["source","target"]
+#     list_display = ["source","target" ]
+#
+#     def get_queryset(self, request):
+#
+#         qs = super(OrgRelationshipAdmin, self).get_queryset(request)
+#
+#         return qs.select_related("source","target")
+
+
 
 
 @admin.register(Structure)

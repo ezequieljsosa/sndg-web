@@ -19,21 +19,20 @@ from .views.models.TaxView import TaxView
 from .views.search.BioSearch import BioSearchView
 from .views.search.BioSearchRelated import BioSearchRelatedView
 from .views.search import search_redirect
-from .views.jobs.BlastView import blast,job_view
+from .views.jobs.BlastView import blast, job_view
 
 from .views.submission.SubmissionNewView import SubmissionNewView
 from .views.submission.ToolSubmissionView import ToolSubmissionView
-from .views.submission.SubmissionImportView import SubmissionImportView,SubmitImportView
-from .views.submission.SubmissionRelatedView import SubmissionRelatedView,claim_resource,mark_to_relate,claim_identity
-from .views.submission import submission_start
+from .views.submission.BioprojectSubmissionView import BioprojectSubmissionView
 
+from .views.submission.SubmissionImportView import SubmissionImportView, SubmitImportView
+from .views.submission.SubmissionRelatedView import SubmissionRelatedView, claim_resource, mark_to_relate, \
+    claim_identity
+from .views.submission import submission_start
 
 from .views.user.UserResourcesView import UserResourcesView
 
-#
-
-
-# from .views import ResumableUploadView
+### from .views import ResumableUploadView
 
 app_name = 'bioresources'
 urlpatterns = [
@@ -46,10 +45,10 @@ urlpatterns = [
 
     path('search/', BioSearchView.as_view(), name='search_view'),
     path('search/<str:rtype_src>/<int:rid>/<str:rtype_dst>', BioSearchRelatedView.as_view(), name='search_view'),
-    path('search_redirect/<str:acctype>/<str:acc>',  search_redirect , name='search_redirect'),
+    path('search_redirect/<str:acctype>/<str:acc>', search_redirect, name='search_redirect'),
 
     # Models
-    path('bioproject/<int:pk>',  bioproject, name='bioproject_view'),
+    path('bioproject/<int:pk>', bioproject, name='bioproject_view'),
     path('organization/<int:pk>', organization, name='organization_view'),
     path('person/<int:pk>', person, name='person_view'),
     path('expression/<int:pk>', expression, name='expression_view'),
@@ -63,10 +62,7 @@ urlpatterns = [
     path('reads/<int:pk>', reads, name='reads_view'),
     path('nucleotide/<int:pk>', NucleotideView, name='nucleotide_view'),
     path('protein/<int:pk>', ProteinView, name='protein_view'),
-    path('tax/<int:pk>',  TaxView.as_view(), name='tax_view'),
-
-    # path('sample/<str:pk>', sample_view, name='sample_view2'),
-    # path('assembly/<str:pk>', assembly, name='assembly_view2'),
+    path('tax/<int:pk>', TaxView.as_view(), name='tax_view'),
 
     # # Jobs
     # path('jobs/', view=ResumableUploadView.as_view(), name='jobs'),
@@ -77,26 +73,27 @@ urlpatterns = [
     # path('upload/', view=ResumableUploadView.as_view(), name='upload'),
 
     path('submission/', view=submission_start, name='submission'),
-    path('submission/new',view=SubmissionNewView, name='submission_new'),
-    path('submission/tool',view=ToolSubmissionView, name='tool_submission'),
+    path('submission/new', view=SubmissionNewView, name='submission_new'),
+    path('submission/tool', view=ToolSubmissionView, name='tool_submission'),
+    path('submission/bioproject', view=BioprojectSubmissionView, name='bioproject_submission'),
     path('submission/import', view=SubmissionImportView, name='submission_import'),
     path('submission/import/submit', view=SubmitImportView, name='submission_import_submit'),
-    path('submission/related',view=SubmissionRelatedView, name='submission_related'),
+    path('submission/related', view=SubmissionRelatedView, name='submission_related'),
 
-    path('user/resources',view=UserResourcesView, name='user_resources'),
-    path('user/claim_identity/<int:person_id>',view=claim_identity, name='claim_identity'),
-    path('relate/<int:src_id>/<int:dst_id>',view=SubmissionRelatedView, name='relate_resources'),
-    path('relate/<int:resource_id>',view=claim_resource, name='claim_resource'),
-    path('relate/<int:resource_id>/mark',view=mark_to_relate, name='mark_to_relate'),
+    path('user/resources', view=UserResourcesView, name='user_resources'),
+    path('user/claim_identity/<int:person_id>', view=claim_identity, name='claim_identity'),
+    path('relate/<int:src_id>/<int:dst_id>', view=SubmissionRelatedView, name='relate_resources'),
+    path('relate/<int:resource_id>', view=claim_resource, name='claim_resource'),
+    path('relate/<int:resource_id>/mark', view=mark_to_relate, name='mark_to_relate'),
 
     #
-    # # Submission
-    # path('ra/new', views.tool, name='ra_new'),
-    # path('sample/new', views.tool, name='sample_new'),
+    #     # # Submission
+    #     # path('ra/new', views.tool, name='ra_new'),
+    #     # path('sample/new', views.tool, name='sample_new'),
+    #     #
+    #     #
+    #     # # Other
+    #     # path('stats/', view=ResumableUploadView.as_view(), name='stats'),
     #
-    #
-    # # Other
-    # path('stats/', view=ResumableUploadView.as_view(), name='stats'),
-
 ]
 # urlpatterns += [path('search/', BioSearchView.as_view(), name='search_view'),   ]

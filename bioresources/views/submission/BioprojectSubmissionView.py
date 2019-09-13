@@ -12,18 +12,18 @@ from crispy_forms.layout import Submit
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
-from bioresources.models.Tool import Tool
+from bioresources.models.BioProject import BioProject
 
 
-class ToolForm(forms.ModelForm):
+class BioprojectForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
     class Meta:
-        model = Tool
-        fields = ["name", "description", "url", "tool_type"]
+        model = BioProject
+        fields = ["name", "description", "sample_scope", "material","capture"]
 
     def __init__(self, *args, **kwargs):
-        super(ToolForm, self).__init__(*args, **kwargs)
+        super(BioprojectForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
 
@@ -35,17 +35,24 @@ class ToolForm(forms.ModelForm):
 
 
 @login_required
-def ToolSubmissionView(request):
+def BioprojectSubmissionView(request):
     if request.method == 'POST':
-        form = ToolForm(request.POST)
+        form = BioprojectForm(request.POST)
 
         if form.is_valid():
-            tool = form.save()
-            from bioresources.graph import Tool as gTool
-            node = gTool(rid=tool.id, title=tool.name, tool_type=tool.tool_type)
-            node.save()
-            return HttpResponseRedirect('/tool/' + str(tool.id))
+            resource = form.save()
+            return HttpResponseRedirect( reverse("bioproject_view",args=[resource.id])  )
     else:
-        form = ToolForm()
+        if "pk" in request.GET:
+            resource = BioProject.objects.get(id=request.GET["pk"])
+            form = BioprojectForm(instance=resource)
+        else:
+            form = BioprojectForm()
 
     return render(request, 'submission/tool_submission.html', {'form': form})
+
+# from modeltranslation.translator import translator, TranslationOptions
+# class NewsTranslationOptions(TranslationOptions):
+#     fields = ('title', 'text',)
+#
+# translator.register(BioProject, NewsTranslationOptions)
