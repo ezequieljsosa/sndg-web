@@ -20,13 +20,14 @@ def get_resource_class():
         Resource.RESOURCE_TYPES.TOOL: "Tool",
         Resource.RESOURCE_TYPES.READS: "Reads",
         Resource.RESOURCE_TYPES.PERSON: "Person",
+        Resource.RESOURCE_TYPES.ORGANIZATION: "Organization",
 
     }
 
 
 def delete_edge(r1, r2, reltype: str = "USES"):
     resource_class = get_resource_class()
-    query = """ MATCH (a:%(src)s)-[e:%(reltype)]-(b:%(dst)s)
+    query = """ MATCH (a:%(src)s)-[e:%(reltype)s]-(b:%(dst)s)
                 WHERE a.rid = %(src_id)s AND b.rid = %(dst_id)s                 
                 DELETE e""" % {
         "src": resource_class[r1.type],
@@ -68,7 +69,8 @@ class Organization(StructuredNode):
 
     @classmethod
     def from_resource(cls, organization):
-        return cls(rid=organization.id, name=organization.name)
+        o = cls(rid=organization.id, name=organization.name)
+        o.save()
 
 
 class Journal(StructuredNode):
@@ -78,6 +80,11 @@ class Journal(StructuredNode):
 class Person(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty()
+
+    @classmethod
+    def from_resource(cls, person):
+        gPerson = Person(rid=person.id, name=person.complete_name())
+        gPerson.save()
 
 
 class Species(StructuredNode):
@@ -134,7 +141,12 @@ class Assembly(Resource):
     def from_resource(cls, assembly):
         r = Assembly(rid=assembly.id, title=assembly.name, intraspecific_name=assembly.intraspecific_name)
         r.save()
-        s = Species.nodes.get(name=assembly.species_name)
+        qs = Species.nodes.filter(name=assembly.species_name)
+        if len(qs) == 0:
+            s = Species(name=assembly.species_name)
+        else:
+            s = qs.get()
+
         r.species.connect(s)
 
 
@@ -194,11 +206,19 @@ class Tool(Resource):
         g.save()
 
 
-from django.db.models.signals import post_save, post_delete, post_init
+from django.db.models.signals import post_save, post_delete, post_init, m2m_changed
 from django.dispatch import receiver
 from bioresources.models.Resource import Collaboration
+from bioresources.models.Affiliation import Affiliation
 
 from bioresources.models.Person import Person as rPerson
+
+
+@receiver(post_save, sender=Affiliation)
+def affiliation_handler(sender, **kwargs):
+    aff = kwargs["instance"]
+    aff.author.type = rPerson.TYPE
+    connect_nodes(aff.author, aff.resource)
 
 
 @receiver(post_save, sender=Collaboration)
@@ -206,6 +226,16 @@ def my_handler(sender, **kwargs):
     c = Collaboration.objects.prefetch_related("person", "resource").get(id=kwargs["instance"].id)
     c.person.type = rPerson.TYPE
     connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
+
+
+from bioresources.models.ResourceRelation import ResourceRelation
+
+
+@receiver(post_save, sender=ResourceRelation)
+def resource_relation_handler(sender, **kwargs):
+    c = ResourceRelation.objects.prefetch_related("source", "target").get(id=kwargs["instance"].id)
+
+    connect_nodes(c.source, c.target, reltype=c.role)
 
 
 @receiver(post_delete, sender=Collaboration)
@@ -223,6 +253,8 @@ from bioresources.models.Expression import Expression as rExpression
 from bioresources.models.Barcode import Barcode as rBarcode
 from bioresources.models.Structure import Structure as rStructure
 from bioresources.models.Tool import Tool as rTool
+from bioresources.models.Publication import Publication as rPublication
+from bioresources.models.Organization import Organization as rOrganization
 
 gclass_dict = {
     Resource.RESOURCE_TYPES.STRUCTURE: Structure,
@@ -231,15 +263,59 @@ gclass_dict = {
     Resource.RESOURCE_TYPES.EXPRESSION: Expression,
     Resource.RESOURCE_TYPES.PUBLICATION: Publication,
     Resource.RESOURCE_TYPES.TOOL: Tool,
-    Resource.RESOURCE_TYPES.READS: Reads
+    Resource.RESOURCE_TYPES.READS: Reads,
+
+    Resource.RESOURCE_TYPES.PERSON: Person,
+    Resource.RESOURCE_TYPES.ORGANIZATION: Organization
+
 }
 
 
 # TODO habilitar barcodes
-@receiver(post_save, sender=[rTool, rReadsArchive, rSample, rAssembly, rExpression, rStructure])  # rBarcode
+@receiver(post_save, sender=rTool)  # rBarcode
+@receiver(post_save, sender=rReadsArchive)
+@receiver(post_save, sender=rSample)
+@receiver(post_save, sender=rAssembly)
+@receiver(post_save, sender=rExpression)
+@receiver(post_save, sender=rStructure)
+@receiver(post_save, sender=rPublication)
+@receiver(post_save, sender=rOrganization)
+@receiver(post_save, sender=rPerson)
 def my_handler3(sender, **kwargs):
     r = kwargs["instance"]
-
+    r = sender.objects.get(id=r.id)
+    gclass = gclass_dict[sender.TYPE]
     if len(gclass.nodes.filter(rid=r.id)) == 0:
-        gclass = gclass_dict[sender.TYPE]
         gclass.from_resource(r)
+
+
+@receiver(post_delete, sender=rTool)  # rBarcode
+@receiver(post_delete, sender=rReadsArchive)
+@receiver(post_delete, sender=rSample)
+@receiver(post_delete, sender=rAssembly)
+@receiver(post_delete, sender=rExpression)
+@receiver(post_delete, sender=rStructure)
+@receiver(post_delete, sender=rPublication)
+@receiver(post_delete, sender=rOrganization)
+@receiver(post_delete, sender=rPerson)
+def model_delete_handler(sender, **kwargs):
+    r = kwargs["instance"]
+    gclass = gclass_dict[sender.TYPE]
+    qs = gclass.nodes.filter(rid=r.id)
+    if len(qs):
+        qs.get().delete()
+
+
+@receiver(m2m_changed, sender=Affiliation.organizations.through)
+def aff_handler(sender, **kwargs):
+    ids = kwargs.pop('pk_set')
+    organization = rOrganization.objects.filter(id__in=ids)
+    action = kwargs.pop('action', None)
+    aff = kwargs["instance"]
+    aff.author.type = rPerson.TYPE
+    for org in organization:
+        org.type = rOrganization.TYPE
+        if action == "post_add":
+            connect_nodes(aff.author, org, reltype="AFF")
+        elif action in ["post_remove", "post_clear"]:
+            delete_edge(aff.author, org, reltype="AFF")

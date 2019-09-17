@@ -12,6 +12,7 @@
 {% block content %}
 
 <div class="row">
+{% resource_actions object collaboration request %}
 <div class="col-md-6">
       {% resource_table object external_url %}
     <table class="table  table-responsive">
@@ -79,8 +80,8 @@
 
 <div class="row">
 
-      {% related_resources_summary pk rtype_src related_resources %}
-      {% resource_graph pk graph %}
+      {% related_resources_summary object.id "Assembly" related_resources %}
+      {% resource_graph object.id graph %}
 
       <script type="text/javascript">
         $(document).ready(()=>{

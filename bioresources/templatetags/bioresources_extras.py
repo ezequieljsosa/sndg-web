@@ -2,7 +2,7 @@ import re
 from urllib.parse import urlparse, parse_qsl
 
 from django import template
-from bioresources.models.Resource import Resource
+from bioresources.models.Resource import Resource, Collaboration
 
 register = template.Library()
 
@@ -122,9 +122,16 @@ def related_resources_table(related_resources: dict):
 
 
 @register.inclusion_tag('tags/related_resources_summary.html')
-def related_resources_summary(rid: str, rtype_src: str, related_resources: dict, level: int=2):
+def related_resources_summary(rid: str, rtype_src: str, related_resources: dict, level: int = 2):
     return {"rid": rid, "related_resources": related_resources, "rtype_src": rtype_src, "level": level}
 
+
 @register.inclusion_tag('tags/resource_table.html')
-def resource_table(obj: Resource,external_url:str=""):
+def resource_table(obj: Resource, external_url: str = ""):
     return {"obj": obj, "external_url": external_url}
+
+
+@register.inclusion_tag('tags/resource_actions.html')
+def resource_actions(obj: Resource, collaboration: Collaboration, request):
+    return {"pk": obj.id, "edit_url": 'bioresources:' + obj.type_name() + '_submission',
+            'request': request, "collaboration": collaboration}

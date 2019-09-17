@@ -24,13 +24,13 @@
         <tr><td>{% trans 'Add a new tool' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'New' %}</a> </td></tr>
 
         <tr><td>{% trans 'Add a new Bioproject' %}</td><td><a href="{% url 'bioresources:bioproject_submission' %}">{% trans 'New' %}</a> </td></tr>
-        <tr><td>{% trans 'Add a new Assembly' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'New' %}</a> </td></tr>
-        <tr><td>{% trans 'Add a new Barcode' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'New' %}</a> </td></tr>
-        <tr><td>{% trans 'Add a new Sequencing' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'New' %}</a> </td></tr>
-        <tr><td>{% trans 'Add a new Expression Data' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'New' %}</a> </td></tr>
+        <tr><td>{% trans 'Add a new Assembly' %}</td><td><a href="{% url 'bioresources:assembly_submission'%}">{% trans 'New' %}</a> </td></tr>
+
+        <tr><td>{% trans 'Add a new Sequencing' %}</td><td><a href="{% url 'bioresources:reads_submission'%}">{% trans 'New' %}</a> </td></tr>
+        <tr><td>{% trans 'Add a new Expression Data' %}</td><td><a href="{% url 'bioresources:expression_submission'%}">{% trans 'New' %}</a> </td></tr>
 
 
-        <tr><td>{% trans 'Add batch data' %}</td><td><a href="{% url 'bioresources:tool_submission'%}">{% trans 'Load csv' %}</a> </td></tr>
+        <tr><td>{% trans 'Add/Import batch data' %}</td><td><a href="{% url 'bioresources:batch_import'%}">{% trans 'Load csv' %}</a> </td></tr>
 
 
 

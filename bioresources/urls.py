@@ -24,10 +24,15 @@ from .views.jobs.BlastView import blast, job_view
 from .views.submission.SubmissionNewView import SubmissionNewView
 from .views.submission.ToolSubmissionView import ToolSubmissionView
 from .views.submission.BioprojectSubmissionView import BioprojectSubmissionView
+from .views.submission.AssemblySubmissionView import AssemblySubmissionView
+from .views.submission.ReadsArchiveSubmissionView import ReadsArchiveSubmissionView
+from .views.submission.ExpressionSubmissionView import ExpressionSubmissionView
+from .views.submission.BatchSubmissionView import BatchSubmissionView
+
 
 from .views.submission.SubmissionImportView import SubmissionImportView, SubmitImportView
 from .views.submission.SubmissionRelatedView import SubmissionRelatedView, claim_resource, mark_to_relate, \
-    claim_identity
+    claim_identity , relate_to_publication
 from .views.submission import submission_start
 
 from .views.user.UserResourcesView import UserResourcesView
@@ -76,6 +81,13 @@ urlpatterns = [
     path('submission/new', view=SubmissionNewView, name='submission_new'),
     path('submission/tool', view=ToolSubmissionView, name='tool_submission'),
     path('submission/bioproject', view=BioprojectSubmissionView, name='bioproject_submission'),
+    path('submission/assembly', view=AssemblySubmissionView, name='assembly_submission'),
+    path('submission/reads', view=ReadsArchiveSubmissionView, name='reads_submission'),
+    path('submission/expression', view=ExpressionSubmissionView, name='expression_submission'),
+    path('submission/batch_import', view=BatchSubmissionView, name='batch_import'),
+
+
+
     path('submission/import', view=SubmissionImportView, name='submission_import'),
     path('submission/import/submit', view=SubmitImportView, name='submission_import_submit'),
     path('submission/related', view=SubmissionRelatedView, name='submission_related'),
@@ -85,6 +97,7 @@ urlpatterns = [
     path('relate/<int:src_id>/<int:dst_id>', view=SubmissionRelatedView, name='relate_resources'),
     path('relate/<int:resource_id>', view=claim_resource, name='claim_resource'),
     path('relate/<int:resource_id>/mark', view=mark_to_relate, name='mark_to_relate'),
+    path('relate/<int:resource_id>/publication', view=relate_to_publication, name='relate_to_publication'),
 
     #
     #     # # Submission

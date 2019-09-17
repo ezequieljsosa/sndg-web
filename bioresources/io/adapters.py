@@ -73,7 +73,8 @@ def scopus_affiliation(affiliation):
 
     org = Organization(name=affiliation["affilname"],
                        country=afcountry,
-                       city=affiliation["affiliation-city"]
+                       city=affiliation["affiliation-city"],
+                       source=Organization.objects.get(name=Organization.SCOPUS)
                        )
 
     # TODO country detection based on the city

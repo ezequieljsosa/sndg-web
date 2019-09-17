@@ -34,7 +34,7 @@ from bioseq.io.Pagination import Page
 
 def assembly_view(request, pk):
     assembly = Assembly.objects.get(id=pk)
-    graph, related_resources = GraphRepo.get_neighborhood(pk, "Barcode", level=1)
+    graph, related_resources = GraphRepo.get_neighborhood(pk, "Assembly", level=1)
 
     loaded = True
     job = LoadGenomeJob.objects.filter(assembly=assembly)
@@ -74,7 +74,8 @@ def assembly_view(request, pk):
 
         contigs = beqs[page.offset(): page.end()]
 
-    params = {"query": "", "page_obj": page,
+    collaboration = request.user.get_collaboration(assembly) if request.user.is_authenticated else None
+    params = {"query": "", "page_obj": page, "collaboration": collaboration,
               "lengths": lengths, "external_url": external_url, "loaded": loaded,
               "level": {k: str(v) for k, v in Assembly.ASSEMBLY_LEVEL},
               "object": assembly, "graph": graph, "atypes": {k: str(v) for k, v in Assembly.ASSEMBLY_TYPES},

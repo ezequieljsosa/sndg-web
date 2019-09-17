@@ -2,6 +2,7 @@ import json
 
 from elsapy.elsclient import ElsClient
 from elsapy.elssearch import ElsSearch
+from django.conf import settings
 
 
 class ScopusDS:
@@ -46,15 +47,24 @@ class ScopusDS:
         after_year_q = "AND PUBYEAR AFT " + str(after_year) if after_year else ""
 
         aff_srch = ElsSearch("((" + kwfilter + ") AND AFFILCOUNTRY ( " + country + " ) " + after_year_q + " )",
-                             'scopus',maxResults=10000)
+                             'scopus', maxResults=10000)
         aff_srch.execute(self.client, get_all=True)
 
         for article in aff_srch.results:
             yield article
 
-    def doi(self,doi):
+    def doi(self, doi):
 
-        aff_srch = ElsSearch("DOI ( %s )" % doi,'scopus',maxResults=1)
+        aff_srch = ElsSearch("DOI ( %s )" % doi, 'scopus', maxResults=1)
         aff_srch.execute(self.client, get_all=True)
 
-        return aff_srch.results
+        rs = [x for x in aff_srch.results if "error" not in x]
+        if rs:
+            doi = rs[0]['prism:doi']
+            return {"doi": doi, "title": rs[0]["dc:title"], "record": rs[0]}
+        else:
+            return None
+
+
+def scopus_client():
+    return ScopusDS(settings.SCOPUS_API)

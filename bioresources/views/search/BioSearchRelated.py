@@ -34,9 +34,13 @@ class BioSearchRelatedView(View):
             Resource.RESOURCE_TYPES.ORGANIZATION: Organization,
             Resource.RESOURCE_TYPES.PERSON: Person,
         }
+        level = int(self.request.GET.get("level", "1"))
 
         neighborhood_ids = GraphRepo.get_neighborhood_ids(rid, rtype_src,
-                                                          rtype_dst, level=int(self.request.GET.get("level", "1")))
+                                                          rtype_dst, level=1)
+        if level > 1:
+            neighborhood_ids += GraphRepo.get_neighborhood_ids(rid, rtype_src,
+                                                              rtype_dst, level=level)
 
         obj = resource_class[Resource.name2code[rtype_src.upper()]].objects.get(id=rid)
 

@@ -17,11 +17,7 @@ def tool(request, pk):
 
     tool = Tool.objects.get(id=pk)
     graph, related_resources = GraphRepo.get_neighborhood(pk, "Tool", level=1)
-    collaboration = []
-    if request.user.is_authenticated and bool(request.user.person):
-        collaboration = list(Collaboration.objects.filter(person=request.user.person,resource=tool))
-        if collaboration:
-            collaboration = collaboration[0]
+    collaboration = request.user.get_collaboration(tool)   if request.user.is_authenticated else None
 
     params = {"external_url": tool.url, "collaboration": collaboration,
               "graph": graph, "related_resources": related_resources, "pk": pk,

@@ -10,8 +10,11 @@ class Organization(models.Model):
     NCBI = "NCBI"
     BOLD = "BOLD"
     SCOPUS = "SCOPUS"
+    EBI = "EBI"
 
-    name = models.CharField(max_length=200)
+    TYPE = 30
+
+    name = models.CharField(max_length=255)
     url = models.URLField(null=True)
     country = models.CharField(max_length=200, null=True)
     city = models.CharField(max_length=200, null=True)
@@ -33,14 +36,18 @@ class Organization(models.Model):
     @staticmethod
     def init_orgs():
         if Organization.objects.filter(name=Organization.NCBI).count() == 0:
-            Organization.objects.create(name=Organization.NCBI, description="National Center for Biotechnology Information",
-                                        url="https://www.ncbi.nlm.nih.gov/",country="USA")
+            Organization.objects.create(name=Organization.NCBI,
+                                        description="National Center for Biotechnology Information",
+                                        url="https://www.ncbi.nlm.nih.gov/", country="USA")
         if Organization.objects.filter(name=Organization.BOLD).count() == 0:
             Organization.objects.create(name=Organization.BOLD, description="Barcode of Life Data system",
-                                        url="http://www.boldsystems.org/",country="International")
+                                        url="http://www.boldsystems.org/", country="International")
         if Organization.objects.filter(name=Organization.SCOPUS).count() == 0:
             Organization.objects.create(name=Organization.SCOPUS, description="Scopus",
-                                        url="https://www.scopus.com",country="International")
+                                        url="https://www.scopus.com", country="International")
+        if Organization.objects.filter(name=Organization.EBI).count() == 0:
+            Organization.objects.create(name=Organization.EBI, description="European Bioinformatics Institute",
+                                        url="https://www.ebi.ac.uk/", country="International")
 
     def rtype(self):
         return 30  # "org"

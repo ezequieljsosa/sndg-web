@@ -13,6 +13,9 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
 from bioresources.models.Tool import Tool
+from bioresources.models.Resource import Collaboration
+from django.db import transaction
+
 
 
 class ToolForm(forms.ModelForm):
@@ -29,20 +32,41 @@ class ToolForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(ToolForm, self).clean()
-        if Tool.objects.filter(name=cleaned_data["name"]).exists():
-            self._errors['name'] = self._errors.get('name', [])
-            self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        qs = Tool.objects.filter(name=cleaned_data["name"])
+        if "pk" in self.data:
+            if qs.exclude(id=self.data["pk"]).exists():
+                self._errors['name'] = self._errors.get('name', [])
+                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        else:
+            if qs.exists():
+                self._errors['name'] = self._errors.get('name', [])
+                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
 
 
 @login_required
 def ToolSubmissionView(request):
     if request.method == 'POST':
-        form = ToolForm(request.POST)
+        if "pk" in request.GET:
+            resource = Tool.objects.get(id=request.GET["pk"])
+            form = ToolForm(request.POST,instance=resource)
+        else:
+            form = ToolForm(request.POST)
 
         if form.is_valid():
-            tool = form.save()
-            return HttpResponseRedirect(reverse("tool_view",args=[tool.id]) )
+            with transaction.atomic():
+                tool = form.save()
+                if not Collaboration.objects.filter(resource=tool,person=request.user.person).exists():
+                    Collaboration.objects.create(resource=tool,person=request.user.person,type=Collaboration.COLLABORATION_TYPES.owner)
+            return HttpResponseRedirect(reverse("bioresources:tool_view", args=[tool.id]))
     else:
-        form = ToolForm()
+        if "pk" in request.GET:
+            resource = Tool.objects.get(id=request.GET["pk"])
+            form = ToolForm(instance=resource)
+        else:
+            form = ToolForm()
 
-    return render(request, 'submission/tool_submission.html', {'form': form})
+    data = {'form': form}
+    if "pk" in request.GET:
+        data["pk"] = request.GET["pk"]
+
+    return render(request, 'submission/tool_submission.html', data)

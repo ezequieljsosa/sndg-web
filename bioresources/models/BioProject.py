@@ -29,9 +29,9 @@ class BioProject(Resource):
 
     TYPE = Resource.RESOURCE_TYPES.BIOPROJECT
 
-    sample_scope = models.PositiveIntegerField(choices=SAMPLE_SCOPE_TYPES, null=True)
-    material = models.PositiveIntegerField(choices=MATERIAL_TYPES, null=True)
-    capture = models.PositiveIntegerField(choices=CAPTURE_TYPES, null=True)
+    sample_scope = models.PositiveIntegerField(choices=SAMPLE_SCOPE_TYPES, null=True,blank=True)
+    material = models.PositiveIntegerField(choices=MATERIAL_TYPES, null=True,blank=True)
+    capture = models.PositiveIntegerField(choices=CAPTURE_TYPES, null=True,blank=True)
 
     target = models.CharField(max_length=200, null=True)
     submitters = models.TextField(null=True)

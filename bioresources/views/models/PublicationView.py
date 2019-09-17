@@ -7,8 +7,14 @@ from django.shortcuts import render
 from bioresources.models.Publication import Publication
 from bioresources.io.GraphRepo import GraphRepo
 
+from bioresources.models.Affiliation import Affiliation
+from bioresources.models.Organization import Organization
 
 def publication(request, pk):
+
+
+
+
     publication = Publication.objects.prefetch_related("targets__target", "affiliations__author",
                                                        "affiliations__organizations").get(id=pk)
     orgs = publication.affiliation_names()

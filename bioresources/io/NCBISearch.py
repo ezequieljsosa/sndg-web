@@ -76,3 +76,12 @@ class NCBISearch():
               workdir + '"'
         with open(os.devnull, 'w') as FNULL:
             sp.call(cmd, shell=True,stdout=FNULL)
+
+    @staticmethod
+    def doi(doi):
+        result = Entrez.read(Entrez.esearch("pmc",doi + '[DOI]'))
+        if "IdList" in result:
+            ncbi_id = result["IdList"][0]
+            publ = Entrez.read(Entrez.esummary(db="pmc",id=ncbi_id))
+        else:
+            return None

@@ -8,8 +8,11 @@
 {% block content %}
 <div class="row">
 <div class="col-lg-9">
-<form action="{% url 'bioresources:tool_submission' %}" method="post">
+<form  method="post">
 
+    {% if pk  %}
+    <input type="hidden" name="pk" value="{{pk}}" />
+    {% endif %}
 
     {% crispy form %}
 

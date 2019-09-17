@@ -12,6 +12,7 @@
 {% block content %}
 <div class="container">
     <div class="row">
+    {% resource_actions expression collaboration request %}
         <div class="col-md-12">
             {% resource_table expression external_url %}
             <table class="table">

@@ -29,7 +29,7 @@ class Resource(models.Model):
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
             "STRUCTURE", "EXPRESSION", "BARCODE", "SAMPLE", "TOOL",
         ])] + [(50, "UNPROCESSED", _("UNPROCESSED")), (40, "PROTEIN", _("PROTEIN")),
-               (30, "ORGANIZATION", _("ORGANIZATION")), (Person.TYPE, "PERSON", _("PERSON"))])
+               (Organization.TYPE, "ORGANIZATION", _("ORGANIZATION")), (Person.TYPE, "PERSON", _("PERSON"))])
     )
 
     name2code = {

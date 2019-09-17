@@ -12,42 +12,42 @@ from crispy_forms.layout import Submit
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
-from bioresources.models.BioProject import BioProject
+from bioresources.models.ReadsArchive import ReadsArchive
 
 
-class BioprojectForm(forms.ModelForm):
+class ReadsArchiveForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
     class Meta:
-        model = BioProject
-        fields = ["name", "description", "sample_scope", "material","capture"]
+        model = ReadsArchive
+        fields = ["name", "description"]
 
     def __init__(self, *args, **kwargs):
-        super(BioprojectForm, self).__init__(*args, **kwargs)
+        super(ReadsArchiveForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
 
     def clean(self):
-        cleaned_data = super(BioprojectForm, self).clean()
-        if BioProject.objects.filter(name=cleaned_data["name"]).exists():
+        cleaned_data = super(ReadsArchiveForm, self).clean()
+        if ReadsArchive.objects.filter(name=cleaned_data["name"]).exists():
             self._errors['name'] = self._errors.get('name', [])
             self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
 
 
 @login_required
-def BioprojectSubmissionView(request):
+def ReadsArchiveSubmissionView(request):
     if request.method == 'POST':
-        form = BioprojectForm(request.POST)
+        form = ReadsArchiveForm(request.POST)
 
         if form.is_valid():
             resource = form.save()
-            return HttpResponseRedirect( reverse("bioresources:bioproject_view",args=[resource.id])  )
+            return HttpResponseRedirect( reverse("bioresources:reads_view",args=[resource.id])  )
     else:
         if "pk" in request.GET:
-            resource = BioProject.objects.get(id=request.GET["pk"])
-            form = BioprojectForm(instance=resource)
+            resource = ReadsArchive.objects.get(id=request.GET["pk"])
+            form = ReadsArchiveForm(instance=resource)
         else:
-            form = BioprojectForm()
+            form = ReadsArchiveForm()
 
     return render(request, 'submission/tool_submission.html', {'form': form})
 
@@ -55,4 +55,4 @@ def BioprojectSubmissionView(request):
 # class NewsTranslationOptions(TranslationOptions):
 #     fields = ('title', 'text',)
 #
-# translator.register(BioProject, NewsTranslationOptions)
+# translator.register(ReadsArchive, NewsTranslationOptions)

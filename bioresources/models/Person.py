@@ -17,7 +17,7 @@ class Person(models.Model):
         (4, "other", _("other")),
     )
 
-    # source =
+
 
     # TODO add manager to query affiliations+organizations
     surname = models.CharField(max_length=200, blank=False)
@@ -30,6 +30,8 @@ class Person(models.Model):
     index_updated = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    source = models.ForeignKey("Organization", on_delete=models.SET_NULL, null=True)
 
     class Meta:
         verbose_name_plural = _("Persons")
