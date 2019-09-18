@@ -32,22 +32,55 @@ class LoadGenomeJob(Job):
             sys.stdout = stdout
             sys.stderr = stderr
 
-            NCBISearch.download_assembly(self.assembly.name, workdir=self.job_dir())
-            input_file = glob(self.job_dir() + "*_genomic.gbff.gz")[0]
+            self.load_genome()
 
-            io = BioIO(self.assembly.name, self.assembly.ncbi_tax.ncbi_taxon_id)
-
-            grep_cmd = 'zgrep -c "FEATURES *Location/Qualifiers" "%s"' % input_file
-            io.create_db()
-
-            total = int(sp.check_output(grep_cmd, shell=True))
-            with gzip.open(input_file, "rt") as h:
-                io.process_record_list(bpio.parse(h, "gb"), total)
-
-            io = DB2JBrowse(jbrowse_path=settings.ROOT_DIR, jbrowse_data_path=os.path.abspath(settings.SNDG_JBROWSE))
-            io.ovewrite = True
-            io.excluded.append("gene")
-            io.db2fs(self.assembly.name)
+            self.jbrowse_load()
 
         self.end = datetime.now()
         self.status = Job.STATUS.FINISHED
+
+    def jbrowse_load(self):
+        io = DB2JBrowse(jbrowse_path=settings.ROOT_DIR, jbrowse_data_path=os.path.abspath(settings.SNDG_JBROWSE))
+        io.ovewrite = True
+        io.excluded.append("gene")
+        io.db2fs(self.assembly.name)
+
+
+
+
+class LoadGenomeFromNCBIJob(LoadGenomeJob):
+
+    def load_genome(self):
+        NCBISearch.download_assembly(self.assembly.name, workdir=self.job_dir())
+        input_file = glob(self.job_dir() + "*_genomic.gbff.gz")[0]
+
+        io = BioIO(self.assembly.name, self.assembly.ncbi_tax.ncbi_taxon_id)
+
+        grep_cmd = 'zgrep -c "FEATURES *Location/Qualifiers" "%s"' % input_file
+        io.create_db()
+
+        total = int(sp.check_output(grep_cmd, shell=True))
+        with gzip.open(input_file, "rt") as h:
+            io.process_record_list(bpio.parse(h, "gb"), total)
+
+
+class LoadGenomeFromFileJob(LoadGenomeJob):
+
+    filename = models.TextField()
+
+    def load_genome(self):
+        tax_id = self.assembly.ncbi_tax.ncbi_taxon_id if self.assembly.ncbi_tax else 1
+        io = BioIO(self.assembly.name, tax_id)
+        io.create_db()
+        if self.filename.endswith("gb.gz") or self.filename.endswith("gbk.gz"):
+            format = "gb"
+            grep_cmd = 'zgrep -c "FEATURES *Location/Qualifiers" "%s"' % self.filename
+        elif self.filename.endswith("fasta.gz") or self.filename.endswith("fna.gz"):
+            format = "fasta"
+            grep_cmd = 'grep -c ">" "%s"' % self.filename
+        else:
+            raise Exception(_("invalid file format"))
+        total = int(sp.check_output(grep_cmd, shell=True))
+
+        with gzip.open(self.filename, "rt") as h:
+            io.process_record_list(bpio.parse(h, format), total)
