@@ -38,3 +38,4 @@ django-cache-memoize
 django-polymorphic
 xmltodict
 django-tellme
+django-resumable

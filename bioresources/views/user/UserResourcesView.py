@@ -13,7 +13,7 @@ from bioresources.io.GraphRepo import GraphRepo
 
 def UserResourcesView(request,username=""):
     person = request.user.person
-    collaborations = list(Collaboration.objects.prefetch_related("resource").filter(person=person))
+    collaborations = set(Collaboration.objects.prefetch_related("resource").filter(person=person))
     for c in collaborations:
         c.resource.tname = Resource.RESOURCE_TYPES[c.resource.type]
     if person:

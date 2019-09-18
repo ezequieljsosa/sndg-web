@@ -85,7 +85,7 @@ THIRD_PARTY_APPS = [
 
     # 'captcha',
     # 'crispy_forms',
-    # "resumable",
+    "resumable",
     # 'django_select2',
 
 ]
@@ -414,3 +414,4 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_QUERY_EMAIL=True
 
 GOOGLE_ANALYTICS_CODE=os.environ.get('GOOGLE_ANALYTICS_CODE',"")
+FILE_UPLOAD_TEMP_DIR=os.environ.get('FILE_UPLOAD_TEMP_DIR',os.path.join(str(ROOT_DIR), "data/uploads/"))

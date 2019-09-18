@@ -21,6 +21,7 @@ def get_resource_class():
         Resource.RESOURCE_TYPES.READS: "Reads",
         Resource.RESOURCE_TYPES.PERSON: "Person",
         Resource.RESOURCE_TYPES.ORGANIZATION: "Organization",
+        Resource.RESOURCE_TYPES.BIOPROJECT: "BioProject",
 
     }
 
@@ -51,6 +52,8 @@ def connect_nodes(r1, r2, reltype: str = "USES"):
     return db.cypher_query(query, {})
 
 
+
+
 class Tax(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty()
@@ -60,6 +63,19 @@ class Tax(StructuredNode):
 class Country(StructuredNode):
     name = StringProperty(unique_index=True)
 
+
+
+
+class BioProject(StructuredNode):
+    rid = IntegerProperty(unique_index=True)
+    name = StringProperty(unique_index=True)
+    # level = DateProperty()
+    # location = RelationshipTo('Country', 'LOCATION')
+
+    @classmethod
+    def from_resource(cls, obj):
+        n = cls(rid=obj.id, name=obj.name)
+        n.save()
 
 class Organization(StructuredNode):
     rid = IntegerProperty(unique_index=True)
@@ -141,13 +157,14 @@ class Assembly(Resource):
     def from_resource(cls, assembly):
         r = Assembly(rid=assembly.id, title=assembly.name, intraspecific_name=assembly.intraspecific_name)
         r.save()
-        qs = Species.nodes.filter(name=assembly.species_name)
-        if len(qs) == 0:
-            s = Species(name=assembly.species_name)
-        else:
-            s = qs.get()
+        if assembly.species_name:
+            qs = Species.nodes.filter(name=assembly.species_name)
+            if len(qs) == 0:
+                s = Species(name=assembly.species_name)
+            else:
+                s = qs.get()
 
-        r.species.connect(s)
+            r.species.connect(s)
 
 
 class Barcodes(Resource):
@@ -255,6 +272,7 @@ from bioresources.models.Structure import Structure as rStructure
 from bioresources.models.Tool import Tool as rTool
 from bioresources.models.Publication import Publication as rPublication
 from bioresources.models.Organization import Organization as rOrganization
+from bioresources.models.BioProject import BioProject as rBioProject
 
 gclass_dict = {
     Resource.RESOURCE_TYPES.STRUCTURE: Structure,
@@ -266,7 +284,9 @@ gclass_dict = {
     Resource.RESOURCE_TYPES.READS: Reads,
 
     Resource.RESOURCE_TYPES.PERSON: Person,
-    Resource.RESOURCE_TYPES.ORGANIZATION: Organization
+    Resource.RESOURCE_TYPES.ORGANIZATION: Organization,
+    Resource.RESOURCE_TYPES.BIOPROJECT: BioProject
+
 
 }
 
@@ -281,11 +301,15 @@ gclass_dict = {
 @receiver(post_save, sender=rPublication)
 @receiver(post_save, sender=rOrganization)
 @receiver(post_save, sender=rPerson)
+@receiver(post_save, sender=rBioProject)
 def my_handler3(sender, **kwargs):
     r = kwargs["instance"]
+    print(r)
     r = sender.objects.get(id=r.id)
     gclass = gclass_dict[sender.TYPE]
+    print(gclass)
     if len(gclass.nodes.filter(rid=r.id)) == 0:
+        print("xxx")
         gclass.from_resource(r)
 
 
@@ -298,6 +322,7 @@ def my_handler3(sender, **kwargs):
 @receiver(post_delete, sender=rPublication)
 @receiver(post_delete, sender=rOrganization)
 @receiver(post_delete, sender=rPerson)
+@receiver(post_delete, sender=rBioProject)
 def model_delete_handler(sender, **kwargs):
     r = kwargs["instance"]
     gclass = gclass_dict[sender.TYPE]
