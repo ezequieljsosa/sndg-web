@@ -76,6 +76,7 @@ class BioProject(StructuredNode):
     def from_resource(cls, obj):
         n = cls(rid=obj.id, name=obj.name)
         n.save()
+        return n
 
 class Organization(StructuredNode):
     rid = IntegerProperty(unique_index=True)
@@ -87,6 +88,7 @@ class Organization(StructuredNode):
     def from_resource(cls, organization):
         o = cls(rid=organization.id, name=organization.name)
         o.save()
+        return o
 
 
 class Journal(StructuredNode):
