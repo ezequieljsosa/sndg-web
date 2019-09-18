@@ -13,6 +13,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
 from bioresources.models.ReadsArchive import ReadsArchive
+from bioresources.views.submission import form_clean_data, submit_model
 
 
 class ReadsArchiveForm(forms.ModelForm):
@@ -26,33 +27,14 @@ class ReadsArchiveForm(forms.ModelForm):
         super(ReadsArchiveForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
+        if self.instance.id:
+            self.fields['name'].widget.attrs['readonly'] = True
 
     def clean(self):
-        cleaned_data = super(ReadsArchiveForm, self).clean()
-        if ReadsArchive.objects.filter(name=cleaned_data["name"]).exists():
-            self._errors['name'] = self._errors.get('name', [])
-            self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        form_clean_data(self)
 
 
 @login_required
 def ReadsArchiveSubmissionView(request):
-    if request.method == 'POST':
-        form = ReadsArchiveForm(request.POST)
+    return submit_model(ReadsArchiveForm, request)
 
-        if form.is_valid():
-            resource = form.save()
-            return HttpResponseRedirect( reverse("bioresources:reads_view",args=[resource.id])  )
-    else:
-        if "pk" in request.GET:
-            resource = ReadsArchive.objects.get(id=request.GET["pk"])
-            form = ReadsArchiveForm(instance=resource)
-        else:
-            form = ReadsArchiveForm()
-
-    return render(request, 'submission/tool_submission.html', {'form': form})
-
-# from modeltranslation.translator import translator, TranslationOptions
-# class NewsTranslationOptions(TranslationOptions):
-#     fields = ('title', 'text',)
-#
-# translator.register(ReadsArchive, NewsTranslationOptions)

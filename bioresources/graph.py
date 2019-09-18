@@ -135,6 +135,7 @@ class Publication(Resource):
             for org in aff.organizations.all():
                 gOrg = Organization.nodes.get(rid=org.id)
                 gPublication.organizations.connect(gOrg)
+        return gPublication
 
 
 class Expression(Resource):
@@ -145,6 +146,7 @@ class Expression(Resource):
     def from_resource(cls, expresion):
         r = Expression(rid=expresion.id, title=expresion.name, pdat=expresion.pdat, gdstype=expresion.gdstype)
         r.save()
+        return r
 
 
 class Assembly(Resource):
@@ -165,6 +167,7 @@ class Assembly(Resource):
                 s = qs.get()
 
             r.species.connect(s)
+        return r
 
 
 class Barcodes(Resource):
@@ -188,6 +191,7 @@ class Structure(Resource):
         if sample.country:
             c = Country.nodes.get(name=sample.country)
             r.country.connect(c)
+        return g
 
 
 class Sample(Resource):
@@ -203,6 +207,7 @@ class Sample(Resource):
         if sample.country:
             c = Country.nodes.get(name=sample.country)
             r.country.connect(c)
+        return g
 
 
 class Reads(Resource):
@@ -212,6 +217,7 @@ class Reads(Resource):
     def from_resource(cls, reads):
         g = cls(rid=reads.id, title=reads.name)
         g.save()
+        return g
 
 
 class Tool(Resource):
@@ -221,6 +227,7 @@ class Tool(Resource):
     def from_resource(cls, tool):
         g = cls(rid=tool.id, title=tool.name, tool_type=tool.tool_type)
         g.save()
+        return g
 
 
 from django.db.models.signals import post_save, post_delete, post_init, m2m_changed

@@ -20,7 +20,7 @@ from pdbdb.io.PDB2SQL import PDB2SQL
 from bioresources.models.Job import Job
 from bioresources.tasks import execute_job
 from bioresources.models.jobs.LoadPDBJob import LoadPDBJob
-from bioresources.models.jobs.LoadGenomeJob import LoadGenomeJob
+from bioresources.models.jobs.LoadGenomeJob import LoadGenomeFromNCBIJob
 
 from cache_memoize import cache_memoize
 
@@ -40,7 +40,7 @@ class ResourceResult():
         self.rtype = rtype
 
 
-rtypes = ["assembly", "sra", "gds", "biosample", "structure", "pubmed"]
+rtypes = ["assembly", "sra", "gds", "biosample", "structure", "pubmed","bioproject"]
 
 from django.contrib.auth.decorators import login_required
 @login_required
@@ -120,7 +120,8 @@ def process_db_id(db, rid):
                                                                organization=Organization.objects.get(name="NCBI"),
                                                                identifier=rid)
     if r.count():
-        line_result.resources.append(ResourceResult(__("Already in DB"), r.get().resource))
+        r = r.get().resource
+        line_result.append(ResourceResult(__("Already in DB"), r,rid,r.type_name()))
     else:
         records, _ = ncbi_search.search_database(db, rid)
         if records:
@@ -180,7 +181,7 @@ def SubmitImportView(request):
                 execute_job.apply_async(args=(job.id,),countdown=10)
             if rtype =="assembly":
                 with transaction.atomic():
-                    job = LoadGenomeJob(assembly=record)
+                    job = LoadGenomeFromNCBIJob(assembly=record)
                     job.save()
                     job.init()
                     job.queue()

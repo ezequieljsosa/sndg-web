@@ -21,7 +21,8 @@ def reads(request, pk):
         external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[ReadsArchive.TYPE] + "/" + external_ids[
             0] + "[accn]")
 
-    return render(request, 'resources/readsarchive.html',
-                  {"readsarchive": sra, "sidebarleft": 1, "level": 1, "external_url": external_url,
-                   "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Reads"
-                   })
+    collaboration = request.user.get_collaboration(sra) if request.user.is_authenticated else None
+    params = {"readsarchive": sra, "sidebarleft": 1, "level": 1, "external_url": external_url,
+              "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Reads",
+              "collaboration": collaboration}
+    return render(request, 'resources/readsarchive.html', params)

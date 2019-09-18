@@ -21,6 +21,9 @@ def bioproject(request, pk):
     if external_ids:
         external_url = ("https://www.ncbi.nlm.nih.gov/" + NCBISearch.rtype2ncbb[BioProject.TYPE] + "/" + external_ids[
             0])
-    return render(request, 'resources/bioproject.html', {"external_url":external_url,
-        "bioproject": bioproject, "graph": graph, "related_resources": related_resources,
-        "sidebarleft": 1, })
+    collaboration = request.user.get_collaboration(bioproject) if request.user.is_authenticated else None
+    params = {"external_url": external_url,
+              "bioproject": bioproject, "graph": graph,
+              "related_resources": related_resources,
+              "sidebarleft": 1, "collaboration": collaboration}
+    return render(request, 'resources/bioproject.html', params)

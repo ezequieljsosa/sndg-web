@@ -29,44 +29,15 @@ class ToolForm(forms.ModelForm):
         super(ToolForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
+        if self.instance.id:
+            self.fields['name'].widget.attrs['readonly'] = True
 
     def clean(self):
-        cleaned_data = super(ToolForm, self).clean()
-        qs = Tool.objects.filter(name=cleaned_data["name"])
-        if "pk" in self.data:
-            if qs.exclude(id=self.data["pk"]).exists():
-                self._errors['name'] = self._errors.get('name', [])
-                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
-        else:
-            if qs.exists():
-                self._errors['name'] = self._errors.get('name', [])
-                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        form_clean_data(self)
 
 
 @login_required
 def ToolSubmissionView(request):
-    if request.method == 'POST':
-        if "pk" in request.GET:
-            resource = Tool.objects.get(id=request.GET["pk"])
-            form = ToolForm(request.POST,instance=resource)
-        else:
-            form = ToolForm(request.POST)
+    return submit_model(ToolForm, request)
 
-        if form.is_valid():
-            with transaction.atomic():
-                tool = form.save()
-                if not Collaboration.objects.filter(resource=tool,person=request.user.person).exists():
-                    Collaboration.objects.create(resource=tool,person=request.user.person,type=Collaboration.COLLABORATION_TYPES.owner)
-            return HttpResponseRedirect(reverse("bioresources:tool_view", args=[tool.id]))
-    else:
-        if "pk" in request.GET:
-            resource = Tool.objects.get(id=request.GET["pk"])
-            form = ToolForm(instance=resource)
-        else:
-            form = ToolForm()
 
-    data = {'form': form}
-    if "pk" in request.GET:
-        data["pk"] = request.GET["pk"]
-
-    return render(request, 'submission/tool_submission.html', data)

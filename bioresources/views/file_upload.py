@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.shortcuts import redirect, reverse, render
+
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponse, HttpResponseRedirect
+from django import forms
+from django.db import transaction
+
+from bioresources.models.Resource import Resource
+from bioresources.models.jobs.LoadGenomeJob import LoadGenomeFromFileJob
+from bioseq.models.Biodatabase import Biodatabase
 
 def submission(request):
     return render(request, "forms/submission.html")
+
 
 from django.views import generic
 
@@ -19,7 +29,7 @@ from django.conf import settings
 from resumable.fields import ResumableFileField
 
 
-class ResumableForm(Form):
+class ResumableForm(forms.Form):
     file = ResumableFileField(
         # allowed_mimes=("audio/ogg",),
         upload_url=lambda: reverse('upload_api'),
@@ -28,7 +38,7 @@ class ResumableForm(Form):
 
 
 from resumable.files import ResumableFile
-
+from bioresources.tasks import execute_job
 
 def upload_view(request):
     form = ResumableForm()
@@ -39,14 +49,23 @@ class ResumableUploadView(generic.TemplateView):
     template_name = 'forms/resource_upload.html'
 
     def get(self, request, *args, **kwargs):
+
+
         if "resumableChunkNumber" in request.GET:
             r = ResumableFile(self.storage, self.request.GET)
             if not (r.chunk_exists or r.is_complete):
                 return HttpResponse('chunk not found', status=404)
             return HttpResponse('chunk already exists')
         else:
+            resource = Resource.objects.get(id=kwargs["resource_id"])
+            bdb = Biodatabase.objects.filter(name=resource.name)
+            loaded = bool(bdb.count())
+            if loaded:
+                return HttpResponseRedirect(resource.get_absolute_url())
+
             form = ResumableForm()
-            return render(request, self.template_name, {'form': form})
+            return render(request, self.template_name, {"resource": resource,
+                                                        'form': form, "resource_id": kwargs["resource_id"]})
 
     def post(self, *args, **kwargs):
         """Saves chunks then checks if the file is complete.
@@ -57,14 +76,25 @@ class ResumableUploadView(generic.TemplateView):
             return HttpResponse('chunk already exists')
         r.process_chunk(chunk)
         if r.is_complete:
-            self.process_file(r.filename, r)
+            resource = Resource.objects.get(id=kwargs["resource_id"])
+            self.process_file(r.filename, r,resource)
             r.delete_chunks()
+
+            return HttpResponseRedirect(resource.get_absolute_url())
         return HttpResponse()
 
-    def process_file(self, filename, file):
-        """Process the complete file.
-        """
-        self.storage.save(filename, file)
+    def process_file(self, filename, resumablefile,resource):
+        """ Process the complete file. """
+        self.storage.save(filename, resumablefile)
+        with transaction.atomic():
+            job = LoadGenomeFromFileJob(assembly=resource,
+                                        filename=settings.FILE_UPLOAD_TEMP_DIR + "/" + filename)
+            job.save()
+            job.init()
+            job.queue()
+            job.save()
+
+        execute_job.apply_async(args=(job.id,),countdown=10)
 
     @property
     def chunks_dir(self):

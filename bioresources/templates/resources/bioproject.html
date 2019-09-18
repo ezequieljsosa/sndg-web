@@ -40,8 +40,8 @@
 
 
 
-{% related_resources_summary pk rtype_src related_resources %}
-  {% resource_graph pk graph %}
+{% related_resources_summary bioproject.id rtype_src related_resources %}
+  {% resource_graph bioproject.id graph %}
 
   <script type="text/javascript">
     $(document).ready(()=>{

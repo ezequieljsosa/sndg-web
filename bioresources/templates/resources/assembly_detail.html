@@ -12,24 +12,42 @@
 {% block content %}
 
 <div class="row">
-{% resource_actions object collaboration request %}
-<div class="col-md-6">
-      {% resource_table object external_url %}
-    <table class="table  table-responsive">
+    <div class="col-md-12">
+    {% resource_actions object collaboration request %}
+    </div>
+
+    {% if can_upload %}
+    <div class="col-md-12">
+        <a class="btn btn-primary" href="{% url 'bioresources:upload_resource' object.id %}">{% trans 'Upload Genome' %}</a>
+    </div>
+    {% endif %}
+    <div class="col-md-12">
 
 
-
-        <tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
-        <tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
-
-        <tr><td><b>Nivel</b></td><td>{{level|getattribute:object.level}}</td></tr>
+        {% resource_table object external_url %}
+        <table class="table  table-responsive">
 
 
-        <tr><td><b>Tipo</b></td><td>{{ atypes|getattribute:object.assembly_type }}</td></tr>
+            {% if object.species_name %}
+            <tr><td><b>Especie</b></td><td>{{ object.species_name }}</td></tr>
+            {% endif %}
 
-    </table>
- </div>
- </div>
+            {% if object.intraspecific_name %}
+            <tr><td><b>IntraEspecie</b></td><td>{{ object.intraspecific_name }}</td></tr>
+            {% endif %}
+
+            <tr><td><b>Nivel</b></td><td>{{level|getattribute:object.level}}</td></tr>
+
+            {% if object.assembly_type %}
+            <tr><td><b>Tipo</b></td><td>{{ atypes|getattribute:object.assembly_type }}</td></tr>
+            {% endif %}
+
+        </table>
+
+     </div>
+</div>
+
+<div class="row">
      {% if not loaded %}
      {% trans 'Processing Assembly, annotation will be availiable shortly' %}
      {% endif %}
@@ -75,20 +93,21 @@
                 </tbody>
             </table>
         </div>
-        </div>
+
     {% endif %}
-
+</div>
+</div>
 <div class="row">
+    <div class="col-md-12">
+          {% related_resources_summary object.id "Assembly" related_resources %}
+          {% resource_graph object.id graph %}
 
-      {% related_resources_summary object.id "Assembly" related_resources %}
-      {% resource_graph object.id graph %}
-
-      <script type="text/javascript">
-        $(document).ready(()=>{
-            create_graph()
-        });
-      </script>
-
+          <script type="text/javascript">
+            $(document).ready(()=>{
+                create_graph()
+            });
+          </script>
+    </div>
 </div>
 
 

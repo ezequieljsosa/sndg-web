@@ -13,6 +13,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
 from bioresources.models.BioProject import BioProject
+from bioresources.views.submission import form_clean_data, submit_model
 
 
 class BioprojectForm(forms.ModelForm):
@@ -26,30 +27,16 @@ class BioprojectForm(forms.ModelForm):
         super(BioprojectForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
+        if self.instance.id:
+            self.fields['name'].widget.attrs['readonly'] = True
 
     def clean(self):
-        cleaned_data = super(BioprojectForm, self).clean()
-        if BioProject.objects.filter(name=cleaned_data["name"]).exists():
-            self._errors['name'] = self._errors.get('name', [])
-            self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        form_clean_data(self)
 
 
 @login_required
 def BioprojectSubmissionView(request):
-    if request.method == 'POST':
-        form = BioprojectForm(request.POST)
-
-        if form.is_valid():
-            resource = form.save()
-            return HttpResponseRedirect( reverse("bioresources:bioproject_view",args=[resource.id])  )
-    else:
-        if "pk" in request.GET:
-            resource = BioProject.objects.get(id=request.GET["pk"])
-            form = BioprojectForm(instance=resource)
-        else:
-            form = BioprojectForm()
-
-    return render(request, 'submission/tool_submission.html', {'form': form})
+    return submit_model(BioprojectForm, request)
 
 # from modeltranslation.translator import translator, TranslationOptions
 # class NewsTranslationOptions(TranslationOptions):

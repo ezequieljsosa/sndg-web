@@ -22,6 +22,8 @@ def structure(request, pk):
         if job.status != Job.STATUS.FINISHED:
             loaded = False
 
-    return render(request, 'resources/structure.html', {"external_url":external_url,"loaded":loaded,
-        "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Structure",
-        "pdb": pdb, "sidebarleft": 1, "level": 1})
+    collaboration = request.user.get_collaboration(pdb) if request.user.is_authenticated else None
+    params =  {"external_url":external_url,"loaded":loaded,"collaboration":collaboration,
+               "graph": graph, "related_resources": related_resources, "pk": pk, "rtype_src": "Structure",
+               "pdb": pdb, "sidebarleft": 1, "level": 1}
+    return render(request, 'resources/structure.html',params)

@@ -13,6 +13,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
 from bioresources.models.Assembly import Assembly
+from bioresources.views.submission import form_clean_data, submit_model
 
 
 class AssemblyForm(forms.ModelForm):
@@ -20,7 +21,7 @@ class AssemblyForm(forms.ModelForm):
 
     class Meta:
         model = Assembly
-        fields = ["name", "description", "intraspecific_name", "species_name","level"]
+        fields = ["name", "description", "intraspecific_name", "species_name", "level"]
 
     def __init__(self, *args, **kwargs):
         super(AssemblyForm, self).__init__(*args, **kwargs)
@@ -29,52 +30,13 @@ class AssemblyForm(forms.ModelForm):
         if self.instance.id:
             self.fields['name'].widget.attrs['readonly'] = True
 
-
-
     def clean(self):
-        cleaned_data = super(self.__class__, self).clean()
-        qs = self._meta.model.objects.filter(name=cleaned_data["name"])
-        if "pk" in self.data:
-            if qs.exclude(id=self.data["pk"]).exists():
-                self._errors['name'] = self._errors.get('name', [])
-                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
-        else:
-            if qs.exists():
-                self._errors['name'] = self._errors.get('name', [])
-                self._errors['name'].append(__("%s already exists") % cleaned_data["name"])
+        form_clean_data(self)
 
 
 @login_required
 def AssemblySubmissionView(request):
-    form_class = AssemblyForm
-    model_class = Assembly
-    if request.method == 'POST':
-        if "pk" in request.GET:
-            obj = model_class.objects.get(id=request.GET["pk"])
-            form = form_class(request.POST,instance=obj)
-        else:
-            form = form_class(request.POST)
-
-        if form.is_valid():
-            with transaction.atomic():
-                obj = form.save()
-                if not Collaboration.objects.filter(resource=obj,person=request.user.person).exists():
-                    Collaboration.objects.create(resource=obj,person=request.user.person,type=Collaboration.COLLABORATION_TYPES.owner)
-            return HttpResponseRedirect(reverse("bioresources:" + obj.type_name()  + "_view", args=[obj.id]))
-    else:
-        if "pk" in request.GET:
-            resource = model_class.objects.get(id=request.GET["pk"])
-            form = form_class(instance=resource)
-        else:
-            form = form_class()
-
-    data = {'form': form}
-    if "pk" in request.GET:
-        data["pk"] = request.GET["pk"]
-
-
-
-    return render(request, 'submission/tool_submission.html', {'form': form})
+    return submit_model(AssemblyForm, request)
 
 # from modeltranslation.translator import translator, TranslationOptions
 # class NewsTranslationOptions(TranslationOptions):

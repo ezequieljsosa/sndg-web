@@ -12,19 +12,19 @@ from crispy_forms.layout import Submit
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 
-from bioresources.models.ReadsArchive import ReadsArchive
+from bioresources.models.Structure import Structure
 from bioresources.views.submission import form_clean_data, submit_model
 
 
-class ReadsArchiveForm(forms.ModelForm):
+class StructureForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
     class Meta:
-        model = ReadsArchive
+        model = Structure
         fields = ["name", "description"]
 
     def __init__(self, *args, **kwargs):
-        super(ReadsArchiveForm, self).__init__(*args, **kwargs)
+        super(self.__class__, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Submit'))
         if self.instance.id:
@@ -35,6 +35,6 @@ class ReadsArchiveForm(forms.ModelForm):
 
 
 @login_required
-def ReadsArchiveSubmissionView(request):
-    return submit_model(ReadsArchiveForm, request)
+def StructureSubmissionView(request):
+    return submit_model(StructureForm, request)
 
