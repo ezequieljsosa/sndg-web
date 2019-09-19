@@ -6,7 +6,7 @@ import environ
 import os
 
 ROOT_DIR = (
-    environ.Path(__file__) - 3
+        environ.Path(__file__) - 3
 )
 APPS_DIR = ROOT_DIR.path("sndg")
 
@@ -86,7 +86,7 @@ THIRD_PARTY_APPS = [
     # 'captcha',
     # 'crispy_forms',
     "resumable",
-    # 'django_select2',
+    'django_select2',
 
 ]
 
@@ -158,7 +158,7 @@ MIDDLEWARE = [
 # STATIC
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-root
-STATIC_ROOT = str(env('STATIC_ROOT',default=ROOT_DIR("data/static")))
+STATIC_ROOT = str(env('STATIC_ROOT', default=ROOT_DIR("data/static")))
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
@@ -254,7 +254,7 @@ LOGGING = {
     "formatters": {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
-            "%(process)d %(thread)d %(message)s"
+                      "%(process)d %(thread)d %(message)s"
         }
     },
     "handlers": {
@@ -322,12 +322,11 @@ HAYSTACK_CONNECTIONS = {
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.ResourceIndexOAI'],
     },
 
-
 }
 if "SNDG_OAI" in env:
     HAYSTACK_CONNECTIONS['oai'] = {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL':  env('SNDG_OAI',default='http://127.0.0.1:8984/solr/oai') ,
+        'URL': env('SNDG_OAI', default='http://127.0.0.1:8984/solr/oai'),
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',
@@ -340,16 +339,14 @@ if "SNDG_OAI" in env:
                              'bioresources.search_indexes.ReadsArchiveIndex',
                              'bioresources.search_indexes.BarcodeIndex',
 
-
                              ],
 
     }
 
-
-HAYSTACK_ID_FIELD = env("HAYSTACK_ID_FIELD",default='id')
-HAYSTACK_DJANGO_CT_FIELD = env("HAYSTACK_DJANGO_CT_FIELD",default='django_ct')
-HAYSTACK_DJANGO_ID_FIELD = env("HAYSTACK_DJANGO_ID_FIELD",default='django_id')
-HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD",default='text')
+HAYSTACK_ID_FIELD = env("HAYSTACK_ID_FIELD", default='id')
+HAYSTACK_DJANGO_CT_FIELD = env("HAYSTACK_DJANGO_CT_FIELD", default='django_ct')
+HAYSTACK_DJANGO_ID_FIELD = env("HAYSTACK_DJANGO_ID_FIELD", default='django_id')
+HAYSTACK_DOCUMENT_FIELD = env("HAYSTACK_DOCUMENT_FIELD", default='text')
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
@@ -357,14 +354,14 @@ FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
-SNDG_JBROWSE = env('SNDG_JBROWSE',default=os.path.join(str(ROOT_DIR), "data/jbrowse/"))
+SNDG_JBROWSE = os.path.join(str(ROOT_DIR), env('SNDG_JBROWSE', default="data/jbrowse/"))
 STATICFILES_DIRS = [
     os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
-    ("jbrowse",SNDG_JBROWSE),
+    ("jbrowse", SNDG_JBROWSE),
 ]
 
-BLASTDBSDIR=os.environ.get('BLASTDBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/blastdbs/")))
-JOBSDIR=os.environ.get('JOBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/jobs/")))
+BLASTDBSDIR = os.environ.get('BLASTDBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/blastdbs/")))
+JOBSDIR = os.environ.get('JOBSDIR', os.path.abspath(os.path.join(str(ROOT_DIR), "data/jobs/")))
 NEOMODEL_NEO4J_BOLT_URL = os.environ.get('NEO4J_BOLT_URL', 'bolt://neo4j:123@localhost:7687')
 # NEOMODEL_SIGNALS = True
 # NEOMODEL_FORCE_TIMEZONE = False
@@ -375,9 +372,9 @@ CACHES = {
     'default': env.cache('REDIS_URL'),
 }
 
-SCOPUS_API=os.environ.get('SCOPUS_API',os.path.join(str(ROOT_DIR), "data/scopus_api.json"))
-PDBSDIR="/data/databases/pdb/divided/"
-PDBSENTRIES="/data/databases/pdb/entries.idx"
+SCOPUS_API = os.environ.get('SCOPUS_API', os.path.join(str(ROOT_DIR), "data/scopus_api.json"))
+PDBSDIR = "/data/databases/pdb/divided/"
+PDBSENTRIES = "/data/databases/pdb/entries.idx"
 
 # ACCOUNT_SIGNUP_FORM_CLASS = "sndg.users.forms.UserCreationForm"
 
@@ -396,9 +393,9 @@ LANGUAGES = (
     ('en', 'English'),
 )
 if "EMAIL_CONFIG" in env:
-    EMAIL_CONFIG = env.email_url( 'EMAIL_CONFIG')
+    EMAIL_CONFIG = env.email_url('EMAIL_CONFIG')
     vars().update(EMAIL_CONFIG)
-TELLME_FEEDBACK_EMAIL ="sndg@qb.fcen.uba.ar"
+TELLME_FEEDBACK_EMAIL = "sndg@qb.fcen.uba.ar"
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -411,7 +408,8 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-SOCIALACCOUNT_QUERY_EMAIL=True
+SOCIALACCOUNT_QUERY_EMAIL = True
 
-GOOGLE_ANALYTICS_CODE=os.environ.get('GOOGLE_ANALYTICS_CODE',"")
-FILE_UPLOAD_TEMP_DIR=os.environ.get('FILE_UPLOAD_TEMP_DIR',os.path.join(str(ROOT_DIR), "data/uploads/"))
+GOOGLE_ANALYTICS_CODE = os.environ.get('GOOGLE_ANALYTICS_CODE', "")
+FILE_UPLOAD_TEMP_DIR = os.environ.get('FILE_UPLOAD_TEMP_DIR', os.path.join(str(ROOT_DIR), "data/uploads/"))
+DJANGO_SELECT2_I18N = 'ar'

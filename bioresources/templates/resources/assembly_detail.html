@@ -49,7 +49,9 @@
 
 <div class="row">
      {% if not loaded %}
-     {% trans 'Processing Assembly, annotation will be availiable shortly' %}
+        {% if processing %}
+            {% trans 'Processing Assembly, annotation will be availiable shortly' %}
+        {% endif %}
      {% endif %}
     {% if contigs %}
         <iframe  id="jbrowse"

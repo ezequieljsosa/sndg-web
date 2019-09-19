@@ -45,8 +45,9 @@ def assembly_view(request, pk):
     bdb = Biodatabase.objects.filter(name=assembly.name)
 
     loaded = bool(bdb.count())
-
+    processing = False
     if job.exists():
+        processing = True
         job = job.order_by("-id")[0]
         if job.status != Job.STATUS.FINISHED:
             loaded = False
@@ -81,7 +82,7 @@ def assembly_view(request, pk):
     collaboration = request.user.get_collaboration(assembly) if request.user.is_authenticated else None
 
 
-    can_upload =  not loaded and collaboration and not external_ids and  bool(bdb.count())
+    can_upload =  not loaded and collaboration and not external_ids and  not bool(bdb.count())
 
 
     params = {"query": "", "page_obj": page, "collaboration": collaboration,"can_upload":can_upload,
@@ -89,6 +90,6 @@ def assembly_view(request, pk):
               "level": {k: str(v) for k, v in Assembly.ASSEMBLY_LEVEL},
               "object": assembly, "graph": graph, "atypes": {k: str(v) for k, v in Assembly.ASSEMBLY_TYPES},
               "related_resources": related_resources,
-              "contigs": contigs, "sidebarleft": {}}
+              "contigs": contigs, "sidebarleft": {}, "processing":processing}
 
     return render(request, 'resources/assembly_detail.html', params)

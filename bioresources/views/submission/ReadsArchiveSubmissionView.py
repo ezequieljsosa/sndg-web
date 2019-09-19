@@ -16,12 +16,22 @@ from bioresources.models.ReadsArchive import ReadsArchive
 from bioresources.views.submission import form_clean_data, submit_model
 
 
+from . import TaxChoiceField, TaxSelect
+from bioseq.models.Taxon import Taxon
+
 class ReadsArchiveForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
+    ncbi_tax = TaxChoiceField(
+        widget=TaxSelect(
+            model=Taxon,
+            search_fields=['names__name__icontains']
+        ),required=False
+    )
+
     class Meta:
         model = ReadsArchive
-        fields = ["name", "description"]
+        fields = ["name", "description", "ncbi_tax"]
 
     def __init__(self, *args, **kwargs):
         super(ReadsArchiveForm, self).__init__(*args, **kwargs)

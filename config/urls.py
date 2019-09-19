@@ -28,7 +28,7 @@ urlpatterns = [
     # Your stuff: custom urls includes go here
 
     # url(r'^captcha/', include('captcha.urls')),
-    # url(r'^select2/', include('django_select2.urls')),
+    url(r'^select2/', include('django_select2.urls')),
 
 
 

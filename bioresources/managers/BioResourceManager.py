@@ -4,8 +4,9 @@ from django.db.models.query import QuerySet
 
 from polymorphic.managers import PolymorphicManager
 from polymorphic.managers import PolymorphicQuerySet
+from polymorphic.managers import PolymorphicManager
 
-class ResourceQuerySet(QuerySet):
+class ResourceQuerySet(PolymorphicQuerySet):
 
     def oai_compliant(self):
         return self.exclude(Q(creators=None) | Q(publishers=None)).prefetch_related(
@@ -28,7 +29,7 @@ class ResourceQuerySet(QuerySet):
             .filter(**q))
 
 
-class BioResourceManager(models.Manager):
+class BioResourceManager(PolymorphicManager):
 
     def get_query_set(self):
         return ResourceQuerySet(self.model)

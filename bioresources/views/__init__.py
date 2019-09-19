@@ -13,8 +13,6 @@ from bioseq.views import labelize
 # from django.forms import Form
 from django.http import HttpResponseRedirect, HttpResponse
 
-
-
 # from .filters import PublicationFilter
 # from .forms import BioSearchForm, AssemblyForm
 
@@ -32,21 +30,19 @@ from django.http import HttpResponseRedirect, HttpResponse
 #     paginate = {'per_page': 25}
 
 
-
-
 # def publications(request):
 #     table = PublicationTable(Publication.objects.all())
 #     RequestConfig(request,paginate={'per_page': 25}).configure(table)
 #     return render(request, 'publications/list.html',
 #                   {"publications": table})
 
+from bioseq.models.Taxon import TaxIdx
 
 
+def tax_data(request):
+    qs = TaxIdx.objects.filter(text__icontains=request.GET["q"])
+    tot = qs.count()
 
-
-
-
-
-
-
-
+    return {
+        "results": [{"id": x.tax_id, "text": x.tax.scientific_name()} for x in qs[:10]]
+    }

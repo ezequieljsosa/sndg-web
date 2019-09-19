@@ -165,6 +165,7 @@ class Assembly(Resource):
             qs = Species.nodes.filter(name=assembly.species_name)
             if len(qs) == 0:
                 s = Species(name=assembly.species_name)
+                s.save()
             else:
                 s = qs.get()
 

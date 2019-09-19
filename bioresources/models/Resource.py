@@ -14,6 +14,7 @@ from bioseq.models.Taxon import Taxon, TaxIdx
 from polymorphic.models import PolymorphicModel
 
 
+
 def get_class(kls):
     parts = kls.split('.')
     module = ".".join(parts[:-1])
@@ -23,7 +24,7 @@ def get_class(kls):
     return m
 
 
-class Resource(models.Model):
+class Resource(PolymorphicModel):
     RESOURCE_TYPES = Choices(
         *([(i, x, _(x)) for i, x in enumerate([
             "PUBLICATION", "BIOPROJECT", "SEQUENCE", "ASSEMBLY", "GENOME", "READS",
@@ -42,6 +43,8 @@ class Resource(models.Model):
         "bioproject": ["sample_scope", "material"],  # , "capture_target", "method"
         "barcode": ["subdivision", "marker"],
     }
+
+
 
     id = models.AutoField(primary_key=True)
 

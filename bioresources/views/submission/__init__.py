@@ -6,17 +6,36 @@ from django.shortcuts import render
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
+from django import forms
+
 from bioresources.models.Resource import Collaboration
+from bioseq.models.Taxon import  Taxon
 
 
 @login_required
 def submission_start(request):
     return render(request, 'submission/submission_start.html', {})
 
+from django_select2.forms import ModelSelect2Widget
+
+class TaxSelect(ModelSelect2Widget):
+    def label_from_instance(self,obj):
+        return str(obj.scientific_name())
+
+class TaxChoiceField(forms.ChoiceField):
+    def valid_value(self, value):
+        return True
+    def clean(self, value):
+        value = super(self.__class__,self).clean(value)
+        if value:
+            return Taxon.objects.get(taxon_id=value)
+        return None
 
 def form_clean_data(form):
     cleaned_data = super(form.__class__, form).clean()
     qs = form._meta.model.objects.filter(name=cleaned_data["name"])
+    # if cleaned_data["ncbi_tax"]:
+    #     form.data["ncbi_tax"] = Taxon.objects.get(taxon_id=cleaned_data["ncbi_tax"])
     if "pk" in form.data:
         if qs.exclude(id=form.data["pk"]).exists():
             form._errors['name'] = form._errors.get('name', [])

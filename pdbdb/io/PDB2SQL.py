@@ -66,6 +66,8 @@ class PDB2SQL():
         resolution = None
         try:
             resolution = float(entry.RESOLUTION)
+        except:
+            resolution = 20
         finally:
             if resolution and not math.isnan(resolution):
                 pdb_model.resolution = resolution

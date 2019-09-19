@@ -35,7 +35,7 @@ Lineaje:
 </nav>
 
 
-{% if object.children %}
+{% if object.children.count %}
 Hijos:
 <ul>
 {% for c in object.children.all %}

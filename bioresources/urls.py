@@ -27,6 +27,7 @@ from .views.submission.BioprojectSubmissionView import BioprojectSubmissionView
 from .views.submission.AssemblySubmissionView import AssemblySubmissionView
 from .views.submission.ReadsArchiveSubmissionView import ReadsArchiveSubmissionView
 from .views.submission.ExpressionSubmissionView import ExpressionSubmissionView
+from .views.submission.StructureSubmissionView import StructureSubmissionView
 from .views.submission.BatchSubmissionView import BatchSubmissionView
 
 
@@ -37,10 +38,14 @@ from .views.submission import submission_start
 
 from .views.user.UserResourcesView import UserResourcesView
 
-### from .views import ResumableUploadView
+from .views.file_upload import ResumableUploadView
+from django.contrib.auth.decorators import login_required
+from .views import tax_data
 
 app_name = 'bioresources'
 urlpatterns = [
+
+    path('/tax_json',tax_data , name='tax_api'),
 
     # Main page and resources search
     path('', index.index, name='index'),
@@ -51,6 +56,7 @@ urlpatterns = [
     path('search/', BioSearchView.as_view(), name='search_view'),
     path('search/<str:rtype_src>/<int:rid>/<str:rtype_dst>', BioSearchRelatedView.as_view(), name='search_view'),
     path('search_redirect/<str:acctype>/<str:acc>', search_redirect, name='search_redirect'),
+
 
     # Models
     path('bioproject/<int:pk>', bioproject, name='bioproject_view'),
@@ -75,7 +81,7 @@ urlpatterns = [
     #
     #
     # # Upload
-    # path('upload/', view=ResumableUploadView.as_view(), name='upload'),
+    path('upload/<int:resource_id>', view=login_required(ResumableUploadView.as_view()), name='upload_resource'),
 
     path('submission/', view=submission_start, name='submission'),
     path('submission/new', view=SubmissionNewView, name='submission_new'),
@@ -84,7 +90,9 @@ urlpatterns = [
     path('submission/assembly', view=AssemblySubmissionView, name='assembly_submission'),
     path('submission/reads', view=ReadsArchiveSubmissionView, name='reads_submission'),
     path('submission/expression', view=ExpressionSubmissionView, name='expression_submission'),
+    path('submission/structure', view=StructureSubmissionView, name='structure_submission'),
     path('submission/batch_import', view=BatchSubmissionView, name='batch_import'),
+
 
 
 

@@ -15,13 +15,42 @@ from django.contrib.auth.decorators import login_required
 from bioresources.models.Assembly import Assembly
 from bioresources.views.submission import form_clean_data, submit_model
 
+from . import TaxChoiceField, TaxSelect
+
+from bioseq.models.Taxon import Taxon
+
+
+class TaxChoiceField2(forms.ChoiceField):
+    def valid_value(self, value):
+        return True
+    def clean(self, value):
+        value = super(self.__class__,self).clean(value)
+        if value:
+            return Taxon.objects.get(taxon_id=value).scientific_name()
+        return None
 
 class AssemblyForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
+    ncbi_tax = TaxChoiceField(
+        widget=TaxSelect(
+            model=Taxon,
+            search_fields=['names__name__icontains']
+        ),required=False
+    )
+
+    species_name = TaxChoiceField2(
+        widget=TaxSelect(
+            queryset=Taxon.objects.filter(node_rank="species"),
+            model=Taxon,
+            search_fields=['names__name__icontains']
+        ),required=False
+    )
+
+
     class Meta:
         model = Assembly
-        fields = ["name", "description", "intraspecific_name", "species_name", "level"]
+        fields = ["name", "description", "intraspecific_name", "species_name", "level", "ncbi_tax"]
 
     def __init__(self, *args, **kwargs):
         super(AssemblyForm, self).__init__(*args, **kwargs)
