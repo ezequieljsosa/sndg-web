@@ -354,7 +354,7 @@ FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
-SNDG_JBROWSE = os.path.join(str(ROOT_DIR), env('SNDG_JBROWSE', default="data/jbrowse/"))
+SNDG_JBROWSE = os.path.join(str(ROOT_DIR), env('SNDG_JBROWSE', default="data/jbrowse/data"))
 STATICFILES_DIRS = [
     os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
     ("jbrowse", SNDG_JBROWSE),

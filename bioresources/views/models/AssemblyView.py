@@ -42,9 +42,9 @@ def assembly_view(request, pk):
 
     contigs = None
     lengths = None
-    bdb = Biodatabase.objects.filter(name=assembly.name)
+    qsbdb = Biodatabase.objects.filter(name=assembly.name)
 
-    loaded = bool(bdb.count())
+    loaded = bool(qsbdb.count())
     processing = False
     if job.exists():
         processing = True
@@ -59,8 +59,8 @@ def assembly_view(request, pk):
             0])
 
     page = None
-    if bdb.count():
-        bdb = bdb.get()
+    if qsbdb.count():
+        bdb = qsbdb.get()
         beqs = bdb.entries.all()
 
         lengths = {}
@@ -82,7 +82,7 @@ def assembly_view(request, pk):
     collaboration = request.user.get_collaboration(assembly) if request.user.is_authenticated else None
 
 
-    can_upload =  not loaded and collaboration and not external_ids and  not bool(bdb.count())
+    can_upload =  not loaded and collaboration and not external_ids and  not bool(qsbdb.count())
 
 
     params = {"query": "", "page_obj": page, "collaboration": collaboration,"can_upload":can_upload,
