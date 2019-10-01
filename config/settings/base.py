@@ -326,7 +326,7 @@ HAYSTACK_CONNECTIONS = {
 if "SNDG_OAI" in env:
     HAYSTACK_CONNECTIONS['oai'] = {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': env('SNDG_OAI', default='http://127.0.0.1:8984/solr/oai'),
+        'URL': env('SNDG_OAI'), #ex: 'http://127.0.0.1:8984/solr/oai'
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',
@@ -338,7 +338,6 @@ if "SNDG_OAI" in env:
                              'bioresources.search_indexes.OrganizationIndex',
                              'bioresources.search_indexes.ReadsArchiveIndex',
                              'bioresources.search_indexes.BarcodeIndex',
-
                              ],
 
     }

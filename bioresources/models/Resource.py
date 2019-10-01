@@ -4,6 +4,9 @@ from model_utils import Choices
 from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from django.urls import reverse
+from django.template.loader import get_template
+from django.conf import settings
+
 
 from .Person import Person
 from .Organization import Organization

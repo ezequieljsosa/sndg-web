@@ -31,7 +31,7 @@ class DB2JBrowse():
         self.jbrowse_data_path = jbrowse_data_path
         self.accession = None
         self.excluded = ["source"]
-
+        self.stderr = sys.stderr
         self.previous_lt = ""
         self.previous_gene = ""
 
@@ -46,7 +46,7 @@ class DB2JBrowse():
 
         if not os.path.exists(os.path.dirname(self.fasta_path)) or self.ovewrite:
             with open(self.fasta_path, "w") as h_fasta, open(self.gff_path, "w") as h_gff:
-                for bioentry in tqdm(bioentry_iterator, file=sys.stderr, total=bioentry_iterator.count()):
+                for bioentry in tqdm(bioentry_iterator, file=self.stderr, total=bioentry_iterator.count()):
                     self.process_bioentry(bioentry, h_fasta, h_gff)
         self.create_files()
 
@@ -60,7 +60,7 @@ class DB2JBrowse():
         qs = bioentry.features.prefetch_related("qualifiers", "type_term").exclude(
             type_term__identifier__in=self.excluded)
 
-        for feature in tqdm(qs, file=sys.stderr, total=qs.count()):
+        for feature in tqdm(qs, file=self.stderr, total=qs.count()):
             if feature.type_term.identifier in ["CDS", "tRNA", "rRNA", "miRNA", "soRNA", "sRNA", "miRNA",
                                                 "repeat_region"]:
                 self.process_seqfeature(bioentry.accession, feature, h_gff)

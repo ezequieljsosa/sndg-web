@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import sys
-
+from django.conf import settings
 from haystack import indexes
 
 from bioseq.models.Bioentry import Bioentry
+from .models.Resource import Resource
 from .models.Assembly import Assembly
 from .models.Organization import Organization
 from .models.Person import Person
@@ -18,53 +19,53 @@ from .models.ReadsArchive import ReadsArchive
 
 only_not_indexed = sys.argv[1] in ["rebuild_index", "update_index"]  # for solr index updating
 
-# class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
-#     """
-#     "item.id":1,
-#         "item.handle":"oai:localhost:tede/5",
-#         "item.lastmodified":"2018-05-05T15:09:57Z",
-#         "item.submitter":"submitter",
-#         "item.deleted":false,
-#         "item.public":true,
-#         "item.collections":["FMRP"],
-#         "item.communities":["com_FAMERP"],
-#
-#     "metadata.dc.language":["por"],
-#         "metadata.dc.rights":["info:sa-repo/semantics/openAccess"],
-#         "metadata.dc.format":["application/pdf"],
-#         "metadata.dc.publisher":["Faculdade de Medicina de São José do Rio Preto",
-#           "Programa de Pós-Graduação em Ciências da Saúde",
-#           "FAMERP",
-#           "BR",
-#           "Medicina Interna; Medicina e Ciências Correlatas"],
-#
-#     """
-#     text = indexes.CharField(document=True, use_template=True, index_fieldname=settings.HAYSTACK_DOCUMENT_FIELD)
-#
-#     item_id = indexes.IntegerField(model_attr='id', index_fieldname="item.id")
-#     item_handle = indexes.CharField(model_attr='permalink', index_fieldname="item.handle")
-#     item_lastmodified = indexes.DateTimeField(model_attr='updated_at', index_fieldname="item.lastmodified")
-#     item_submitter = indexes.CharField(model_attr='oai_submitter', index_fieldname="item.submitter")
-#     item_deleted = indexes.BooleanField(model_attr='deprecated', index_fieldname="item.deleted")
-#     item_public = indexes.BooleanField(model_attr='oai_public', index_fieldname="item.public")
-#     item_collections = indexes.MultiValueField(model_attr='oai_collections', index_fieldname="item.collections")
-#     item_communities = indexes.MultiValueField(model_attr='oai_communities', index_fieldname="item.communities")
-#
-#     item_compile = indexes.CharField(model_attr='compile', index_fieldname="item.compile")
-#
-#     metadata_dc_language = indexes.MultiValueField(model_attr='metadata_dc_language',
-#                                                    index_fieldname="metadata.dc.language")
-#     metadata_dc_rights = indexes.MultiValueField(model_attr='metadata_dc_rights', index_fieldname="metadata.dc.rights")
-#     metadata_dc_format = indexes.MultiValueField(model_attr='metadata_dc_format', index_fieldname="metadata.dc.format")
-#     metadata_dc_publisher = indexes.MultiValueField(model_attr='metadata_dc_publisher',
-#                                                     index_fieldname="metadata.dc.publisher")
-#
-#     def get_model(self):
-#         return Resource
-#
-#     def index_queryset(self, using=None):
-#         """Used when the entire index for model is updated."""
-#         return self.get_model().objects.oai_compliant()
+class ResourceIndexOAI(indexes.SearchIndex, indexes.Indexable):
+    """
+    "item.id":1,
+        "item.handle":"oai:localhost:tede/5",
+        "item.lastmodified":"2018-05-05T15:09:57Z",
+        "item.submitter":"submitter",
+        "item.deleted":false,
+        "item.public":true,
+        "item.collections":["FMRP"],
+        "item.communities":["com_FAMERP"],
+
+    "metadata.dc.language":["por"],
+        "metadata.dc.rights":["info:sa-repo/semantics/openAccess"],
+        "metadata.dc.format":["application/pdf"],
+        "metadata.dc.publisher":["Faculdade de Medicina de São José do Rio Preto",
+          "Programa de Pós-Graduação em Ciências da Saúde",
+          "FAMERP",
+          "BR",
+          "Medicina Interna; Medicina e Ciências Correlatas"],
+
+    """
+    text = indexes.CharField(document=True, use_template=True, index_fieldname=settings.HAYSTACK_DOCUMENT_FIELD)
+
+    item_id = indexes.IntegerField(model_attr='id', index_fieldname="item.id")
+    item_handle = indexes.CharField(model_attr='permalink', index_fieldname="item.handle")
+    item_lastmodified = indexes.DateTimeField(model_attr='updated_at', index_fieldname="item.lastmodified")
+    item_submitter = indexes.CharField(model_attr='oai_submitter', index_fieldname="item.submitter")
+    item_deleted = indexes.BooleanField(model_attr='deprecated', index_fieldname="item.deleted")
+    item_public = indexes.BooleanField(model_attr='oai_public', index_fieldname="item.public")
+    item_collections = indexes.MultiValueField(model_attr='oai_collections', index_fieldname="item.collections")
+    item_communities = indexes.MultiValueField(model_attr='oai_communities', index_fieldname="item.communities")
+
+    item_compile = indexes.CharField(model_attr='compile', index_fieldname="item.compile")
+
+    metadata_dc_language = indexes.MultiValueField(model_attr='metadata_dc_language',
+                                                   index_fieldname="metadata.dc.language")
+    metadata_dc_rights = indexes.MultiValueField(model_attr='metadata_dc_rights', index_fieldname="metadata.dc.rights")
+    metadata_dc_format = indexes.MultiValueField(model_attr='metadata_dc_format', index_fieldname="metadata.dc.format")
+    metadata_dc_publisher = indexes.MultiValueField(model_attr='metadata_dc_publisher',
+                                                    index_fieldname="metadata.dc.publisher")
+
+    def get_model(self):
+        return Resource
+
+    def index_queryset(self, using=None):
+        """Used when the entire index for model is updated."""
+        return self.get_model().objects.oai_compliant()
 
 
 class PublicationIndex(indexes.SearchIndex, indexes.Indexable):

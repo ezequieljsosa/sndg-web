@@ -9,9 +9,10 @@ from polymorphic.managers import PolymorphicManager
 class ResourceQuerySet(PolymorphicQuerySet):
 
     def oai_compliant(self):
-        return self.exclude(Q(creators=None) | Q(publishers=None)).prefetch_related(
-            "creators", "publishers"
-        ).filter(deprecated=False, index_updated=False)
+        # return self.exclude(Q(creators=None) | Q(publishers=None)).prefetch_related(
+        #     "creators", "publishers"
+        # ).filter(deprecated=False, index_updated=False)
+        return self.filter(deprecated=False, index_updated=False)
 
     def publication_related(self, country, only_not_indexed=False):
         from ..models.Publication import Publication

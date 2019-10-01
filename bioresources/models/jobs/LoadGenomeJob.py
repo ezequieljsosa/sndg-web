@@ -29,33 +29,29 @@ class LoadGenomeJob(Job):
 
     def execute(self):
         with open(self.result, "w") as stdout, open(self.dev_error, "w") as stderr:
-            sys.stdout = stdout
-            sys.stderr = stderr
+            self.load_genome(stderr)
 
-            self.load_genome()
-
-            self.jbrowse_load()
+            self.jbrowse_load(stderr)
 
         self.end = datetime.now()
         self.status = Job.STATUS.FINISHED
 
-    def jbrowse_load(self):
+    def jbrowse_load(self, stderr=sys.stderr):
         io = DB2JBrowse(jbrowse_path=settings.ROOT_DIR, jbrowse_data_path=os.path.abspath(settings.SNDG_JBROWSE))
+        io.stderr = stderr
         io.ovewrite = True
         io.excluded.append("gene")
         io.db2fs(self.assembly.name)
 
 
-
-
 class LoadGenomeFromNCBIJob(LoadGenomeJob):
 
-    def load_genome(self):
+    def load_genome(self, stderr=sys.stderr):
         NCBISearch.download_assembly(self.assembly.name, workdir=self.job_dir())
         input_file = glob(self.job_dir() + "*_genomic.gbff.gz")[0]
 
         io = BioIO(self.assembly.name, self.assembly.ncbi_tax.ncbi_taxon_id)
-
+        io.stderr = stderr
         grep_cmd = 'zgrep -c "FEATURES *Location/Qualifiers" "%s"' % input_file
         io.create_db()
 
@@ -65,7 +61,6 @@ class LoadGenomeFromNCBIJob(LoadGenomeJob):
 
 
 class LoadGenomeFromFileJob(LoadGenomeJob):
-
     filename = models.TextField()
 
     def load_genome(self):
