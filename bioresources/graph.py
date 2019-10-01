@@ -52,8 +52,6 @@ def connect_nodes(r1, r2, reltype: str = "USES"):
     return db.cypher_query(query, {})
 
 
-
-
 class Tax(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty()
@@ -64,11 +62,10 @@ class Country(StructuredNode):
     name = StringProperty(unique_index=True)
 
 
-
-
 class BioProject(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty(unique_index=True)
+
     # level = DateProperty()
     # location = RelationshipTo('Country', 'LOCATION')
 
@@ -77,6 +74,7 @@ class BioProject(StructuredNode):
         n = cls(rid=obj.id, name=obj.name)
         n.save()
         return n
+
 
 class Organization(StructuredNode):
     rid = IntegerProperty(unique_index=True)
@@ -249,9 +247,21 @@ def affiliation_handler(sender, **kwargs):
 
 
 @receiver(post_save, sender=Collaboration)
-def my_handler(sender, **kwargs):
-    c = Collaboration.objects.prefetch_related("person", "resource").get(id=kwargs["instance"].id)
-    c.person.type = rPerson.TYPE
+def collaboration_handler(sender, **kwargs):
+    collaboration = kwargs["instance"]
+    if collaboration.person and collaboration.organization:
+        c = Collaboration.objects.prefetch_related("person", "organization", "resource").get(id=collaboration.id)
+        c.person.type = rPerson.TYPE
+        c.organization.type = rOrganization.TYPE
+    elif collaboration.person:
+        c = Collaboration.objects.prefetch_related("person", "resource").get(id=collaboration.id)
+        c.person.type = rPerson.TYPE
+    elif collaboration.organization:
+        c = Collaboration.objects.prefetch_related("organization", "resource").get(id=collaboration.id)
+        c.organization.type = rOrganization.TYPE
+    else:
+        raise Exception("Collaboration must have either a person or an organization")
+
     connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
 
 
@@ -296,7 +306,6 @@ gclass_dict = {
     Resource.RESOURCE_TYPES.PERSON: Person,
     Resource.RESOURCE_TYPES.ORGANIZATION: Organization,
     Resource.RESOURCE_TYPES.BIOPROJECT: BioProject
-
 
 }
 

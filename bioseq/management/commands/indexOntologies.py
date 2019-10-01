@@ -1,11 +1,12 @@
 import sys
 
 from django.db import transaction
-from django_tqdm import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from bioseq.models.Ontology import Ontology
 from bioseq.models.Term import TermRelationship, Term, TermIdx
 from bioseq.models.Taxon import Taxon, TaxonName, TaxIdx
+from tqdm import tqdm
 
 
 class Command(BaseCommand):
@@ -16,20 +17,24 @@ class Command(BaseCommand):
         self.is_a = Term.objects.get(identifier="is_a")
         self.processed_tax = {1: 1}
 
-    def travel_tax_child(self, parent, iter_adv, txt_acc, buffer):
+    def travel_tax_child(self, parent, iter_adv, txt_acc, buffer, genus, family):
 
         txt = [x.name for x in parent.names.all()] + [str(parent.ncbi_taxon_id)]
         txt += txt_acc
 
+        genus2 = parent.scientific_name() if parent.node_rank == "genus" else ""
+        family2 = parent.scientific_name() if parent.node_rank == "family" else ""
+
         if parent.ncbi_taxon_id != 1:
             if parent.ncbi_taxon_id not in self.processed_tax:
                 self.processed_tax[parent.ncbi_taxon_id] = 1
-                buffer["data"][parent.ncbi_taxon_id] = TaxIdx(tax=parent, text=" ".join(txt))
+                buffer["data"][parent.ncbi_taxon_id] = TaxIdx(tax=parent, text=" ".join(txt), genus=genus,
+                                                              family=family)
 
         for t in Taxon.objects.prefetch_related("names", "children").filter(parent_taxon=parent):
             # if t.ncbi_taxon_id in [131567, 2, 1783257, 203682, 203683, 112, 1763524,127]:
-                if t.ncbi_taxon_id not in self.processed_tax:
-                    self.travel_tax_child(t, iter_adv, txt, buffer)
+            if t.ncbi_taxon_id not in self.processed_tax:
+                self.travel_tax_child(t, iter_adv, txt, buffer, genus2, family2)
 
         if len(buffer["data"]) > 5000:
             TaxIdx.objects.bulk_create(buffer["data"].values())
@@ -66,13 +71,13 @@ class Command(BaseCommand):
         TaxIdx.objects.all().delete()
         root = Taxon.objects.prefetch_related("names").get(ncbi_taxon_id=1)
         count = Taxon.objects.count()
-        iter_adv = self.tqdm(total=count, file=sys.stderr)
+        iter_adv = tqdm(total=count, file=sys.stderr)
 
         buffer = {"data": {}}
 
-        for c in self.tqdm(root.children.all(), total=root.children.count()):
+        for c in tqdm(root.children.all(), total=root.children.count()):
             # if c.ncbi_taxon_id in [131567, 2, 1783257, 203682, 203683, 112, 1763524,127]:
-                self.travel_tax_child(c, iter_adv, "", buffer)
+            self.travel_tax_child(c, iter_adv, "", buffer,"","")
         TaxIdx.objects.bulk_create(buffer["data"].values())
 
         # buffer = {"data": []}
