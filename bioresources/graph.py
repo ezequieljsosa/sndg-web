@@ -22,6 +22,7 @@ def get_resource_class():
         Resource.RESOURCE_TYPES.PERSON: "Person",
         Resource.RESOURCE_TYPES.ORGANIZATION: "Organization",
         Resource.RESOURCE_TYPES.BIOPROJECT: "BioProject",
+        Resource.RESOURCE_TYPES.BARCODE: "Barcodes",
 
     }
 
@@ -297,6 +298,7 @@ gclass_dict = {
     Resource.RESOURCE_TYPES.PUBLICATION: Publication,
     Resource.RESOURCE_TYPES.TOOL: Tool,
     Resource.RESOURCE_TYPES.READS: Reads,
+    Resource.RESOURCE_TYPES.BARCODE: Barcodes,
 
     Resource.RESOURCE_TYPES.PERSON: Person,
     Resource.RESOURCE_TYPES.ORGANIZATION: Organization,
@@ -305,8 +307,9 @@ gclass_dict = {
 }
 
 
-# TODO habilitar barcodes
-@receiver(post_save, sender=rTool)  # rBarcode
+
+@receiver(post_save, sender=rBarcode)
+@receiver(post_save, sender=rTool)
 @receiver(post_save, sender=rReadsArchive)
 @receiver(post_save, sender=rSample)
 @receiver(post_save, sender=rAssembly)
@@ -327,7 +330,8 @@ def my_handler3(sender, **kwargs):
         gclass.from_resource(r)
 
 
-@receiver(post_delete, sender=rTool)  # rBarcode
+@receiver(post_delete, sender=rBarcode)
+@receiver(post_delete, sender=rTool)
 @receiver(post_delete, sender=rReadsArchive)
 @receiver(post_delete, sender=rSample)
 @receiver(post_delete, sender=rAssembly)
