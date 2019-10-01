@@ -249,20 +249,15 @@ def affiliation_handler(sender, **kwargs):
 @receiver(post_save, sender=Collaboration)
 def collaboration_handler(sender, **kwargs):
     collaboration = kwargs["instance"]
-    if collaboration.person and collaboration.organization:
-        c = Collaboration.objects.prefetch_related("person", "organization", "resource").get(id=collaboration.id)
+    c = Collaboration.objects.prefetch_related("person", "organization", "resource").get(id=collaboration.id)
+    if collaboration.person:
         c.person.type = rPerson.TYPE
+        connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
+    if collaboration.organization:
         c.organization.type = rOrganization.TYPE
-    elif collaboration.person:
-        c = Collaboration.objects.prefetch_related("person", "resource").get(id=collaboration.id)
-        c.person.type = rPerson.TYPE
-    elif collaboration.organization:
-        c = Collaboration.objects.prefetch_related("organization", "resource").get(id=collaboration.id)
-        c.organization.type = rOrganization.TYPE
-    else:
-        raise Exception("Collaboration must have either a person or an organization")
+        connect_nodes(c.organization, c.resource, reltype=Collaboration.rev_types[c.type])
 
-    connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
+
 
 
 from bioresources.models.ResourceRelation import ResourceRelation
