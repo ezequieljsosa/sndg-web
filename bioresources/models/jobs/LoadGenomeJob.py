@@ -37,7 +37,7 @@ class LoadGenomeJob(Job):
         self.status = Job.STATUS.FINISHED
 
     def jbrowse_load(self, stderr=sys.stderr):
-        io = DB2JBrowse(jbrowse_path=settings.ROOT_DIR, jbrowse_data_path=os.path.abspath(settings.SNDG_JBROWSE))
+        io = DB2JBrowse(jbrowse_path=settings.ROOT_DIR, jbrowse_data_path=settings.SNDG_JBROWSE)
         io.stderr = stderr
         io.ovewrite = True
         io.excluded.append("gene")
