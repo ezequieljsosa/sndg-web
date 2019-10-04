@@ -8,8 +8,9 @@ from .Resource import Resource
 class Expression(Resource):
     TYPE = Resource.RESOURCE_TYPES.EXPRESSION
 
-    pdat = models.DateField(null=True)
-    gdstype = models.CharField(max_length=250, null=True)
+    pdat = models.DateField(null=True,blank=True)
+    gdstype = models.CharField(max_length=250, null=True,blank=True,
+                               help_text="Tipo de análisis, por ejemplo: 'RNAs no codificantes'")
     submitters = models.TextField(null=True)
 
     class Meta:

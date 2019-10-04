@@ -16,7 +16,7 @@ from bioresources.models.Tool import Tool
 from bioresources.models.Resource import Collaboration
 from django.db import transaction
 
-
+from bioresources.views.submission import form_clean_data, submit_model
 
 class ToolForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))

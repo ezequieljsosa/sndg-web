@@ -4,8 +4,8 @@
     <ul class="nav navbar-nav navbar-right">
         <li><a href="{% url 'bioresources:index' %}">{% trans 'Home' %}</a></li>
         <li><a href="{% url 'bioresources:available_tools' %}">{% trans 'Blast' %}</a></li>
-        <li><a href="#">{% trans 'FAQ' %}</a></li>
-        <li><a href="#">{% trans 'API' %}</a></li>
+        <li><a href="{% url 'bioresources:faq' %}">{% trans 'FAQ' %}</a></li>
+        <li><a href="{% url 'bioresources:api' %}">{% trans 'API' %}</a></li>
         <li><a style="display: none" href="{% url 'bioresources:stats' %}">{% trans 'Stats' %}</a></li>
         <li><a href="{% url 'bioresources:submission' %}">{% trans 'Data Submissions' %}</a></li>
         <li><a style="display: none" href="{% url 'about' %}">{% trans 'Information' %}</a></li>

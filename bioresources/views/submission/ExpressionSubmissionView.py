@@ -21,6 +21,7 @@ from bioseq.models.Taxon import Taxon
 
 class ExpressionForm(forms.ModelForm):
     release_date = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
+    # pdat = forms.DateField(required=True, widget=forms.SelectDateWidget(years=range(1990, datetime.now().year)))
 
     ncbi_tax = TaxChoiceField(
         widget=TaxSelect(
@@ -31,7 +32,7 @@ class ExpressionForm(forms.ModelForm):
 
     class Meta:
         model = Expression
-        fields = ["name", "description", "pdat", "gdstype", "ncbi_tax"]
+        fields = ["name", "description",  "gdstype", "ncbi_tax"]
 
     def __init__(self, *args, **kwargs):
         super(ExpressionForm, self).__init__(*args, **kwargs)

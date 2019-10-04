@@ -413,3 +413,4 @@ GOOGLE_ANALYTICS_CODE = os.environ.get('GOOGLE_ANALYTICS_CODE', "")
 FILE_UPLOAD_TEMP_DIR = os.environ.get('FILE_UPLOAD_TEMP_DIR', os.path.join(str(ROOT_DIR), "data/uploads/"))
 DJANGO_SELECT2_I18N = 'ar'
 MINCYT_URL = os.environ.get('MINCYT_URL', "")
+MINCYT_API_URL = os.environ.get('MINCYT_API_URL', "http://datostest.sndg.mincyt.gob.ar/api")

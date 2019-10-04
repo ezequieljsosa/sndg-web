@@ -30,10 +30,9 @@ from .views.submission.ExpressionSubmissionView import ExpressionSubmissionView
 from .views.submission.StructureSubmissionView import StructureSubmissionView
 from .views.submission.BatchSubmissionView import BatchSubmissionView
 
-
 from .views.submission.SubmissionImportView import SubmissionImportView, SubmitImportView
 from .views.submission.SubmissionRelatedView import SubmissionRelatedView, claim_resource, mark_to_relate, \
-    claim_identity , relate_to_publication
+    claim_identity, relate_to_publication
 from .views.submission import submission_start
 
 from .views.user.UserResourcesView import UserResourcesView
@@ -51,23 +50,24 @@ if settings.MINCYT_URL:
 else:
     home_view = index.index
 
+api_view = RedirectView.as_view(url=settings.MINCYT_API_URL)
 
 urlpatterns = [
 
-    path('/tax_json',tax_data , name='tax_api'),
+    path('/tax_json', tax_data, name='tax_api'),
 
     # Main page and resources search
 
     path('', home_view, name='index'),
     path('blast/', blast, name='available_tools'),
     path('job/<int:jid>', job_view, name='job_view'),
-    path('/stats', index.index, name='stats'),
-    path('/faq', index.index, name='faq'),
+    path('stats', index.index, name='stats'),
+    path('faq', index.index, name='faq'),
+    path('api', api_view, name='api'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),
     path('search/<str:rtype_src>/<int:rid>/<str:rtype_dst>', BioSearchRelatedView.as_view(), name='search_view'),
     path('search_redirect/<str:acctype>/<str:acc>', search_redirect, name='search_redirect'),
-
 
     # Models
     path('bioproject/<int:pk>', bioproject, name='bioproject_view'),
@@ -103,9 +103,6 @@ urlpatterns = [
     path('submission/expression', view=ExpressionSubmissionView, name='expression_submission'),
     path('submission/structure', view=StructureSubmissionView, name='structure_submission'),
     path('submission/batch_import', view=BatchSubmissionView, name='batch_import'),
-
-
-
 
     path('submission/import', view=SubmissionImportView, name='submission_import'),
     path('submission/import/submit', view=SubmitImportView, name='submission_import_submit'),
