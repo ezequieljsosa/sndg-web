@@ -13,12 +13,13 @@ from bioresources.io.GraphRepo import GraphRepo
 
 def UserResourcesView(request,username=""):
     person = request.user.person
-    collaborations = set(Collaboration.objects.prefetch_related("resource").filter(person=person))
-    for c in collaborations:
-        c.resource.tname = Resource.RESOURCE_TYPES[c.resource.type]
     if person:
-        graph, _ = GraphRepo.get_neighborhood(person.id, "Person", 1)
-    else:
-        graph = {}
+        collaborations = set(Collaboration.objects.prefetch_related("resource").filter(person=person))
+        for c in collaborations:
+            c.resource.tname = Resource.RESOURCE_TYPES[c.resource.type]
+        if person:
+            graph, _ = GraphRepo.get_neighborhood(person.id, "Person", 1)
+        else:
+            graph = {}
     return render(request, 'user/user_resources.html',
                   {"user": request.user, "person": person, "collaborations": collaborations, "graph": graph})

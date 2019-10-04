@@ -1005,3 +1005,10 @@ msgid "Name"
 msgstr "Nombre"
 
 
+# user_resources.html
+msgid "No resources associated with this user"
+msgstr "Este usuario no esta asociado a ningún recurso"
+
+# blast.html
+msgid "Sequence must have at least 10 nucleotides/aminoacides"
+msgstr "La secuencia debe tener una longitud mínima de 10"

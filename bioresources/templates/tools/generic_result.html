@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block head %}
-
+<meta http-equiv="refresh" content="30"/>
 {% endblock %}
 
 
@@ -21,6 +21,7 @@
 				<tr><td>{% trans "Job Type" %}</td><td>{{job.result_type}}</td></tr>
 				<tr><td>{% trans "Started" %}</td><td>{{job.start|date:"h:i d M Y" }}</td></tr>
 				<tr><td>{% trans "Elapsed time" %}</td><td>{{elapsed_time}} seconds</td></tr>
+				<tr><td>{% trans "Page will refresh every 30 seconds" %}</td><td>{{elapsed_time}} seconds</td></tr>
 			</table>
 
 		</section>

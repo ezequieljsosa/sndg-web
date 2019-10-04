@@ -172,7 +172,12 @@
 					});
 
 			$("#blast_button").click(function(evt) {
-				run_blast();
+			    const seq = $("#sequence_text").val().replace(/\s/g,"");
+			    if (seq.length < 10) {
+			        alert('{% trans "Sequence must have at least 10 nucleotides/aminoacides" %}')
+			        return false;
+			    } 
+
 
 			});
 
@@ -202,7 +207,7 @@
 						<div class="input-group">
 
 
-							<button class="btn btn-info" id="blast_selected_button"
+							<button class="btn btn-info" id="blast_button"
 								title="Runs the blast algorithm">Blast	</button>
 
 							<button class="btn btn-warning" id="blast_unip_button"

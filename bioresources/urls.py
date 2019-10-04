@@ -62,7 +62,7 @@ urlpatterns = [
     path('blast/', blast, name='available_tools'),
     path('job/<int:jid>', job_view, name='job_view'),
     path('stats', index.index, name='stats'),
-    path('faq', index.index, name='faq'),
+    path('faq', index.faq, name='faq'),
     path('api', api_view, name='api'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),

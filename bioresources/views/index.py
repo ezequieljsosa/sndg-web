@@ -54,6 +54,9 @@ resources = [
 ]
 
 
+def faq(request):
+    return render(request, 'faq.html', {})
+
 def index(request):
     db = request.GET.get("db", "all")
     search = request.GET.get("search", "").strip()
@@ -98,3 +101,4 @@ def index(request):
         "stats": resources, "search": search if search != "*" else "", "selected": selected,
         "db": db, "suggestions": suggestions, "querystring": params,
         "sidebarleft": facets["fields"], "sidebarrigth": {"news": [{"title": "n1", "text": "lalala"}]}})
+
