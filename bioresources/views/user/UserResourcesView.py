@@ -13,6 +13,8 @@ from bioresources.io.GraphRepo import GraphRepo
 
 def UserResourcesView(request,username=""):
     person = request.user.person
+    collaborations = None
+    graph = None
     if person:
         collaborations = set(Collaboration.objects.prefetch_related("resource").filter(person=person))
         for c in collaborations:
