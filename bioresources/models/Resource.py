@@ -37,6 +37,10 @@ class Resource(PolymorphicModel):
         n: idx for idx, n, _ in RESOURCE_TYPES._triples
     }
 
+    code2name = {
+        idx: n for idx, n, _ in RESOURCE_TYPES._triples
+    }
+
     facet_dict = {
         "assembly": ["species_name", "level", "assembly_type"],
         "gds": ["pdat", "gdstype"],
@@ -78,7 +82,7 @@ class Resource(PolymorphicModel):
         super(Resource, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('bioresources:%s_view' % Resource.RESOURCE_TYPES[self.type].lower(), args=[str(self.id)])
+        return reverse('bioresources:%s_view' % Resource.code2name[self.type].lower(), args=[str(self.id)])
 
     def type_name(self):
         return Resource.RESOURCE_TYPES[self.type].lower()

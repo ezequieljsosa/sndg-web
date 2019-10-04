@@ -9,10 +9,11 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 {% endblock %}
 
-{% block content %}
-<div class="container">
-    <div class="row">
+{% block header %}
+    {% include "header.html" with class="bg-info" section_name="Organization"%}
+{% endblock %}
 
+{% block content %}
         <div class="col-md-12">
 
 
@@ -26,9 +27,6 @@
             {% endfor %}
         </div>
 
-
-     </div>
-
   {% related_resources_summary pk rtype_src related_resources %}
   {% resource_graph pk graph %}
 
@@ -38,5 +36,4 @@
     });
   </script>
 
-  </div>
 {% endblock %}

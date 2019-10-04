@@ -8,9 +8,6 @@
 
 
 {% block content %}
-
-
-	<div class="row">
 		<section class="col-lg-12 connectedSortable">
 			{% if status == "ERROR" %}
 			<h1>{% trans 'There was an error runnning your job'  %}  </h1>
@@ -27,6 +24,4 @@
 			</table>
 
 		</section>
-	</div>
-
 {% endblock %}

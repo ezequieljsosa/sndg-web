@@ -12,21 +12,21 @@
 <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
 {% endblock %}
 
+{% block header %}
+    {% include "header.html" with class="bg-arandano" section_name="Structure" %}
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
     {% resource_actions pdb collaboration request %}
     <div class="col-md-12">
         {% resource_table pdb external_url %}
-        </div>
     </div>
 
-{% if loaded %}
-{% pdb_structure pdb.name %}
-{% else %}
-<h2+>{% trans 'PDB is currenly in process...' %}</h2>
-{% endif %}
+    {% if loaded %}
+    {% pdb_structure pdb.name %}
+    {% else %}
+    <h2+>{% trans 'PDB is currenly in process...' %}</h2>
+    {% endif %}
 
   {% related_resources_summary pk rtype_src related_resources level %}
   {% resource_graph pk graph %}
@@ -36,9 +36,4 @@
         create_graph()
     });
   </script>
-
-
-
-</div>
-
 {% endblock %}

@@ -6,35 +6,29 @@
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+{% endblock %}
 
+{% block header %}
+    {% include "header.html" with class="bg-primary" section_name="Barcode"%}
 {% endblock %}
 
 {% block content %}
-<div class="container">
-<div class="row">
-
-
-
-
-<div class="col-md-12">
+    <div class="col-md-12">
      {% resource_table barcode external_url %}
      </div>
+    <div class="col-md-12">
+        <table class="table table-responsive table-stripped" width="100%">
+        <tr><td>Lugar</td><td>{{barcode.subdivision}}</td></tr>
+        <tr><td>Tomo la muestra</td><td>{{barcode.collectors}}</td></tr>
+        <tr><td>Marcador</td><td>{{barcode.marker}}</td></tr>
+        <tr><td>Organización</td><td>{{barcode.bold_org}}</td></tr>
+        <tr><td>Taxonomía</td><td>{{barcode.ncbi_tax.scientific_name}}</td></tr>
+        </table>
 
- <div class="col-md-12">
-    <table class="table table-responsive table-stripped" width="100%">
-    <tr><td>Lugar</td><td>{{barcode.subdivision}}</td></tr>
-    <tr><td>Tomo la muestra</td><td>{{barcode.collectors}}</td></tr>
-    <tr><td>Marcador</td><td>{{barcode.marker}}</td></tr>
-    <tr><td>Organización</td><td>{{barcode.bold_org}}</td></tr>
-    <tr><td>Taxonomía</td><td>{{barcode.ncbi_tax.scientific_name}}</td></tr>
-    </table>
-
-    <img src="{{barcode.image_url}}" />
-
-</div>
-
-
-  </div>
+         {% if  barcode.image_url %}
+        <img src="{{barcode.image_url}}" />
+         {% endif %}
+    </div>
 
     {% related_resources_summary pk rtype_src related_resources %}
     {% resource_graph pk graph %}
@@ -44,7 +38,4 @@
           create_graph()
       });
     </script>
-
-
-  </div>
 {% endblock %}

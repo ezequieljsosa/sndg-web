@@ -36,10 +36,14 @@ msgstr "Afiliaciones"
 #: bioresources/models/Assembly.py:33
 msgid "Assemblies"
 msgstr "Genomas"
+msgid "ASSEMBLY"
+msgstr "Genomas"
 
 #: bioresources/models/Barcode.py:20
 msgid "Barcodes"
 msgstr ""
+msgid "BARCODE"
+msgstr "Barcodes"
 
 #: bioresources/models/BioProject.py:44
 msgid "BioProjects"
@@ -61,6 +65,8 @@ msgstr ""
 #: bioresources/templates/submission/submission_import.html:35
 msgid "Expression"
 msgstr "Expresión"
+msgid "EXPRESSION"
+msgstr "Expresión"
 
 #: bioresources/models/ExternalId.py:17
 msgid "ExternalId"
@@ -78,16 +84,28 @@ msgstr "Trabajo"
 msgid "Organizations"
 msgstr "Organizaciones"
 
+#: bioresources/templates/resources/organization.html
+msgid "Organization"
+msgstr "Organización"
+
 #: bioresources/models/Person.py:23 bioresources/views/index.py:46
 msgid "Persons"
 msgstr "Personas"
 
+#: bioresources/templates/resources/person.html:12
+msgid "Person"
+msgstr "Persona"
+
 #: bioresources/models/Publication.py:21
 msgid "Publications"
+msgstr "Publicaciones"
+msgid "PUBLICATION"
 msgstr "Publicaciones"
 
 #: bioresources/models/ReadsArchive.py:15
 msgid "Reads Archive"
+msgstr "Datos de secuenciación"
+msgid "READS"
 msgstr "Datos de secuenciación"
 
 #: bioresources/models/Resource.py:31
@@ -96,15 +114,19 @@ msgstr "No procesado"
 
 #: bioresources/models/Resource.py:31
 msgid "PROTEIN"
-msgstr "Proteina"
+msgstr "Proteína"
+
+#: bioresources/templates/resources/protein_view.html:15
+msgid "Protein"
+msgstr "Proteína"
 
 #: bioresources/models/Resource.py:32
 msgid "ORGANIZATION"
-msgstr "Organización"
+msgstr "Organizaciones"
 
 #: bioresources/models/Resource.py:32
 msgid "PERSON"
-msgstr "Persona"
+msgstr "Personas"
 
 #: bioresources/models/Resource.py:129
 msgid "owner"
@@ -129,14 +151,23 @@ msgstr "Relaciones de recursos"
 #: bioresources/models/Sample.py:22
 msgid "Samples"
 msgstr "Muestras"
+msgid "SAMPLE"
+msgstr "Muestras"
 
 #: bioresources/models/Structure.py:18
 msgid "Structures"
+msgstr "Estructuras"
+#Para el título de los listados
+msgid "STRUCTURE"
 msgstr "Estructuras"
 
 #: bioresources/models/Tool.py:22
 msgid "Tools"
 msgstr "Herramientas"
+
+#: bioresources/bioresources/templates/tool.html:22
+msgid "Tool"
+msgstr "Herramienta"
 
 #: bioresources/tasks.py:32
 #, python-format
@@ -553,6 +584,10 @@ msgstr "Procesando el genoma... la anotación estará disponible en breve."
 msgid "Sequences"
 msgstr "Secuencias"
 
+#: bioresources/templates/resources/nucleotide_view.html:43
+msgid "Sequence"
+msgstr "Secuencia"
+
 #: bioresources/templates/resources/nucleotide_view.html:34
 msgid "Annotations"
 msgstr "Anotaciones"
@@ -723,7 +758,7 @@ msgstr "Recursos relacionados"
 
 #: bioresources/templates/tags/resource_table.html:11
 msgid "External link"
-msgstr "Link externo"
+msgstr "Descarga"
 
 #: bioresources/templates/tags/resource_table.html:15
 msgid "Publisher"
@@ -731,7 +766,7 @@ msgstr "Publicador"
 
 #: bioresources/templates/tags/resource_table.html:18
 msgid "Taxon"
-msgstr ""
+msgstr "Taxón"
 
 #: bioresources/templates/tags/resource_table.html:22
 msgid "Last Updated"
@@ -964,7 +999,7 @@ msgid "No person was claimed, select one:"
 msgstr "No ha validado su identidad:"
 
 msgid "Person list"
-msgstr "Lista de personas
+msgstr "Lista de personas"
 
 msgid "Name"
 msgstr "Nombre"

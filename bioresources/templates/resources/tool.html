@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load i18n %}
+{% load i18n %}image_filename="images/header/tool.jpg"
 {% load bioresources_extras %}
 
 {% block head %}
@@ -9,14 +9,12 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 {% endblock %}
 
-
+{% block header %}
+{% include "header.html" with class="bg-info" section_name="Tool" %}
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-
-
-{% resource_actions tool collaboration request %}
+    {% resource_actions tool collaboration request %}
 
 
  <div class="col-md-12">
@@ -35,8 +33,4 @@
             create_graph()
         });
       </script>
-
-
-      </div>
-</div>
 {% endblock %}

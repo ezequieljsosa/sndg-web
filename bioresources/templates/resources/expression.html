@@ -9,9 +9,11 @@
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 {% endblock %}
 
+{% block header %}
+    {% include "header.html" with class="bg-tomate" section_name="Expression"%}
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="row">
     {% resource_actions expression collaboration request %}
         <div class="col-md-12">
             {% resource_table expression external_url %}
@@ -24,7 +26,6 @@
             {% endif %}
             </table>
         </div>
-    </div>
 
   {% related_resources_summary pk rtype_src related_resources %}
   {% resource_graph pk graph %}
@@ -34,7 +35,4 @@
         create_graph()
     });
   </script>
-
-</div>
-
 {% endblock %}

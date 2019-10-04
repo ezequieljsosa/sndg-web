@@ -6,7 +6,6 @@
 {% load bioresources_extras %}
 
 {% block content %}
-<div class="row">
 <div class="col-lg-9">
 <form action="{% url 'bioresources:tool_submission' %}" method="post">
 
@@ -14,6 +13,5 @@
     {% crispy form %}
 
 </form>
-</div>
 </div>
 {% endblock %}
