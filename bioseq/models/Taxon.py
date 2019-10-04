@@ -61,6 +61,8 @@ class TaxIdx(models.Model):
     """
     tax = models.OneToOneField(Taxon, models.CASCADE, primary_key=True, db_column="tax_id", related_name="keywords")
     text = models.TextField()
+    genus = models.CharField(max_length=255)
+    family = models.CharField(max_length=255)
 
     class Meta:
         managed = True

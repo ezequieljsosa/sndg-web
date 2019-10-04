@@ -22,6 +22,7 @@ def get_resource_class():
         Resource.RESOURCE_TYPES.PERSON: "Person",
         Resource.RESOURCE_TYPES.ORGANIZATION: "Organization",
         Resource.RESOURCE_TYPES.BIOPROJECT: "BioProject",
+        Resource.RESOURCE_TYPES.BARCODE: "Barcodes",
 
     }
 
@@ -52,8 +53,6 @@ def connect_nodes(r1, r2, reltype: str = "USES"):
     return db.cypher_query(query, {})
 
 
-
-
 class Tax(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty()
@@ -64,11 +63,10 @@ class Country(StructuredNode):
     name = StringProperty(unique_index=True)
 
 
-
-
 class BioProject(StructuredNode):
     rid = IntegerProperty(unique_index=True)
     name = StringProperty(unique_index=True)
+
     # level = DateProperty()
     # location = RelationshipTo('Country', 'LOCATION')
 
@@ -77,6 +75,7 @@ class BioProject(StructuredNode):
         n = cls(rid=obj.id, name=obj.name)
         n.save()
         return n
+
 
 class Organization(StructuredNode):
     rid = IntegerProperty(unique_index=True)
@@ -249,10 +248,17 @@ def affiliation_handler(sender, **kwargs):
 
 
 @receiver(post_save, sender=Collaboration)
-def my_handler(sender, **kwargs):
-    c = Collaboration.objects.prefetch_related("person", "resource").get(id=kwargs["instance"].id)
-    c.person.type = rPerson.TYPE
-    connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
+def collaboration_handler(sender, **kwargs):
+    collaboration = kwargs["instance"]
+    c = Collaboration.objects.prefetch_related("person", "organization", "resource").get(id=collaboration.id)
+    if collaboration.person:
+        c.person.type = rPerson.TYPE
+        connect_nodes(c.person, c.resource, reltype=Collaboration.rev_types[c.type])
+    if collaboration.organization:
+        c.organization.type = rOrganization.TYPE
+        connect_nodes(c.organization, c.resource, reltype=Collaboration.rev_types[c.type])
+
+
 
 
 from bioresources.models.ResourceRelation import ResourceRelation
@@ -292,17 +298,18 @@ gclass_dict = {
     Resource.RESOURCE_TYPES.PUBLICATION: Publication,
     Resource.RESOURCE_TYPES.TOOL: Tool,
     Resource.RESOURCE_TYPES.READS: Reads,
+    Resource.RESOURCE_TYPES.BARCODE: Barcodes,
 
     Resource.RESOURCE_TYPES.PERSON: Person,
     Resource.RESOURCE_TYPES.ORGANIZATION: Organization,
     Resource.RESOURCE_TYPES.BIOPROJECT: BioProject
 
-
 }
 
 
-# TODO habilitar barcodes
-@receiver(post_save, sender=rTool)  # rBarcode
+
+@receiver(post_save, sender=rBarcode)
+@receiver(post_save, sender=rTool)
 @receiver(post_save, sender=rReadsArchive)
 @receiver(post_save, sender=rSample)
 @receiver(post_save, sender=rAssembly)
@@ -323,7 +330,8 @@ def my_handler3(sender, **kwargs):
         gclass.from_resource(r)
 
 
-@receiver(post_delete, sender=rTool)  # rBarcode
+@receiver(post_delete, sender=rBarcode)
+@receiver(post_delete, sender=rTool)
 @receiver(post_delete, sender=rReadsArchive)
 @receiver(post_delete, sender=rSample)
 @receiver(post_delete, sender=rAssembly)

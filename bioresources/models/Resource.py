@@ -4,6 +4,9 @@ from model_utils import Choices
 from django.utils.translation import gettext_lazy as _, ngettext as __
 from django.db import models
 from django.urls import reverse
+from django.template.loader import get_template
+from django.conf import settings
+
 
 from .Person import Person
 from .Organization import Organization
@@ -12,7 +15,6 @@ from ..managers.BioResourceManager import BioResourceManager
 
 from bioseq.models.Taxon import Taxon, TaxIdx
 from polymorphic.models import PolymorphicModel
-
 
 
 def get_class(kls):
@@ -47,8 +49,6 @@ class Resource(PolymorphicModel):
         "bioproject": ["sample_scope", "material"],  # , "capture_target", "method"
         "barcode": ["subdivision", "marker"],
     }
-
-
 
     id = models.AutoField(primary_key=True)
 
@@ -146,7 +146,9 @@ class Collaboration(models.Model):
     rev_types = {k: str(v) for k, v, _ in COLLABORATION_TYPES._triples}
 
     resource = models.ForeignKey(Resource, related_name="collaborations", on_delete=models.PROTECT)
-    person = models.ForeignKey(Person, related_name="collaborations", on_delete=models.PROTECT)
+    person = models.ForeignKey(Person, related_name="collaborations", on_delete=models.PROTECT, null=True, blank=True)
+    organization = models.ForeignKey(Organization, related_name="collaborations", on_delete=models.PROTECT, null=True,
+                                     blank=True)
     type = models.PositiveIntegerField(choices=COLLABORATION_TYPES)
     info = models.TextField(null=True, blank=True)
 

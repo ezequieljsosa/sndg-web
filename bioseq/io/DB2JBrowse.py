@@ -31,7 +31,7 @@ class DB2JBrowse():
         self.jbrowse_data_path = jbrowse_data_path
         self.accession = None
         self.excluded = ["source"]
-
+        self.stderr = sys.stderr
         self.previous_lt = ""
         self.previous_gene = ""
 
@@ -46,7 +46,7 @@ class DB2JBrowse():
 
         if not os.path.exists(os.path.dirname(self.fasta_path)) or self.ovewrite:
             with open(self.fasta_path, "w") as h_fasta, open(self.gff_path, "w") as h_gff:
-                for bioentry in tqdm(bioentry_iterator, file=sys.stderr, total=bioentry_iterator.count()):
+                for bioentry in tqdm(bioentry_iterator, file=self.stderr, total=bioentry_iterator.count()):
                     self.process_bioentry(bioentry, h_fasta, h_gff)
         self.create_files()
 
@@ -60,7 +60,7 @@ class DB2JBrowse():
         qs = bioentry.features.prefetch_related("qualifiers", "type_term").exclude(
             type_term__identifier__in=self.excluded)
 
-        for feature in tqdm(qs, file=sys.stderr, total=qs.count()):
+        for feature in tqdm(qs, file=self.stderr, total=qs.count()):
             if feature.type_term.identifier in ["CDS", "tRNA", "rRNA", "miRNA", "soRNA", "sRNA", "miRNA",
                                                 "repeat_region"]:
                 self.process_seqfeature(bioentry.accession, feature, h_gff)
@@ -144,14 +144,14 @@ class DB2JBrowse():
         http://jbrowse.org/docs/html_features.html
         """
         sys.stderr.write("prepare-refseqs\n")
-        cmd = """docker run -v {jbrowse_path}/{jbrowse_data_path}:/jbrowse/data/ -v {fasta_path}:/tmp/jbrowse.fasta \
+        cmd = """docker run -v {jbrowse_data_path}:/jbrowse/data/ -v {fasta_path}:/tmp/jbrowse.fasta \
         jbrowse/jbrowse-1.12.0 bin/prepare-refseqs.pl --fasta /tmp/jbrowse.fasta --out data/{acc} --key "Sequence"
         """.format(jbrowse_path=self.jbrowse_path, jbrowse_data_path=self.jbrowse_data_path,
                    acc=self.accession, fasta_path=self.fasta_path)
         sp.call(cmd, shell=True)
 
         sys.stderr.write("flatfile-to-json.pl\n")
-        cmd = """docker run -v {jbrowse_path}/{jbrowse_data_path}:/jbrowse/data/ -v {gff_path}:/tmp/jbrowse.gff \
+        cmd = """docker run -v {jbrowse_data_path}:/jbrowse/data/ -v {gff_path}:/tmp/jbrowse.gff \
          jbrowse/jbrowse-1.12.0 ./bin/flatfile-to-json.pl --gff "/tmp/jbrowse.gff" --out "/jbrowse/data/{acc}" \
           --key "{label}" --trackLabel "{label}" --trackType CanvasFeatures --nameAttributes "gene,locus_tag" \
            --clientConfig '{clientConfig}' 
@@ -167,7 +167,7 @@ class DB2JBrowse():
         sp.call(cmd, shell=True)
 
         sys.stderr.write("generate-names\n")
-        cmd = """docker run -v {jbrowse_path}/{jbrowse_data_path}:/jbrowse/data/  \
+        cmd = """docker run -v {jbrowse_data_path}:/jbrowse/data/  \
          jbrowse/jbrowse-1.12.0 ./bin/generate-names.pl  --out "/jbrowse/data/{acc}" --tracks "{labels}" 
         """.format(jbrowse_path=self.jbrowse_path, jbrowse_data_path=self.jbrowse_data_path,
                    acc=self.accession, labels=",".join(["Sequence", "Genes"]))  # --className  feature

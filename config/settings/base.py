@@ -326,7 +326,7 @@ HAYSTACK_CONNECTIONS = {
 if "SNDG_OAI" in env:
     HAYSTACK_CONNECTIONS['oai'] = {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': env('SNDG_OAI', default='http://127.0.0.1:8984/solr/oai'),
+        'URL': env('SNDG_OAI'), #ex: 'http://127.0.0.1:8984/solr/oai'
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',
@@ -338,7 +338,6 @@ if "SNDG_OAI" in env:
                              'bioresources.search_indexes.OrganizationIndex',
                              'bioresources.search_indexes.ReadsArchiveIndex',
                              'bioresources.search_indexes.BarcodeIndex',
-
                              ],
 
     }
@@ -354,7 +353,7 @@ FILE_UPLOAD_TEMP_DIR = "/tmp/sndg_tmp/"
 OAIPMH_DOMAIN = "sndg.qb.fcen.uba.ar"
 # LOCALE_PATHS = os.path.abspath(os.path.join(SITE_ROOT, "../locale")),
 
-SNDG_JBROWSE = os.path.join(str(ROOT_DIR), env('SNDG_JBROWSE', default="data/jbrowse/"))
+SNDG_JBROWSE = os.path.join(str(ROOT_DIR), env('SNDG_JBROWSE', default="data/jbrowse/data"))
 STATICFILES_DIRS = [
     os.path.abspath(os.path.join(str(ROOT_DIR), "sndg/static/")),
     ("jbrowse", SNDG_JBROWSE),

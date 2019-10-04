@@ -36,9 +36,9 @@ from bioresources.models.ResourceRelation import ResourceRelation
 from bioresources.models.ResourceProperty import ResourceProperty, ResourcePropertyValue
 
 
-def bulk_save(iterator: Iterable, action: Callable[[BSeqFeature], Seqfeature], bulk_size: int = 1000):
+def bulk_save(iterator: Iterable, action: Callable[[BSeqFeature], Seqfeature], bulk_size: int = 1000,stderr=sys.stderr):
     data = []
-    for obj in tqdm(iterator, file=sys.stderr):
+    for obj in tqdm(iterator, file=stderr):
         data.append(obj)
         if (len(data) % bulk_size) == 0:
             with transaction.atomic():
@@ -58,6 +58,7 @@ class BioIO:
     def __init__(self, biodb_name: str, ncbi_tax: int):
         self.biodb_name = biodb_name
         self.ncbi_tax = ncbi_tax
+        self.stderr = sys.stderr
 
     def create_db(self):
         self.genomedb = Biodatabase(name=self.biodb_name)
@@ -142,10 +143,10 @@ class BioIO:
         seq = Biosequence(bioentry=be, seq=str(seqrecord.seq), length=len(seqrecord.seq))
         seq.save()
 
-        bulk_save(seqrecord.features, action=lambda f: self.process_feature(be, f))
+        bulk_save(seqrecord.features, action=lambda f: self.process_feature(be, f),stderr=self.stderr)
 
     def process_record_list(self, seq_record_iterator: Iterable[SeqRecord], contig_count: int):
-        with tqdm(seq_record_iterator, total=contig_count, file=sys.stderr) as pbar:
+        with tqdm(seq_record_iterator, total=contig_count, file=self.stderr) as pbar:
             for seqrecord in pbar:
                 pbar.set_description(seqrecord.id)
                 self.process_seqrecord(seqrecord)
