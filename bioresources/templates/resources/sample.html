@@ -11,8 +11,6 @@
 
 
 {% block content %}
-<div class="container">
-    <div class="row">
     {% resource_actions sample collaboration request %}
         <div class="col-md-12">
             <h1>{{sample.name}}</h1>
@@ -20,7 +18,6 @@
             {{sample.description}}
             </p>
         </div>
-    </div>
 
   {% related_resources_summary pk rtype_src related_resources level %}
   {% resource_graph pk graph %}
@@ -30,9 +27,4 @@
         create_graph()
     });
   </script>
-
-
-
-</div>
-
 {% endblock %}

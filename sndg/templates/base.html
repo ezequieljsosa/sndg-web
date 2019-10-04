@@ -1,16 +1,38 @@
 {% load i18n %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="no-js">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="../../../../favicon.ico">
 
-    <title>{% block title %} {% trans 'SNDG' %} {% endblock %}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>{% block title %} {% trans 'Navegador de datos genómicos' %} {% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" type="image/x-ico" href="{% static 'images/favicon.ico' %}"/>
+
+  <meta property="og:site_name" content="{% trans 'Portal de datos genómicos' %}"/>
+  <meta property="og:url" content="https://datos.sndg.mincyt.gob.ar/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{% trans 'Portal de datos genómicos' %}">
+  <meta property="og:description" content="Desde el Portal de Datos Genómicos del SNDG usted podrá acceder a la base de datos nacional unificada de información genómica, para todas las especies de interés ecológico, agropecuario, biotecnológico y en salud.">
+  <meta property="og:image" content="https://datos.sndg.mincyt.gob.ar/assets/logo_sistemas_nacionales-48dd30357d8c0e7dc192ba175f34427a.png" />
+  <meta property="og:locale" content="es_AR">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{% trans 'Portal de datos genómicos' %}">
+  <meta name="twitter:description" content="Portal de Datos Genómicos del SNDG: base de datos nacional unificada de información genómica de especies de interés ecológico, agropecuario, biotecnológico y en salud.">
+  <meta name="twitter:image" content="https://datos.sndg.mincyt.gob.ar/assets/logo_sistemas_nacionales-48dd30357d8c0e7dc192ba175f34427a.png" />
+
+    <script type="text/javascript" src="{% static 'js/jquery-2.2.0.min.js' %}" ></script>
+    <script type="text/javascript" src="{% static 'js/bootstrap.js' %}" ></script>
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}"/>
+    <!--<link rel="stylesheet" href="{% static 'css/bootstrap-theme.css' %}"/>-->
+    <link rel="stylesheet" href="{% static 'css/poncho.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/roboto-fontface.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/icono-arg.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}"/>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{GOOGLE_ANALYTICS_CODE}}"></script>
@@ -22,128 +44,57 @@
   gtag('config', '{{GOOGLE_ANALYTICS_CODE}}');
 </script>
 
-
 <link href="{% static 'tellme/feedback.min.css' %}" rel="stylesheet">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
-
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-
 
     <!-- Custom styles for this template -->
     <style>
-    /* Show it is fixed to the top */
-    body {
-      min-height: 75rem;
-      padding-top: 4.5rem;
-      background: #FAFBFC;
-      color: #333333;
-      width: 100%;
+        .vertical-right-aligned {
+            transform: rotate(-90deg);
+            transform-origin: 100% 100%;
+            position: fixed;
+            right: 0;
+            top: 50%;
+            z-index: 100;
+        }
 
-    }
-.big-icon {
-    font-size: 64px;
-}
-.container {
-margin-left: 10px;
-margin-right: 10px;
-}
-
-.vertical-right-aligned {
-    transform: rotate(-90deg);
-    transform-origin: 100% 100%;
-    position: fixed;
-    right: 0;
-    top: 50%;
-    z-index: 100;
-}
-
-</style>
+    </style>
 
    {% block head %}{% endblock %}
 
   </head>
 
   <body>
-    <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
-        Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
+    <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned" style="display: block">
+        Feedback <span class="icono-arg-dialogo" aria-hidden="true"></span>
     </button>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-      <a class="navbar-brand" href="{% url 'bioresources:index' %}">SNDG</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarCollapse">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'bioresources:index' %}">{% trans 'Home' %} <span class="sr-only">(current)</span></a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'bioresources:available_tools' %}">{% trans 'Blast' %}</a>
-          </li>
-          <li style="display: none" class="nav-item">
-                      <a class="nav-link" href="{% url 'bioresources:stats' %}">{% trans 'Stats' %}</a>
-                    </li>
-           <li class="nav-item">
-                    <a  class="nav-link" href="{% url 'bioresources:submission' %}">{% trans 'Data Submissions' %}</a>
-                    </li>
-          <li class="nav-item">
-            <a style="display: none"  class="nav-link" href="{% url 'about' %}">{% trans 'Information' %}</a>
-          </li>
+    <header>
+        <nav class="navbar navbar-default navbar-static-top">
+            <div class="container">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="{% url 'bioresources:index' %}"><img src="{%  static 'images/logo_sistemas_nacionales.png' %}" height="50px" alt="Sistema Nacional de Datos Genómicos"/></a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                {% include "navigation.html" %}
+            </div><!-- /.container-fluid -->
+        </nav>
+    </header>
+    {% block header %}
 
-
-        </ul>
-
-{% if request.user.username %}
-
-                        <ul class="navbar-nav ">
-                       <li class="nav-item dropleft ">
-                               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                 <i class="fa fa-user">  </i>&nbsp;{{request.user.username}}
-                               </a>
-                               <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                 <a style="display: none" id class="dropdown-item" href="{% url 'bioresources:available_tools' %}">{% trans 'Jobs' %}</a>
-                                 <a class="dropdown-item" href="{% url 'bioresources:user_resources' %}">{% trans 'Resources' %}</a>
-
-                                 <div class="dropdown-divider"></div>
-                                 <a class="dropdown-item" href="{% url 'account_logout' %}">{% trans 'Logout' %}</a>
-                               </div>
-                             </li>
-                              <li class="nav-item">
-
-                                   </li>
-                        </ul>
-
-{% else %}
-<ul class="navbar-nav  pull-right">
-          <li class="nav-item">
-
-           <a class="nav-link" href="{% url 'account_login' %}?next={{ request.path }}"><i class="fa fa-user">  </i>&nbsp;{% trans 'Login' %} / {% trans 'Register' %}</a>
-
-
-          </li>
-          </ul>
-
-{% endif %}
-
-                      </div>
-    </nav>
-
-
-<div class="row">
+    {% endblock %}
 
 {% block sidebarleft %}
 
-
-
-
-
 {% endblock %}
 
-
-
+<!--
 {% if sidebarleft and  sidebarrigth %}
 
 <main role="main"  class="col-md-8">
@@ -155,12 +106,14 @@ margin-right: 10px;
 <main id="main-div" role="main" class="col-md-12 container">
 
 {% endif %}
-
-      {% block jumbotron %}{% endblock %}
-
-       {% block content %}{% endblock %}
-
-</main>
+-->
+    <main role="main">
+        <div class="container">
+            <div class="row">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
 {% block sidebarrigth %}
 
 {% if false and sidebarrigth %}
@@ -178,35 +131,30 @@ margin-right: 10px;
               </li>
 
              {% endif %}
-              </ul></div></nav>
+              </ul>
+          </div>
+</nav>
 
 {% endif %}
 
 {% endblock %}
 
-
- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-
-    </main>
-
-</main>
-</div>
-
 {% block footer %}
-<style>
-.main-footer {
-    background: #fff;
-    padding-bottom: 32px;
-    padding-top: 60px;
-}
-</style>
-<footer class="main-footer">
-		<div class="container">
+    <footer class="main-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 col-sm-4">
+                    <section>
+                        <img src="{% static 'images/00_Logo_Ministerio_ECCyT.png' %}" class="img-responsive"/>
+                    </section>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    {% include "navigation_footer.html" %}
+                </div>
+            </div>
+        </div>
+    </footer>
 
-		</div>
-</footer>
 {% endblock %}
     <!-- Bootstrap core JavaScript
     ================================================== -->

@@ -9,11 +9,6 @@
 
 
 {% block content %}
-<div class="container">
-<div class="row">
-
-
-
 <div class="col-md-12">
 
     {% resource_actions bioproject collaboration request %}
@@ -38,8 +33,6 @@
     {% endif %}
     </table>
 
-
-
 {% related_resources_summary bioproject.id rtype_src related_resources %}
   {% resource_graph bioproject.id graph %}
 
@@ -48,15 +41,5 @@
         create_graph()
     });
   </script>
-
-
 </div>
-
-
-
-
-
-
-
-
 {% endblock %}

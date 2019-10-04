@@ -6,13 +6,13 @@
 {% block head %}
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+{% endblock %}
 
+{% block header %}
+    {% include "header.html" with class="bg-primary" section_name="Person"%}
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-
     {% if request.user.is_authenticated and request.user.validated and request.user.person.id == pk %}
         {% trans 'Yourself' %}
     {% else %}
@@ -43,5 +43,4 @@
       })
 </script>
 
-</div>
 {% endblock %}

@@ -1,4 +1,4 @@
-<div  id="mynetwork" style="height: 500px;width: 100%"></div>
+<div  id="mynetwork" style="height: 500px;width: 100%;display: none"></div>
 </div>
 
 <script type="text/javascript">
@@ -15,7 +15,7 @@
         // "Sample":"green",
         "Tool":"darkgreen",
     };
-    function create_graph(){
+    function create_graph(){return;
         const container = document.getElementById('mynetwork');
         const nodes = new vis.DataSet([
             {% for x in graph.nodes %}

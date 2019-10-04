@@ -2,8 +2,7 @@
  {% load i18n %}
  {% load bioresources_extras %}
 
- <div class="col-md-12">
-
+      <div class="col-md-12">
         {% if request.user.is_authenticated and request.user.person %}
                   {% if collaboration %}
                       <span class="badge badge-success">{% trans 'You claimed this resource' %}</span><br />
