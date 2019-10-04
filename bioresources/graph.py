@@ -346,7 +346,8 @@ def model_delete_handler(sender, **kwargs):
     gclass = gclass_dict[sender.TYPE]
     qs = gclass.nodes.filter(rid=r.id)
     if len(qs):
-        qs.get().delete()
+        for x in qs:
+            x.delete()
 
 
 @receiver(m2m_changed, sender=Affiliation.organizations.through)

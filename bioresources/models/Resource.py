@@ -54,7 +54,7 @@ class Resource(PolymorphicModel):
 
     creators = models.ManyToManyField(Organization, related_name="created_resources", blank=True)
     publishers = models.ManyToManyField(Organization, related_name="published_resources", blank=True)
-    keywords = models.ManyToManyField(RKeyword, related_name="associated_resources")
+    keywords = models.ManyToManyField(RKeyword, related_name="associated_resources", blank=True)
 
     ncbi_tax = models.ForeignKey(Taxon, db_column="ncbi_tax", to_field="ncbi_taxon_id", blank=True,
                                  on_delete=models.SET_NULL, null=True, related_name="bioresources")

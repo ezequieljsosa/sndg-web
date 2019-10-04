@@ -326,7 +326,7 @@ HAYSTACK_CONNECTIONS = {
 if "SNDG_OAI" in env:
     HAYSTACK_CONNECTIONS['oai'] = {
         'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': env('SNDG_OAI'), #ex: 'http://127.0.0.1:8984/solr/oai'
+        'URL': env('SNDG_OAI'),  # ex: 'http://127.0.0.1:8984/solr/oai'
         'INCLUDE_SPELLING': False,
         'EXCLUDED_INDEXES': ['bioresources.search_indexes.PublicationIndex',
                              'bioresources.search_indexes.StructureIndex',
@@ -412,3 +412,4 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 GOOGLE_ANALYTICS_CODE = os.environ.get('GOOGLE_ANALYTICS_CODE', "")
 FILE_UPLOAD_TEMP_DIR = os.environ.get('FILE_UPLOAD_TEMP_DIR', os.path.join(str(ROOT_DIR), "data/uploads/"))
 DJANGO_SELECT2_I18N = 'ar'
+MINCYT_URL = os.environ.get('MINCYT_URL', "")

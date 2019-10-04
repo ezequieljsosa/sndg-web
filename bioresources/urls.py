@@ -41,17 +41,28 @@ from .views.user.UserResourcesView import UserResourcesView
 from .views.file_upload import ResumableUploadView
 from django.contrib.auth.decorators import login_required
 from .views import tax_data
+from django.views.generic import RedirectView
+
+from django.conf import settings
 
 app_name = 'bioresources'
+if settings.MINCYT_URL:
+    home_view = RedirectView.as_view(url=settings.MINCYT_URL)
+else:
+    home_view = index.index
+
+
 urlpatterns = [
 
     path('/tax_json',tax_data , name='tax_api'),
 
     # Main page and resources search
-    path('', index.index, name='index'),
+
+    path('', home_view, name='index'),
     path('blast/', blast, name='available_tools'),
     path('job/<int:jid>', job_view, name='job_view'),
-    path('', index.index, name='stats'),
+    path('/stats', index.index, name='stats'),
+    path('/faq', index.index, name='faq'),
 
     path('search/', BioSearchView.as_view(), name='search_view'),
     path('search/<str:rtype_src>/<int:rid>/<str:rtype_dst>', BioSearchRelatedView.as_view(), name='search_view'),

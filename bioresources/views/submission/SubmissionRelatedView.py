@@ -72,8 +72,7 @@ def relate_to_publication(request, resource_id):
         if qs_publication.exists():
             publication = qs_publication.get()
             doi = {"title": publication.name,
-                   "doi": publication.doi
-                   }
+                   "doi": publication.doi}
         else:
             source = "scopus"
             sds = scopus_client()

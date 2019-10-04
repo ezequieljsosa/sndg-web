@@ -11,6 +11,8 @@ class Organization(models.Model):
     BOLD = "BOLD"
     SCOPUS = "SCOPUS"
     EBI = "EBI"
+    SNDG = "SNDG"
+    RENAORG = "RENAORG"
 
     TYPE = 30
 
@@ -48,6 +50,13 @@ class Organization(models.Model):
         if Organization.objects.filter(name=Organization.EBI).count() == 0:
             Organization.objects.create(name=Organization.EBI, description="European Bioinformatics Institute",
                                         url="https://www.ebi.ac.uk/", country="International")
+        if Organization.objects.filter(name=Organization.SNDG).count() == 0:
+            Organization.objects.create(name=Organization.SNDG, description="Sistema Nacional de Datos Genómicos",
+                                        url="http://datos.sndg.mincyt.gob.ar/", country="Argentina")
+        if Organization.objects.filter(name=Organization.RENAORG).count() == 0:
+            Organization.objects.create(name=Organization.RENAORG,
+                                        description="Registro Nacional de las Organizaciones",
+                                        url="", country="Argentina")
 
     def rtype(self):
         return 30  # "org"
