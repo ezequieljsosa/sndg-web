@@ -16,5 +16,8 @@ class Barcode(Resource):
     bold_org = models.CharField(max_length=255, null=True)
     collectors = models.CharField(max_length=255, null=True)
 
+    lat = models.FloatField(null=True,blank=True)
+    lon = models.FloatField(null=True,blank=True)
+
     class Meta:
         verbose_name_plural = _("Barcodes")

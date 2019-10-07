@@ -31,10 +31,16 @@ admin.site.register(Identity)
 admin.site.register(RKeyword)
 admin.site.register(Affiliation)
 admin.site.register(ResourceProperty)
-admin.site.register(Sample)
+
 
 admin.site.register(ExternalId)
 
+
+@admin.register(Sample)
+class SampleArchiveAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["ncbi_tax"]
+    search_fields = ["name","description"]
+    list_display = ["name", "description", "deprecated", "updated_at"]
 
 
 

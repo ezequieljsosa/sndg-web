@@ -18,6 +18,9 @@ class Sample(Resource):
     publication_date = models.DateField(null=True)
     update_date = models.DateField(null=True)
 
+    lat = models.FloatField(null=True,blank=True)
+    lon = models.FloatField(null=True,blank=True)
+
     class Meta:
         verbose_name_plural = _("Samples")
 

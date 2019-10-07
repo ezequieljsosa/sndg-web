@@ -122,7 +122,7 @@ def scopus_extended_publication(article):
     arg = []  # TODO criterio pais?
     for affiliation in article["affiliation"]:
         org = scopus_affiliation(affiliation)
-    #     if org.country == "Argentina" and org.scopus_id:
+        #     if org.country == "Argentina" and org.scopus_id:
         arg.append(org.scopus_id)
     #
     # if not arg:
@@ -141,20 +141,19 @@ def scopus_extended_publication(article):
 class NCBIBioSampleAdapter:
 
     def fetch(self, ncbi_id):
-        return fetch_list[0]
+        return self.fetch_list(ncbi_id)[0]
 
     def fetch_list(self, ncbi_ids):
-        slist = Entrez.read(retry(lambda: Entrez.esummary(db="biosample", id=ncbi_ids)))["DocumentSummarySet"][
+        slist = Entrez.read(retry(lambda: Entrez.esummary(db="biosample", id=ncbi_ids)),validate=False)["DocumentSummarySet"][
             "DocumentSummary"]
-        return [xmltodict.parse(biosampledata["SampleData"])["BioSample"] for biosampledata in  slist]
-
+        return [xmltodict.parse(biosampledata["SampleData"])["BioSample"] for biosampledata in slist]
 
     def adapt(self, summaryData) -> Sample:
 
         acc = summaryData["@accession"]
         desc = summaryData["Description"]["Title"]
 
-        s = Sample(name=acc, description=desc,type=Sample.TYPE)
+        s = Sample(name=acc, description=desc, type=Sample.TYPE)
 
         if ("Organism" in summaryData["Description"]) and ("@taxonomy_id" in summaryData["Description"]["Organism"]):
             tax = summaryData["Description"]["Organism"]['@taxonomy_id']
@@ -177,6 +176,16 @@ class NCBIBioSampleAdapter:
         ncbi_org = Organization.objects.get(name="NCBI")
         s.publishers.add(ncbi_org)
 
+        self.save_attributes(summaryData)
+
+        ExternalId(resource=s, organization=ncbi_org,
+                   identifier=acc, type="accession").save()
+        ExternalId(resource=s, organization=ncbi_org,
+                   identifier=ncbi_id, type="identifier").save()
+        return s
+
+    def save_attributes(self, summaryData,s):
+        ncbi_org = Organization.objects.get(name="NCBI")
         ontology = Ontology.objects.get_or_create(name="NCBI sample", definition="Attributes of an NCBI Sample")[0]
         records = summaryData["Attributes"]["Attribute"]
         if isinstance(records, dict):
@@ -188,12 +197,6 @@ class NCBIBioSampleAdapter:
                     ontology=ontology, name=x["@attribute_name"], identifier=x["@attribute_name"][:255])[0]
                 prop = ResourceProperty.objects.get_or_create(term=term, resource=s, organization=ncbi_org)[0]
                 ResourcePropertyValue.objects.create(property=prop, value=x["#text"][:200])
-
-        ExternalId(resource=s, organization=ncbi_org,
-                   identifier=acc, type="accession").save()
-        ExternalId(resource=s, organization=ncbi_org,
-                   identifier=ncbi_id, type="identifier").save()
-        return s
 
 
 class NCBISRAAdapter:
@@ -319,7 +322,7 @@ class NCBIBioProject:
         s.type = s.__class__.TYPE
         return s
 
-    def save(self, summaryData,ncbi_id):
+    def save(self, summaryData, ncbi_id):
         s = self.adapt(summaryData)
         s.save(force_insert=True)
 
@@ -398,7 +401,7 @@ class NCBIAssemblyAdapter:
 class NCBIStructureAdapter:
 
     def fetch(self, ncbi_id):
-        return Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_id)),validate=False)[0]
+        return Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_id)), validate=False)[0]
 
     def fetch_list(self, ncbi_ids):
         fetch = Entrez.read(retry(lambda: Entrez.esummary(db="structure", id=ncbi_ids)))
