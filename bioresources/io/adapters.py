@@ -176,10 +176,10 @@ class NCBIBioSampleAdapter:
         ncbi_org = Organization.objects.get(name="NCBI")
         s.publishers.add(ncbi_org)
 
-        self.save_attributes(summaryData)
+        self.save_attributes(summaryData,s)
 
         ExternalId(resource=s, organization=ncbi_org,
-                   identifier=acc, type="accession").save()
+                   identifier=s.name, type="accession").save()
         ExternalId(resource=s, organization=ncbi_org,
                    identifier=ncbi_id, type="identifier").save()
         return s
