@@ -29,10 +29,10 @@ class EBISearch():
                     persons.append(p)
                     if "affiliation" in author:
                         affs[author["affiliation"].strip()].append(i)
+                orgs_list = [data["affiliation"]] if ("affiliation" in data) else []
+                orgs = [Organization(name=x, source=ebi) for x in list(affs.keys()) + orgs_list ]
 
-                orgs = [Organization(name=x, source=ebi) for x in list(affs.keys()) + [data["affiliation"]]]
-
-                record = {"doi": data["doi"], "title": data["title"], "abstract": data["abstractText"],
+                record = {"doi": data["doi"], "title": data["title"], "abstract": data["abstractText"] if "abstractText" in data else "",
                           "persons": persons, "orgs": orgs, "affs": dict(affs), "record": data}
                 return record
             else:
