@@ -7,6 +7,7 @@ from bioresources.models.Person import Person
 from bioresources.models.Organization import Organization
 from bioresources.models.Affiliation import Affiliation
 from bioresources.models.Publication import Publication
+from bioresources.models.Resource import Collaboration
 
 
 class EBISearch():
@@ -26,9 +27,10 @@ class EBISearch():
                 for i, author in enumerate(data["authorList"]["author"]):
                     p = Person(name=author["firstName"], surname=author["lastName"], source=ebi)
                     persons.append(p)
-                    affs[author["affiliation"].strip()].append(i)
+                    if "affiliation" in author:
+                        affs[author["affiliation"].strip()].append(i)
 
-                orgs = [Organization(name=x, source=ebi) for x in affs]
+                orgs = [Organization(name=x, source=ebi) for x in list(affs.keys()) + [data["affiliation"]]]
 
                 record = {"doi": data["doi"], "title": data["title"], "abstract": data["abstractText"],
                           "persons": persons, "orgs": orgs, "affs": dict(affs), "record": data}
@@ -59,6 +61,12 @@ class EBISearch():
             data = {"name": o.name, "source": ebi, "country": 'Argentina' if 'argentina' in  o.name.lower() else '' }
 
             o = Organization.objects.get_or_create(**data)[0]
-            for idx in record["affs"][o.name]:
-                affs[idx].organizations.add(o)
+            if o.name in record["affs"]:
+                for idx in record["affs"][o.name]:
+                    affs[idx].organizations.add(o)
+            else:
+                if not Collaboration.objects.filter(resource=publication,organization=o,
+                                                type=Collaboration.COLLABORATION_TYPES.other,info="affiliated").exists():
+                    Collaboration.objects.create(resource=publication,organization=o,
+                                                 type=Collaboration.COLLABORATION_TYPES.other,info="affiliated")
         return publication
