@@ -92,7 +92,8 @@ def relate_to_publication(request, resource_id):
                         raise Exception("Invalid doi source")
                 else :
                     publication = qs_publication.get()
-                ResourceRelation.objects.create(source=publication, target=r, role="publication")
+                if not ResourceRelation.objects.filter(source=publication, target=r).count():
+                    ResourceRelation.objects.create(source=publication, target=r, role="publication")
 
             return redirect(r.get_absolute_url())
         else:
