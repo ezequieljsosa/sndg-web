@@ -7,8 +7,9 @@
                   {% if collaboration %}
                       <span class="badge badge-success">{% trans 'You claimed this resource' %}</span><br />
                       <a href="{% url edit_url %}?pk={{pk}}" class="btn"> {% trans 'Edit resource' %}</a>
-                      <a href="{% url 'bioresources:relate_to_publication' pk %}" class="btn"> {% trans 'Add publication' %}</a>
                   {% endif %}
+
+                   <a href="{% url 'bioresources:relate_to_publication' pk %}" class="btn"> {% trans 'Add publication' %}</a>
 
                 <div class="btn-group" role="group" aria-label="Basic example">
                     {% if  not collaboration %}
