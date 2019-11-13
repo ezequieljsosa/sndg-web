@@ -16,4 +16,4 @@ find . -path "*/migrations/*.pyc"  -delete
 cd ..
 cd ..
 ./manage.py makemigrations
-./manage.py migrate --fake
+#./manage.py migrate --fake

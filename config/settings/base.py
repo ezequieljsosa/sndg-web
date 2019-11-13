@@ -380,8 +380,10 @@ PDBSENTRIES = "/data/databases/pdb/entries.idx"
 # ACCOUNT_USERNAME_VALIDATORS = ['sndg.users.forms.Validator']
 
 ACCOUNT_FORMS = {
-    'signup': 'sndg.users.forms.UserCreationForm'
+    'signup': 'sndg.users.forms.UserCreationForm',
+    'login': 'sndg.users.forms.CustomLoginForm'
 }
+
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 LANGUAGE_CODE = 'es'

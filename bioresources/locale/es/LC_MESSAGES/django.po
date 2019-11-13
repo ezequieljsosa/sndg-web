@@ -168,6 +168,8 @@ msgstr "Herramientas"
 #: bioresources/bioresources/templates/tool.html:22
 msgid "Tool"
 msgstr "Herramienta"
+msgid "TOOL"
+msgstr "Herramienta"
 
 #: bioresources/tasks.py:32
 #, python-format
@@ -479,7 +481,7 @@ msgstr ""
 #: bioresources/templates/account/signup.html:8
 #: bioresources/templates/account/signup.html:18
 msgid "Sign Up"
-msgstr ""
+msgstr "Si aún no tenés cuenta, registrate"
 
 #: bioresources/templates/account/signup.html:10
 #, python-format
@@ -699,6 +701,8 @@ msgstr "Publicación"
 
 #: bioresources/templates/submission/submission_import.html:39
 msgid "Bioproject"
+msgstr "Bioproyecto"
+msgid "BIOPROJECT"
 msgstr "Bioproyecto"
 
 #: bioresources/templates/submission/submission_import.html:51
@@ -1012,3 +1016,6 @@ msgstr "Este usuario no esta asociado a ningún recurso"
 # blast.html
 msgid "Sequence must have at least 10 nucleotides/aminoacides"
 msgstr "La secuencia debe tener una longitud mínima de 10"
+
+msgid "Relation"
+msgstr "Relación"
